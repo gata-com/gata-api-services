@@ -1,4 +1,6 @@
-import { body, ValidationChain } from 'express-validator';
+import { body, ValidationChain, validationResult } from 'express-validator';
+import { ApiResponse } from '../types';
+import { Request, Response, NextFunction } from 'express';
 
 export const validateRegister: ValidationChain[] = [
   body('nim')
@@ -80,3 +82,23 @@ export const validateUpdateUser: ValidationChain[] = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
 ];
+
+export const handleValidationErrors = (
+  req: Request,
+  res: Response<ApiResponse>,
+  next: NextFunction
+): void => {
+  const errors = validationResult(req);
+  
+  if (!errors.isEmpty()) {
+    const errorMessages = errors.array().map(error => error.msg);
+    res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errorMessages
+    });
+    return;
+  }
+  
+  next();
+};

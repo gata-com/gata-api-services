@@ -23,6 +23,7 @@
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
     "strictPropertyInitialization": false,
     "baseUrl": "./src",
     "paths": {
@@ -44,4 +45,5 @@
     "node_modules",
     "dist"
   ]
+  
 }

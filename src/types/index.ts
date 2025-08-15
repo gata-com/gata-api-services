@@ -7,6 +7,17 @@ export interface ApiResponse<T = unknown> {
   message: string;
   data?: T;
   errors?: ApiErrorDetail[];
+  pagination?: PaginationMeta;
+}
+
+// Pagination metadata
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 // Detailed error information
@@ -21,8 +32,8 @@ export interface ApiErrorDetail {
 }
 
 // Extended Express Request with user context
-export interface AuthRequest<P = {}, ResBody = {}, ReqBody = {}, Query = {}>
-  extends Request<P, ResBody, ReqBody, Query> {
+export interface AuthRequest<P = {}, ResBody = {}, ReqBody = {}, ReqQuery = {}>
+  extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: {
     userId: number;
     role: UserRole;
@@ -38,17 +49,15 @@ export interface PaginationQuery {
   search?: string;
 }
 
-// Paginated response structure
+// Paginated response structure - FIXED: removed duplicate pagination property
 export interface PaginationResult<T> {
   data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+  pagination: PaginationMeta;
+}
+
+// Common query parameters
+export interface BaseQueryParams {
+  search?: string;
 }
 
 // JWT payload structure
@@ -69,7 +78,6 @@ export interface ErrorResponse extends Omit<ApiResponse<null>, "errors"> {
 }
 
 // Validation error specifics
-// Add specific validation error interface
 export interface ValidationErrorDetail extends ApiErrorDetail {
   code: 'VALIDATION_ERROR';
   field: string;
@@ -82,7 +90,6 @@ export interface ValidationError extends ApiErrorDetail {
   field: string;
   constraints?: Record<string, string>;
 }
-
 
 // Database operation error
 export interface DatabaseError extends ApiErrorDetail {
@@ -105,3 +112,7 @@ export interface ApiError extends Error {
 export interface PaginatedRequestQuery extends PaginationQuery {
   [key: string]: unknown;
 }
+
+// Export all user and auth types
+export * from './user';
+export * from './auth';

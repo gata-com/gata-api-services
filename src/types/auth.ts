@@ -14,6 +14,21 @@ export interface LoginRequest {
   password: string;
 }
 
+// Reset Password Interfaces - TAMBAHAN BARU
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface VerifyTokenRequest {
+  token: string;
+}
+
 // Extend the base JwtPayload from jsonwebtoken
 export interface JwtPayload extends BaseJwtPayload {
   userId: number;

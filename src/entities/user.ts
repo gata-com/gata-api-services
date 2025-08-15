@@ -15,6 +15,7 @@ import { config } from '../config/config';
 @Entity('users')
 @Index(['email'])
 @Index(['nim'])
+@Index(['resetToken']) // Index untuk reset token
 export class User {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -53,7 +54,21 @@ export class User {
     enum: ['student', 'dosen', 'admin'],
     default: 'student'
   })
-  role!: 'student' | 'admin';
+  role!: 'student' | 'dosen' | 'admin';
+
+  // Kolom untuk dosen (nullable karena hanya untuk role dosen)
+  @Column({ length: 20, nullable: true })
+  nip?: string;
+
+  @Column({ length: 255, nullable: true, comment: 'Kelompok Keahlian untuk dosen' })
+  kk?: string;
+
+  // Kolom untuk reset password functionality
+  @Column({ name: 'reset_token', length: 255, nullable: true, select: false })
+  resetToken?: string;
+
+  @Column({ name: 'reset_token_expires', type: 'datetime', nullable: true, select: false })
+  resetTokenExpires?: Date;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
@@ -81,9 +96,23 @@ export class User {
     return await bcrypt.compare(candidatePassword, this.password);
   }
 
+  // Method untuk check apakah reset token masih valid
+  isResetTokenValid(): boolean {
+    if (!this.resetToken || !this.resetTokenExpires) {
+      return false;
+    }
+    return this.resetTokenExpires > new Date();
+  }
+
+  // Method untuk clear reset token
+  clearResetToken(): void {
+    this.resetToken = undefined;
+    this.resetTokenExpires = undefined;
+  }
+
   // Remove sensitive data when converting to JSON
   toJSON() {
-    const { password, ...user } = this;
+    const { password, resetToken, resetTokenExpires, ...user } = this;
     return user;
   }
 }

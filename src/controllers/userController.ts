@@ -1,234 +1,313 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { UserService } from '../services/userService';
+import { ApiResponse } from '../types';
+import { AuthRequest } from '../types';
 import { validationResult } from 'express-validator';
-import { UserRepository } from '../repositories/userRepository';
-import { AuthRequest, ApiResponse, PaginationQuery } from '../types';
-import { UpdateUserData, UserQueryParams, UserRole } from '../types/user';
 
-const userRepository = new UserRepository();
+export class UserController {
+  private userService: UserService;
 
-/**
- * @desc    Get all users with pagination and filters
- * @route   GET /api/users
- * @access  Private/Admin
- */
-export const getAllUsers = async (
-  req: Request<{}, {}, {}, UserQueryParams & PaginationQuery>,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const result = await userRepository.findAllWithPagination(req.query);
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'Users retrieved successfully',
-      data: result
-    };
-
-    res.json(response);
-  } catch (error) {
-    next(error);
+  constructor() {
+    this.userService = new UserService();
   }
-};
 
-/**
- * @desc    Get user by ID
- * @route   GET /api/users/:id
- * @access  Private
- */
-export const getUserById = async (
-  req: AuthRequest<{ id: string }>,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const userId = parseInt(req.params.id, 10);
-
-    if (isNaN(userId)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid user ID'
+  // Get all users with pagination
+  getUsers = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const result = await this.userService.getAllUsers(req.query as any);
+      res.status(200).json({
+        success: true,
+        message: 'Users retrieved successfully',
+        data: result.data,
+        pagination: result.pagination
       });
-      return;
-    }
-
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      res.status(404).json({
+    } catch (error: any) {
+      res.status(500).json({
         success: false,
-        message: 'User not found'
+        message: error.message || 'Failed to retrieve users'
       });
-      return;
     }
+  };
 
-    const response: ApiResponse = {
-      success: true,
-      message: 'User retrieved successfully',
-      data: { user }
-    };
-
-    res.json(response);
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * @desc    Update user
- * @route   PUT /api/users/:id
- * @access  Private
- */
-export const updateUser = async (
-  req: AuthRequest<{ id: string }, ApiResponse, UpdateUserData>,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
+  // Get user statistics
+  getUserStats = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const stats = await this.userService.getUserStats();
+      res.status(200).json({
+        success: true,
+        message: 'User statistics retrieved successfully',
+        data: stats
+      });
+    } catch (error: any) {
+      res.status(500).json({
         success: false,
-        message: 'Validation failed',
-        
+        message: error.message || 'Failed to retrieve user statistics'
       });
-      return;
     }
+  };
 
-    const userId = parseInt(req.params.id, 10);
-
-    if (isNaN(userId)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid user ID'
-      });
-      return;
-    }
-
-    const existingUser = await userRepository.findById(userId);
-
-    if (!existingUser) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-      return;
-    }
-
-    // Check if email is being updated and already exists
-    if (req.body.email && req.body.email !== existingUser.email) {
-      const emailExists = await userRepository.findByEmail(req.body.email);
-      if (emailExists) {
-        res.status(409).json({
+  // Get user by ID
+  getUserById = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id, 10);
+      if (isNaN(userId)) {
+        res.status(400).json({
           success: false,
-          message: 'Email already exists'
+          message: 'Invalid user ID'
         });
         return;
       }
-    }
 
-    const updatedUser = await userRepository.update(userId, req.body);
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'User updated successfully',
-      data: { user: updatedUser }
-    };
-
-    res.json(response);
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * @desc    Delete user (soft delete)
- * @route   DELETE /api/users/:id
- * @access  Private/Admin
- */
-export const deleteUser = async (
-  req: AuthRequest<{ id: string }>,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const userId = parseInt(req.params.id, 10);
-
-    if (isNaN(userId)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid user ID'
-      });
-      return;
-    }
-
-    const user = await userRepository.findById(userId);
-
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-      return;
-    }
-
-    // Prevent admin from deleting themselves
-    if (req.user?.userId === userId) {
-      res.status(400).json({
-        success: false,
-        message: 'You cannot delete your own account'
-      });
-      return;
-    }
-
-    await userRepository.softDelete(userId);
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'User deleted successfully'
-    };
-
-    res.json(response);
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * @desc    Get user statistics
- * @route   GET /api/users/stats
- * @access  Private/Admin
- */
-export const getUserStats = async (
-  req: Request,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const totalUsers = await userRepository.count();
-    const totalStudents = await userRepository.countByRole('student' as UserRole);
-    const totalAdmins = await userRepository.countByRole('admin' as UserRole);
-    const totalDosen = await userRepository.countByRole('dosen' as UserRole);
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'User statistics retrieved successfully',
-      data: {
-        totalUsers,
-        totalStudents,
-        totalAdmins,
-        totalDosen,
-        breakdown: {
-          students: totalStudents,
-          admins: totalAdmins,
-          dosen: totalDosen
-        }
+      const user = await this.userService.getUserById(userId);
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+        return;
       }
-    };
 
-    res.json(response);
-  } catch (error) {
-    next(error);
-  }
-};
+      res.status(200).json({
+        success: true,
+        message: 'User retrieved successfully',
+        data: user
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to retrieve user'
+      });
+    }
+  };
+
+  // Create new user
+  createUser = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const user = await this.userService.createUser(req.body);
+      res.status(201).json({
+        success: true,
+        message: 'User created successfully',
+        data: user
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to create user'
+      });
+    }
+  };
+
+  // Update user
+  updateUser = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id, 10);
+      if (isNaN(userId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid user ID'
+        });
+        return;
+      }
+
+      const user = await this.userService.updateUser(userId, req.body);
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'User updated successfully',
+        data: user
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to update user'
+      });
+    }
+  };
+
+  // Delete user (soft delete)
+  deleteUser = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const userId = parseInt(req.params.id, 10);
+      if (isNaN(userId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid user ID'
+        });
+        return;
+      }
+
+      await this.userService.deleteUser(userId);
+      res.status(200).json({
+        success: true,
+        message: 'User deleted successfully'
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to delete user'
+      });
+    }
+  };
+
+  // Get current user profile
+  getProfile = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const user = await this.userService.getUserById(userId);
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile retrieved successfully',
+        data: user
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to retrieve profile'
+      });
+    }
+  };
+
+  // Update current user profile
+  updateProfile = async (req: AuthRequest, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'Unauthorized'
+        });
+        return;
+      }
+
+      const user = await this.userService.updateUser(userId, req.body);
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: user
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to update profile'
+      });
+    }
+  };
+
+  // Forgot password - send reset email
+  forgotPassword = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          
+        });
+        return;
+      }
+
+      await this.userService.forgotPassword(req.body.email);
+      res.status(200).json({
+        success: true,
+        message: 'If the email exists, a reset link has been sent'
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to process forgot password request'
+      });
+    }
+  };
+
+  // Reset password using token
+  resetPassword = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          
+        });
+        return;
+      }
+
+      const { token, newPassword } = req.body;
+      await this.userService.resetPassword(token, newPassword);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Password reset successfully'
+      });
+    } catch (error: any) {
+      if (error.message.includes('Invalid') || error.message.includes('expired')) {
+        res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: error.message || 'Failed to reset password'
+        });
+      }
+    }
+  };
+
+  // Verify reset token validity
+  verifyResetToken = async (req: Request, res: Response<ApiResponse>): Promise<void> => {
+    try {
+      const { token } = req.params;
+      const result = await this.userService.verifyResetToken(token);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Reset token is valid',
+        data: result
+      });
+    } catch (error: any) {
+      if (error.message.includes('Invalid') || error.message.includes('expired')) {
+        res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: error.message || 'Failed to verify reset token'
+        });
+      }
+    }
+  };
+}

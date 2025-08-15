@@ -4,7 +4,6 @@ import { User } from '../entities/user';
 import { CreateUserData, UpdateUserData, UserQueryParams, UserRole } from '../types/user';
 import { PaginationResult, PaginationQuery } from '../types';
 
-
 export class UserRepository {
   private repository: Repository<User>;
 
@@ -37,12 +36,14 @@ export class UserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return await this.repository.findOne({ where: { email } });
+    return await this.repository.findOne({ 
+      where: { email: email.toLowerCase() } 
+    });
   }
 
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return await this.repository.findOne({
-      where: { email },
+      where: { email: email.toLowerCase() },
       select: ['id', 'nim', 'nama', 'semester', 'nomorWhatsapp', 'email', 'password', 'role', 'isActive', 'lastLogin', 'createdAt', 'updatedAt']
     });
   }
@@ -53,7 +54,7 @@ export class UserRepository {
 
   async findByEmailOrNim(email: string, nim: string): Promise<User | null> {
     return await this.repository.findOne({
-      where: [{ email }, { nim }]
+      where: [{ email: email.toLowerCase() }, { nim }]
     });
   }
 
@@ -110,9 +111,14 @@ export class UserRepository {
     };
   }
 
-  async update(id: number, updateData: UpdateUserData): Promise<User | null> {
+  async update(id: number, updateData: UpdateUserData | Partial<User>): Promise<User | null> {
     await this.repository.update(id, updateData);
-    return await this.findById(id);
+    
+    const updatedUser = await this.findById(id);
+    if (!updatedUser) {
+      throw new Error('User not found after update');
+    }
+    return updatedUser;
   }
 
   async updateLastLogin(id: number): Promise<void> {
@@ -133,5 +139,40 @@ export class UserRepository {
 
   async countByRole(role: UserRole): Promise<number> {
     return await this.repository.count({ where: { role } });
+  }
+
+  // ===== RESET PASSWORD METHODS =====
+  
+  /**
+   * Update reset token untuk user
+   */
+  async updateResetToken(userId: number, token: string, expires: Date): Promise<void> {
+    await this.repository.update(userId, {
+      resetToken: token,
+      resetTokenExpires: expires
+    } as any);
+  }
+
+  /**
+   * Find user by reset token (include reset token fields dalam select)
+   */
+  async findByResetToken(token: string): Promise<User | null> {
+    const user = await this.repository
+      .createQueryBuilder('user')
+      .addSelect(['user.resetToken', 'user.resetTokenExpires'])
+      .where('user.resetToken = :token', { token })
+      .getOne();
+    return user || null;
+  }
+
+  /**
+   * Update password dan clear reset token
+   */
+  async updatePassword(userId: number, hashedPassword: string): Promise<void> {
+    await this.repository.update(userId, {
+      password: hashedPassword,
+      resetToken: null,
+      resetTokenExpires: null
+    } as any);
   }
 }

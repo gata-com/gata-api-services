@@ -47,7 +47,8 @@ app.get('/', (req: Request, res: Response) => {
       documentation: '/api-docs',
       health: '/api/health',
       auth: '/api/auth',
-      users: '/api/users'
+      users: '/api/users',
+      resetPassword: '/api/auth/reset-password'
     }
   };
   res.status(200).json(response);
@@ -85,7 +86,8 @@ app.all('*', (req: Request, res: Response<ErrorResponse>) => {
     suggestions: [
       '/api/auth/login',
       '/api/auth/register',
-      '/api/users'
+      '/api/users',
+      'resetPassword: /api/auth/reset-password'
     ],
     path: req.originalUrl,
     timestamp: new Date().toISOString()

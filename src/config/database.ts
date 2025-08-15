@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import { config } from './config';
-import { User } from '../entities/user';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -11,9 +10,9 @@ export const AppDataSource = new DataSource({
   database: config.database.name,
   synchronize: config.database.synchronize,
   logging: config.database.logging,
-  entities: [User],
-  migrations: ['src/migrations/*.ts'],
-  subscribers: ['src/subscribers/*.ts'],
+  entities: [__dirname + '/../entities/*.{ts,js}'], // load semua entity
+  migrations: [__dirname + '/../migrations/*.{ts,js}'],
+  subscribers: [__dirname + '/../subscribers/*.{ts,js}'],
   charset: 'utf8mb4',
   timezone: '+00:00',
 });

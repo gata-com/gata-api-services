@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'admin';
+export type UserRole = 'student' | 'admin' | 'dosen';
 
 export interface CreateUserData {
   nim: string;
@@ -8,6 +8,9 @@ export interface CreateUserData {
   email: string;
   password: string;
   role?: UserRole;
+  reset_token?: string;
+  reset_token_expiry?: Date;
+  isActive?: boolean;
 }
 
 export interface UpdateUserData {

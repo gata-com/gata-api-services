@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { UserController } from '../controllers/userController';
+import { UserController } from '../controllers/UserController/index';
 import { validateUpdateUser } from '../middleware/validation';
 import { auth, adminAuth, selfOrAdminAuth } from '../middleware/auth';
 import { 

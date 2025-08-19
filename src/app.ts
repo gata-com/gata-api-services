@@ -48,7 +48,8 @@ app.get('/', (req: Request, res: Response) => {
       health: '/api/health',
       auth: '/api/auth',
       users: '/api/users',
-      resetPassword: '/api/auth/reset-password'
+      resetPassword: '/api/auth/reset-password',
+      forgotPassword: '/api/auth/forgot-password'
     }
   };
   res.status(200).json(response);

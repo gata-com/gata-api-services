@@ -9,8 +9,11 @@ import {
   Index
 } from 'typeorm';
 import bcrypt from 'bcryptjs';
-import { IsEmail, IsNotEmpty, Length, Matches, Min, Max } from 'class-validator';
+import { IsEmail, IsNotEmpty, Length, Matches, Min, Max, IsOptional, IsEnum } from 'class-validator';
 import { config } from '../config/config';
+
+// Import UserRole type
+import { UserRole, KelompokKeahlian } from '../types/user';
 
 @Entity('users')
 @Index(['email'])
@@ -31,14 +34,16 @@ export class User {
   @Matches(/^[a-zA-Z\s]+$/, { message: 'Name can only contain letters and spaces' })
   nama!: string;
 
-  @Column({ type: 'tinyint' })
+  @Column({ type: 'tinyint', nullable: true })
+  @IsOptional()
   @Min(1, { message: 'Semester must be at least 1' })
   @Max(14, { message: 'Semester cannot exceed 14' })
-  semester!: number;
+  semester?: number;
 
-  @Column({ name: 'nomor_whatsapp', length: 20 })
+  @Column({ name: 'nomor_whatsapp', length: 20, nullable: true })
+  @IsOptional()
   @Matches(/^(\+62|62|0)[0-9]{9,13}$/, { message: 'Invalid WhatsApp number format' })
-  nomorWhatsapp!: string;
+  nomorWhatsapp?: string;
 
   @Column({ unique: true, length: 255 })
   @IsEmail({}, { message: 'Invalid email format' })
@@ -51,19 +56,22 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['student', 'dosen', 'admin'],
+    enum: ['student', 'admin', 'dosen'],
     default: 'student'
   })
-  role!: 'student' | 'dosen' | 'admin';
+  role!: UserRole;
 
-  // Kolom untuk dosen (nullable karena hanya untuk role dosen)
-  @Column({ length: 20, nullable: true })
-  nip?: string;
+  @Column({
+    name: 'kelompok_keahlian',
+    type: 'enum',
+    enum: ['RPLSI', 'AICE', 'KMSI'],
+    nullable: true
+  })
+  @IsOptional()
+  @IsEnum(['RPLSI', 'AICE', 'KMSI'], { message: 'Kelompok keahlian must be RPLSI, AICE, or KMSI' })
+  kelompokKeahlian?: KelompokKeahlian;
 
-  @Column({ length: 255, nullable: true, comment: 'Kelompok Keahlian untuk dosen' })
-  kk?: string;
-
-  // Kolom untuk reset password functionality
+  // Kolom untuk reset password
   @Column({ name: 'reset_token', length: 255, nullable: true, select: false })
   resetToken?: string;
 
@@ -86,9 +94,15 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
-    if (this.password) {
+    if (this.password && !this.isPasswordHashed()) {
       this.password = await bcrypt.hash(this.password, config.bcryptSaltRounds);
     }
+  }
+
+  // Helper method to check if password is already hashed
+  private isPasswordHashed(): boolean {
+    // bcrypt hashes always start with $2a$, $2b$, $2x$, or $2y$
+    return /^\$2[abxy]\$/.test(this.password);
   }
 
   // Compare password method

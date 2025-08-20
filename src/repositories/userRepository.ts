@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/user';
-import { CreateUserData, UpdateUserData, UserQueryParams, UserRole } from '../types/user';
+import { CreateUserData, UpdateUserData, UserQueryParams, UserRole, KelompokKeahlian } from '../types/user';
 import { PaginationResult, PaginationQuery } from '../types';
 
 export class UserRepository {
@@ -19,7 +19,7 @@ export class UserRepository {
       nomorWhatsapp: userData.nomorWhatsapp,
       email: userData.email,
       password: userData.password,
-      role: userData.role || 'student',
+      role: userData.role || ('student' as UserRole),
     });
     return await this.repository.save(userToCreate);
   }
@@ -76,13 +76,17 @@ export class UserRepository {
       queryBuilder.andWhere('user.semester = :semester', { semester: query.semester });
     }
 
+    if (query.kelompokKeahlian) {
+      queryBuilder.andWhere('user.kelompokKeahlian = :kelompokKeahlian', { kelompokKeahlian: query.kelompokKeahlian });
+    }
+
     if (typeof query.isActive === 'boolean') {
       queryBuilder.andWhere('user.isActive = :isActive', { isActive: query.isActive });
     }
 
     if (query.search) {
       queryBuilder.andWhere(
-        '(user.nama LIKE :search OR user.email LIKE :search OR user.nim LIKE :search)',
+        '(user.nama LIKE :search OR user.email LIKE :search OR user.nim LIKE :search OR user.kelompokKeahlian LIKE :search)',
         { search: `%${query.search}%` }
       );
     }
@@ -90,7 +94,7 @@ export class UserRepository {
     // Apply sorting
     const sortBy = query.sortBy || 'createdAt';
     const sortOrder = query.sortOrder || 'DESC';
-    queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
+    queryBuilder.orderBy(`user.${sortBy}`, sortOrder as 'ASC' | 'DESC');
 
     // Apply pagination
     queryBuilder.skip(skip).take(limit);
@@ -147,10 +151,15 @@ export class UserRepository {
    * Update reset token untuk user
    */
   async updateResetToken(userId: number, token: string, expires: Date): Promise<void> {
-    await this.repository.update(userId, {
-      resetToken: token,
-      resetTokenExpires: expires
-    } as any);
+    await this.repository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        resetToken: token,
+        resetTokenExpires: expires
+      })
+      .where('id = :id', { id: userId })
+      .execute();
   }
 
   /**
@@ -161,6 +170,7 @@ export class UserRepository {
       .createQueryBuilder('user')
       .addSelect(['user.resetToken', 'user.resetTokenExpires'])
       .where('user.resetToken = :token', { token })
+      .andWhere('user.resetTokenExpires > :now', { now: new Date() })
       .getOne();
     return user || null;
   }
@@ -169,10 +179,15 @@ export class UserRepository {
    * Update password dan clear reset token
    */
   async updatePassword(userId: number, hashedPassword: string): Promise<void> {
-    await this.repository.update(userId, {
-      password: hashedPassword,
-      resetToken: null,
-      resetTokenExpires: null
-    } as any);
+    await this.repository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        password: hashedPassword,
+        resetToken: () => 'NULL',
+        resetTokenExpires: () => 'NULL'
+      })
+      .where('id = :id', { id: userId })
+      .execute();
   }
 }

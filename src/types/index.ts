@@ -49,7 +49,7 @@ export interface PaginationQuery {
   search?: string;
 }
 
-// Paginated response structure - FIXED: removed duplicate pagination property
+// Paginated response structure
 export interface PaginationResult<T> {
   data: T[];
   pagination: PaginationMeta;
@@ -70,6 +70,7 @@ export interface JwtPayload {
 
 // Standard error response format
 export interface ErrorResponse extends Omit<ApiResponse<null>, "errors"> {
+  success: false;
   statusCode: number;
   path: string;
   timestamp: string;
@@ -113,6 +114,5 @@ export interface PaginatedRequestQuery extends PaginationQuery {
   [key: string]: unknown;
 }
 
-// Export all user and auth types
+// Export user types only (remove auth types if they're duplicated)
 export * from './user';
-export * from './auth';

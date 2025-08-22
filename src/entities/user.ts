@@ -16,8 +16,8 @@ import { config } from '../config/config';
 import { UserRole, KelompokKeahlian } from '../types/user';
 
 @Entity('users')
-@Index(['email'])
-@Index(['nim'])
+// Removed @Index(['email']) - not needed since email column has unique: true
+// Removed @Index(['nim']) - not needed since nim column has unique: true
 @Index(['resetToken']) // Index untuk reset token
 export class User {
   @PrimaryGeneratedColumn()
@@ -34,7 +34,7 @@ export class User {
   @Matches(/^[a-zA-Z\s]+$/, { message: 'Name can only contain letters and spaces' })
   nama!: string;
 
-  @Column({ type: 'tinyint', nullable: true })
+  @Column({ type: 'int', nullable: true })
   @IsOptional()
   @Min(1, { message: 'Semester must be at least 1' })
   @Max(14, { message: 'Semester cannot exceed 14' })
@@ -54,27 +54,31 @@ export class User {
   @Length(6, undefined, { message: 'Password must be at least 6 characters' })
   password!: string;
 
+  // MySQL: Use ENUM for better performance and data integrity
   @Column({
     type: 'enum',
     enum: ['student', 'admin', 'dosen'],
     default: 'student'
   })
+  @IsEnum(['student', 'admin', 'dosen'], { message: 'Role must be student, admin, or dosen' })
   role!: UserRole;
 
+  // MySQL: Use ENUM for better performance and data integrity
   @Column({
     name: 'kelompok_keahlian',
     type: 'enum',
-    enum: ['RPLSI', 'AICE', 'KMSI'],
+    enum: ['RPLSI', 'AIDE', 'KMSI'],
     nullable: true
   })
   @IsOptional()
-  @IsEnum(['RPLSI', 'AICE', 'KMSI'], { message: 'Kelompok keahlian must be RPLSI, AICE, or KMSI' })
+  @IsEnum(['RPLSI', 'AIDE', 'KMSI'], { message: 'Kelompok keahlian must be RPLSI, AIDE, or KMSI' })
   kelompokKeahlian?: KelompokKeahlian;
 
   // Kolom untuk reset password
   @Column({ name: 'reset_token', length: 255, nullable: true, select: false })
   resetToken?: string;
 
+  // MySQL: Use DATETIME instead of datetime
   @Column({ name: 'reset_token_expires', type: 'datetime', nullable: true, select: false })
   resetTokenExpires?: Date;
 
@@ -122,6 +126,32 @@ export class User {
   clearResetToken(): void {
     this.resetToken = undefined;
     this.resetTokenExpires = undefined;
+  }
+
+  // Helper methods untuk role checking
+  isStudent(): boolean {
+    return this.role === 'student';
+  }
+
+  isAdmin(): boolean {
+    return this.role === 'admin';
+  }
+
+  isDosen(): boolean {
+    return this.role === 'dosen';
+  }
+
+  // Helper methods untuk kelompok keahlian
+  isRPLSI(): boolean {
+    return this.kelompokKeahlian === 'RPLSI';
+  }
+
+  isAIDE(): boolean {
+    return this.kelompokKeahlian === 'AIDE';
+  }
+
+  isKMSI(): boolean {
+    return this.kelompokKeahlian === 'KMSI';
   }
 
   // Remove sensitive data when converting to JSON

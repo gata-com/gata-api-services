@@ -4,19 +4,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { DataSource } from 'typeorm';
 import { errorHandler } from './middleware/errorHandler';
+import { config } from './config/config';
 import { ApiResponse, ErrorResponse } from './types';
+
+// Import your configured database (but don't initialize here)
+import { AppDataSource } from './config/database';
 
 // Route imports
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import mahasiswaRoutes from './routes/mahasiswa';
-
-// Entity imports (make sure you import your entities here)
-import { User } from './entities/user';
-import { Mahasiswa } from './entities/mahasiswa';
-import { PendaftaranTA } from './entities/pendaftaranTA';
 
 // Load environment variables
 dotenv.config();
@@ -24,67 +22,76 @@ dotenv.config();
 const app: Application = express();
 
 // ======================
-// Middleware
+// Security Middleware
 // ======================
-app.use(helmet());
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// CORS configuration
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? ['https://yourdomain.com']
-        : ['http://localhost:3000', 'http://localhost:3001'],
+    origin: process.env.NODE_ENV === 'production'
+      ? ['https://yourdomain.com']
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 
-if (process.env.NODE_ENV === 'development') {
+// Logging middleware
+if (config.nodeEnv === 'development') {
   app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
 }
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware
+app.use(express.json({ 
+  limit: '10mb',
+  type: ['application/json', 'text/plain']
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb' 
+}));
 
-// ======================
-// Database Connection
-// ======================
-export const AppDataSource = new DataSource({
-  type: 'mysql',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  username: process.env.DB_USERNAME || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'gata',
-  synchronize: true, // ❗ change to false in production, use migrations instead
-  logging: process.env.NODE_ENV === 'development',
-  entities: [User, Mahasiswa, PendaftaranTA],
-});
-
-// Initialize DB before starting server
-AppDataSource.initialize()
-  .then(() => {
-    console.log('✅ Database connected successfully');
-  })
-  .catch((err) => {
-    console.error('❌ Error during Data Source initialization:', err);
-  });
+// Trust proxy (for real IP detection)
+app.set('trust proxy', 1);
 
 // ======================
 // Routes
 // ======================
 
-// Root endpoint
+// Root endpoint with enhanced info
 app.get('/', (req: Request, res: Response) => {
   const response: ApiResponse = {
     success: true,
-    message: 'INI API NYA COBA COBA',
+    message: 'Student Management API Server',
     data: {
-      documentation: '/api-docs',
-      health: '/api/health',
-      auth: '/api/auth',
-      users: '/api/users',
-      resetPassword: '/api/auth/reset-password',
-      forgotPassword: '/api/auth/forgot-password',
-      pendaftaranTA: '/api/mahasiswa/pendaftaran-ta',
+      version: '1.0.0',
+      environment: config.nodeEnv,
+      databaseType: AppDataSource.options.type,
+      serverTime: new Date().toISOString(),
+      endpoints: {
+        documentation: '/api-docs',
+        health: '/api/health',
+        auth: '/api/auth',
+        users: '/api/users',
+        mahasiswa: '/api/mahasiswa',
+        resetPassword: '/api/auth/reset-password',
+        forgotPassword: '/api/auth/forgot-password',
+        pendaftaranTA: '/api/mahasiswa/pendaftaran-ta',
+      },
     },
   };
   res.status(200).json(response);
@@ -95,19 +102,140 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/mahasiswa', mahasiswaRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req: Request, res: Response) => {
-  const response: ApiResponse = {
-    success: true,
-    message: 'Server is running',
-    data: {
+// Enhanced health check endpoint
+app.get('/api/health', async (req: Request, res: Response) => {
+  try {
+    const dbType = AppDataSource.options.type;
+    let dbInfo: string;
+    let dbStatus: string;
+    
+    // Check database connection
+    if (AppDataSource.isInitialized) {
+      try {
+        // Test database connection
+        if (dbType === 'mysql') {
+          await AppDataSource.query('SELECT 1');
+          dbStatus = 'Connected';
+          const options = AppDataSource.options as any;
+          dbInfo = `${options.host}:${options.port}/${options.database}`;
+        } else {
+          dbStatus = 'Connected';
+          dbInfo = (AppDataSource.options as any).database;
+        }
+      } catch (dbError) {
+        dbStatus = 'Connection Error';
+        dbInfo = dbError instanceof Error ? dbError.message : 'Unknown error';
+      }
+    } else {
+      dbStatus = 'Not Initialized';
+      dbInfo = 'Database not initialized';
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Server health check',
+      data: {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor(process.uptime()),
+        environment: config.nodeEnv,
+        nodeVersion: process.version,
+        platform: process.platform,
+        database: {
+          status: dbStatus,
+          type: dbType,
+          info: dbInfo,
+          synchronize: (AppDataSource.options as any).synchronize,
+          logging: (AppDataSource.options as any).logging,
+        },
+        memory: {
+          used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+          total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB',
+        },
+      },
+    };
+    
+    res.status(200).json(response);
+  } catch (error) {
+    const errorResponse: ErrorResponse = {
+      success: false,
+      message: 'Health check failed',
+      statusCode: 500,
+      path: req.path,
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-      database: AppDataSource.isInitialized ? 'Connected' : 'Not connected',
-    },
-  };
-  res.status(200).json(response);
+      error: {
+        code: 'HEALTH_CHECK_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }
+    };
+    res.status(500).json(errorResponse);
+  }
+});
+
+// Database status endpoint (detailed)
+app.get('/api/db-status', async (req: Request, res: Response) => {
+  try {
+    if (!AppDataSource.isInitialized) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        message: 'Database not initialized',
+        statusCode: 503,
+        path: req.path,
+        timestamp: new Date().toISOString(),
+        error: {
+          code: 'DATABASE_NOT_INITIALIZED',
+          message: 'Database connection not established',
+        }
+      };
+      return res.status(503).json(errorResponse);
+    }
+
+    let connectionInfo: any = {};
+    
+    if (AppDataSource.options.type === 'mysql') {
+      // Test MySQL connection with detailed info
+      const [result] = await AppDataSource.query('SELECT CONNECTION_ID() as connection_id, USER() as user, DATABASE() as database');
+      connectionInfo = {
+        connectionId: result.connection_id,
+        user: result.user,
+        database: result.database,
+        host: (AppDataSource.options as any).host,
+        port: (AppDataSource.options as any).port,
+      };
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Database status check',
+      data: {
+        type: AppDataSource.options.type,
+        isInitialized: AppDataSource.isInitialized,
+        connectionInfo,
+        options: {
+          synchronize: (AppDataSource.options as any).synchronize,
+          logging: (AppDataSource.options as any).logging,
+          charset: (AppDataSource.options as any).charset,
+          timezone: (AppDataSource.options as any).timezone,
+        },
+        timestamp: new Date().toISOString(),
+      },
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    const errorResponse: ErrorResponse = {
+      success: false,
+      message: 'Database status check failed',
+      statusCode: 500,
+      path: req.path,
+      timestamp: new Date().toISOString(),
+      error: {
+        code: 'DATABASE_STATUS_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }
+    };
+    return res.status(500).json(errorResponse);
+  }
 });
 
 // ======================
@@ -115,20 +243,25 @@ app.get('/api/health', (req: Request, res: Response) => {
 // ======================
 
 // 404 handler
-app.all('*', (req: Request, res: Response<ErrorResponse>) => {
+app.all('*', (req: Request, res: Response) => {
   const response: ErrorResponse = {
     success: false,
     message: `Route ${req.originalUrl} not found`,
     statusCode: 404,
-    suggestions: [
-      '/api/auth/login',
-      '/api/auth/register',
-      '/api/users',
-      '/api/mahasiswa/pendaftaran-ta',
-      'resetPassword: /api/auth/reset-password',
-    ],
     path: req.originalUrl,
     timestamp: new Date().toISOString(),
+    suggestions: [
+      '/api/auth/login',
+      '/api/auth/register', 
+      '/api/users',
+      '/api/mahasiswa/pendaftaran-ta',
+      '/api/auth/reset-password',
+      '/api/health',
+    ],
+    error: {
+      code: 'ROUTE_NOT_FOUND',
+      message: `${req.method} ${req.originalUrl} not found`,
+    }
   };
   res.status(404).json(response);
 });

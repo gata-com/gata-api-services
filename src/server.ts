@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import app from './app';
-import { AppDataSource, initializeDatabase, closeDatabase } from './config/database';
+import  AppDataSource, {initializeDatabase, closeDatabase } from './config/database';
 import { config } from './config/config';
 
 const PORT = config.port || 5000;

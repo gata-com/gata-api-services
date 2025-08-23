@@ -1,7 +1,7 @@
 // controllers/auth/forgotPassword.ts
 import { Request, Response } from "express";
 import crypto from "crypto";
-import { AppDataSource } from "../../config/database";
+import  AppDataSource  from "../../config/database";
 import { User } from "../../entities/user";
 import { sendResetPasswordEmail } from "../../utils/email"; // Pakai yang dari utils
 

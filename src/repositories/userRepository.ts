@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { AppDataSource } from '../config/database';
+import  AppDataSource  from '../config/database';
 import { User } from '../entities/user';
 import { CreateUserData, UpdateUserData, UserQueryParams, UserRole, KelompokKeahlian } from '../types/user';
 import { PaginationResult, PaginationQuery } from '../types';

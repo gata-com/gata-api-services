@@ -24,11 +24,12 @@ const createDataSourceConfig = (): DataSourceOptions => {
   console.log('🔍 Database name:', config.database.type === 'mysql' ? config.database.name : config.database.database);
   
   const baseConfig = {
-    synchronize: config.database.synchronize,
+    synchronize: false,
     logging: config.database.logging,
     entities: [__dirname + '/../entities/*.{ts,js}'],
     migrations: [__dirname + '/../migrations/*.{ts,js}'],
     subscribers: [__dirname + '/../subscribers/*.{ts,js}'],
+    migrationsRun: true,
   };
 
   if (config.database.type === 'sqlite') {
@@ -88,8 +89,11 @@ const createDataSourceConfig = (): DataSourceOptions => {
 createDataDirectory();
 
 console.log('🚀 Creating AppDataSource...');
-export const AppDataSource = new DataSource(createDataSourceConfig());
+const AppDataSource = new DataSource(createDataSourceConfig());
 console.log('✅ AppDataSource created');
+
+// PENTING: Hapus export const dan hanya gunakan export default
+// export const AppDataSource = new DataSource(createDataSourceConfig()); // HAPUS INI
 
 export const initializeDatabase = async (): Promise<void> => {
   try {
@@ -205,4 +209,5 @@ export const backupDatabase = async (backupPath?: string): Promise<string> => {
   }
 };
 
+// HANYA SATU EXPORT DEFAULT - INI YANG DIBACA TYPEORM CLI
 export default AppDataSource;

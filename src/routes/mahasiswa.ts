@@ -1,17 +1,17 @@
 import { Router } from "express";
-import { pendaftaranTA } from "../controllers/mahasiswa/pendaftaranTAController";
+import { daftarTA } from "../controllers/mahasiswa/pendaftaranTAController";
 import { upload } from "../middleware/upload";
 
 const router = Router();
 
 router.post(
-  "/pendaftaran-ta",
+  "/daftar-ta",
   upload.fields([
-    { name: "thesisDraft", maxCount: 1 },
-    { name: "supportingFile", maxCount: 1 },
-    { name: "exemptionLetter", maxCount: 1 },
+    { name: "draftTA", maxCount: 1 },
+    { name: "filePendukung", maxCount: 1 },
+    { name: "suratDispensasi", maxCount: 1 },
   ]),
-  pendaftaranTA
+  daftarTA
 );
 
 export default router;

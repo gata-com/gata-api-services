@@ -9,7 +9,7 @@ import { config } from './config/config';
 import { ApiResponse, ErrorResponse } from './types';
 
 // Import your configured database (but don't initialize here)
-import { AppDataSource } from './config/database';
+import  AppDataSource  from './config/database';
 
 // Route imports
 import authRoutes from './routes/auth';
@@ -76,7 +76,7 @@ app.set('trust proxy', 1);
 app.get('/', (req: Request, res: Response) => {
   const response: ApiResponse = {
     success: true,
-    message: 'Student Management API Server',
+    message: 'GATA Server',
     data: {
       version: '1.0.0',
       environment: config.nodeEnv,

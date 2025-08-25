@@ -27,7 +27,6 @@ export class PendaftaranTA {
   @ManyToOne(() => Mahasiswa)
   mahasiswaPendaftar: Mahasiswa; // Mahasiswa yang mendaftar (perwakilan)
 
-  // Menggunakan string reference untuk menghindari circular dependency
   @OneToMany("AnggotaTA", "pendaftaranTA", { cascade: true })
   anggotaTA: AnggotaTA[];
 
@@ -71,13 +70,12 @@ export class PendaftaranTA {
   updatedAt: Date;
 }
 
-// Entity untuk menyimpan data setiap anggota TA
+// Entity untuk menyimpan data setiap anggota TA  
 @Entity("anggota_ta")
 export class AnggotaTA {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Menggunakan string reference untuk menghindari circular dependency
   @ManyToOne("PendaftaranTA", "anggotaTA")
   pendaftaranTA: PendaftaranTA;
 

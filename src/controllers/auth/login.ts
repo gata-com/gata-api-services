@@ -46,7 +46,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     // Generate JWT token
     const token = jwt.sign(
       { 
-        id: user.id, 
+        userId: user.id, 
         email: user.email,
         nama: user.nama, // Sesuai dengan field database
         nim: user.nim,
@@ -70,7 +70,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       message: "Login berhasil", 
       token,
       user: {
-        id: user.id,
+        userId: user.id,
         nama: user.nama,
         email: user.email,
         nim: user.nim,

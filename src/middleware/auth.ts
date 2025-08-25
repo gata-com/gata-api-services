@@ -14,9 +14,13 @@ export const auth = async (
 ): Promise<void> => {
   try {
     const authHeader = req.header('Authorization');
+    console.log('🔍 Auth Header:', authHeader);
+    
     const token = authHeader?.replace('Bearer ', '');
+    console.log('🔍 Token:', token);
 
     if (!token) {
+      console.log('❌ No token provided');
       res.status(401).json({
         success: false,
         message: 'Access denied. No token provided'
@@ -24,10 +28,14 @@ export const auth = async (
       return;
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret) as JwtPayload;
+    const decoded = jwt.verify(token, "your-very-strong-secret-here") as JwtPayload;
+    console.log('🔍 Decoded token:', decoded);
     
     const user = await userRepository.findById(decoded.userId);
+    console.log('🔍 User found:', user);
+    
     if (!user || !user.isActive) {
+      console.log('❌ User not found or inactive');
       res.status(401).json({
         success: false,
         message: 'Token is invalid or user is deactivated'
@@ -35,13 +43,18 @@ export const auth = async (
       return;
     }
 
-    req.user = {
-      userId: decoded.userId,
-      role: user.role
+    // ✅ QUICK FIX: Use type assertion
+    (req.user as any) = {
+      id: decoded.userId,        // ✅ Set id
+      userId: decoded.userId,    // ✅ Keep userId untuk backward compatibility
+      email: user.email,         // ✅ Set email
+      role: user.role           // ✅ Set role
     };
     
+    console.log('✅ req.user set:', req.user);
     next();
   } catch (error) {
+    console.log('❌ Auth error:', error);
     res.status(401).json({
       success: false,
       message: 'Token is invalid'

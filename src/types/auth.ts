@@ -1,4 +1,4 @@
-import { JwtPayload as BaseJwtPayload } from 'jsonwebtoken';
+import { JwtPayload as BaseJwtPayload } from "jsonwebtoken";
 
 export interface RegisterRequest {
   nim: string;
@@ -14,7 +14,7 @@ export interface LoginRequest {
   password: string;
 }
 
-// Reset Password Interfaces - TAMBAHAN BARU
+// Reset Password Interfaces 
 export interface ForgotPasswordRequest {
   email: string;
 }
@@ -33,6 +33,11 @@ export interface VerifyTokenRequest {
 export interface JwtPayload extends BaseJwtPayload {
   userId: number;
   role?: string;
+  email?: string;
+  nama?: string;
+  nim?: string;
+  iat?: number;
+  exp?: number;
 }
 
 // For token generation (without iat, exp which are added by jwt.sign)

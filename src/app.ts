@@ -14,7 +14,7 @@ import  AppDataSource  from './config/database';
 // Route imports
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
-import mahasiswaRoutes from './routes/mahasiswa';
+import mahasiswaRoutes from './routes/mahasiswa/profile';
 
 // Load environment variables
 dotenv.config();
@@ -90,7 +90,8 @@ app.get('/', (req: Request, res: Response) => {
         mahasiswa: '/api/mahasiswa',
         resetPassword: '/api/auth/reset-password',
         forgotPassword: '/api/auth/forgot-password',
-        pendaftaranTA: '/api/mahasiswa/pendaftaran-ta',
+        pendaftaranTA: '/api/mahasiswa/daftar-ta',
+        profile: '/api/mahasiswa/profile',
       },
     },
   };
@@ -98,9 +99,11 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // API routes
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/mahasiswa', mahasiswaRoutes);
+
 
 // Enhanced health check endpoint
 app.get('/api/health', async (req: Request, res: Response) => {
@@ -254,7 +257,7 @@ app.all('*', (req: Request, res: Response) => {
       '/api/auth/login',
       '/api/auth/register', 
       '/api/users',
-      '/api/mahasiswa/pendaftaran-ta',
+      '/api/mahasiswa/daftar-ta',
       '/api/auth/reset-password',
       '/api/health',
     ],

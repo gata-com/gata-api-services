@@ -40,7 +40,7 @@ export class User {
   @Max(14, { message: 'Semester cannot exceed 14' })
   semester?: number;
 
-  @Column({ name: 'nomor_whatsapp', length: 20, nullable: true })
+  @Column({ name: 'nomorWhatsapp', length: 20, nullable: true })
   @IsOptional()
   @Matches(/^(\+62|62|0)[0-9]{9,13}$/, { message: 'Invalid WhatsApp number format' })
   nomorWhatsapp?: string;

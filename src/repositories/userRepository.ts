@@ -20,6 +20,7 @@ export class UserRepository {
       email: userData.email,
       password: userData.password,
       role: userData.role || ('student' as UserRole),
+      kelompokKeahlian: userData.kelompokKeahlian,
     });
     return await this.repository.save(userToCreate);
   }

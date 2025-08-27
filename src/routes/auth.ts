@@ -5,7 +5,7 @@ import { register } from '../controllers/auth/register';
 import { login } from '../controllers/auth/login';
 import { forgotPassword } from '../controllers/auth/forgotPassword';
 import { resetPassword } from '../controllers/auth/resetPassword';
-import { getProfile } from '../controllers/auth/getProfile';
+import { getProfile } from '../controllers/auth/getProfileMahasiswa';
 import { refreshToken } from '../controllers/auth/refreshToken';
 import { verifyResetToken } from '../controllers/auth/verifyResetToken';
 

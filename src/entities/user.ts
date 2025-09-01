@@ -16,8 +16,6 @@ import { config } from '../config/config';
 import { UserRole, KelompokKeahlian } from '../types/user';
 
 @Entity('users')
-// Removed @Index(['email']) - not needed since email column has unique: true
-// Removed @Index(['nim']) - not needed since nim column has unique: true
 @Index(['resetToken']) // Index untuk reset token
 export class User {
   @PrimaryGeneratedColumn()
@@ -73,6 +71,13 @@ export class User {
   @IsOptional()
   @IsEnum(['RPLSI', 'AIDE', 'KMSI'], { message: 'Kelompok keahlian must be RPLSI, AIDE, or KMSI' })
   kelompokKeahlian?: KelompokKeahlian;
+
+  // Kolom kode dosen - hanya untuk user dengan role dosen
+  @Column({ name: 'kode_dosen', length: 20, nullable: true, unique: true })
+  @IsOptional()
+  @Length(3, 20, { message: 'Kode dosen must be between 3-20 characters' })
+  @Matches(/^[A-Z0-9]+$/, { message: 'Kode dosen can only contain uppercase letters and numbers' })
+  kodeDosen?: string;
 
   // Kolom untuk reset password
   @Column({ name: 'reset_token', length: 255, nullable: true, select: false })
@@ -139,6 +144,11 @@ export class User {
 
   isDosen(): boolean {
     return this.role === 'dosen';
+  }
+
+  // Helper method untuk check apakah user memiliki kode dosen
+  hasKodeDosen(): boolean {
+    return !!this.kodeDosen;
   }
 
   // Helper methods untuk kelompok keahlian

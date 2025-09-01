@@ -14,7 +14,7 @@ export const verifyResetToken = async (req: Request, res: Response): Promise<Res
     }
 
     const [rows] = await db.query(
-      "SELECT id FROM users WHERE reset_token = ? AND reset_token_expire > NOW()",
+      "SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > NOW()",
       [token]
     );
     const users = rows as any[];

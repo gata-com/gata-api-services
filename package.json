@@ -4,14 +4,15 @@
   "description": "Backend for Student Management System with MySQL",
   "main": "dist/server.js",
   "scripts": {
+    "tsoaBuild": "tsoa spec-and-routes",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts",
+    "start": "npm run tsoaBuild && node dist/server.js",
+    "dev": "npm run tsoaBuild && nodemon src/server.ts",
     "prod": "npm run build && npm start",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:generate": "npm run typeorm migration:generate",
-    "migration:run": "npm run typeorm migration:run",
-    "migration:revert": "npm run typeorm migration:revert"
+    "migration:revert": "npx typeorm migration:revert -d ./src/config/data-source.ts",
+    "migration:generate": "npx typeorm migration:generate -d ./src/config/data-source.ts",
+    "migration:run": "npx typeorm migration:run -d ./src/config/data-source.ts"
   },
   "dependencies": {
     "@types/nodemailer": "^6.4.17",
@@ -31,7 +32,10 @@
     "mysql2": "^3.6.0",
     "nodemailer": "^7.0.5",
     "reflect-metadata": "^0.1.14",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "tsoa": "^6.6.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -43,6 +47,7 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^20.5.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "concurrently": "^8.2.0",
     "nodemon": "^3.0.1",
     "ts-node": "^10.9.2",

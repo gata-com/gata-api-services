@@ -8,8 +8,10 @@ interface AuthRequest extends Request {
     email: string;
   };
 }
-
-export const getProfile = async (req: AuthRequest, res: Response): Promise<Response> => {
+export const getProfile = async (
+  req: AuthRequest,
+  res: Response
+): Promise<Response> => {
   try {
     // Check if user exists in request (from auth middleware)
     if (!req.user) {
@@ -17,9 +19,9 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<Respo
     }
 
     const userId = req.user.id;
-    
+
     const [rows] = await db.query(
-      "SELECT id, name, email, created_at FROM users WHERE id = ?", 
+      "SELECT id, name, email, created_at FROM users WHERE id = ?",
       [userId]
     );
     const users = rows as any[];
@@ -28,9 +30,9 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<Respo
       return res.status(404).json({ message: "User tidak ditemukan" });
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "Profile berhasil diambil",
-      user: users[0] 
+      user: users[0],
     });
   } catch (error) {
     console.error("Error in getProfile:", error);

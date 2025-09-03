@@ -1,3 +1,3 @@
 # gata-api-services
 
-REST api GATA services
+REST api GATA

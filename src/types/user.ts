@@ -1,44 +1,44 @@
-export type UserRole = 'student' | 'admin' | 'dosen';
+export type UserRole = "student" | "admin" | "lecturer";
 
 // Kelompok keahlian untuk dosen
-export type KelompokKeahlian = 'RPLSI' | 'AIDE' | 'KMSI';
+export type ExpertisesGroup = "RPLSI" | "AIDE" | "KMSI";
 
 export interface CreateUserData {
-  nim: string;
-  nama: string;
-  semester?: number; // Made optional to match entity
-  nomorWhatsapp?: string; // Made optional to match entity
+  // nim: string;
+  name: string;
+  // semester?: number; // Made optional to match entity
+  // nomorWhatsapp?: string; // Made optional to match entity
   email: string;
   password: string;
-  role?: UserRole;
-  kelompokKeahlian?: KelompokKeahlian; // Added for dosen
-  resetToken?: string; // Changed to camelCase to match entity
-  resetTokenExpires?: Date; // Changed to camelCase to match entity
-  isActive?: boolean;
+  // role?: UserRole;
+  // ExpertisesGroup?: ExpertisesGroup; // Added for dosen
+  // resetToken?: string; // Changed to camelCase to match entity
+  // resetTokenExpires?: Date; // Changed to camelCase to match entity
+  // isActive?: boolean;
 }
 
 export interface UpdateUserData {
-  nama?: string;
-  semester?: number;
-  nomorWhatsapp?: string;
+  // nama?: string;
+  // semester?: number;
+  // nomorWhatsapp?: string;
   email?: string;
   password?: string;
-  role?: UserRole; // Added role update capability
-  kelompokKeahlian?: KelompokKeahlian; // Added for dosen
-  resetToken?: string; // Added for password reset functionality
-  resetTokenExpires?: Date; // Added for password reset functionality
-  isActive?: boolean;
-  lastLogin?: Date; // Added for login tracking
+  // role?: UserRole; // Added role update capability
+  // kelompokKeahlian?: ExpertisesGroup; // Added for dosen
+  // resetToken?: string; // Added for password reset functionality
+  // resetTokenExpires?: Date; // Added for password reset functionality
+  // isActive?: boolean;
+  // lastLogin?: Date; // Added for login tracking
 }
 
 export interface UserQueryParams {
   role?: UserRole;
   semester?: number;
-  kelompokKeahlian?: KelompokKeahlian; // Added for filtering dosen
+  kelompokKeahlian?: ExpertisesGroup; // Added for filtering dosen
   isActive?: boolean;
   search?: string;
-  sortBy?: 'createdAt' | 'updatedAt' | 'nama' | 'nim' | 'email' | 'lastLogin'; // Added sorting options
-  sortOrder?: 'ASC' | 'DESC'; // Added sort order
+  sortBy?: "createdAt" | "updatedAt" | "nama" | "nim" | "email" | "lastLogin"; // Added sorting options
+  sortOrder?: "ASC" | "DESC"; // Added sort order
   page?: string; // Added for pagination
   limit?: string; // Added for pagination
 }
@@ -52,7 +52,7 @@ export interface UserResponse {
   nomorWhatsapp?: string;
   email: string;
   role: UserRole;
-  kelompokKeahlian?: KelompokKeahlian; // Added for dosen
+  kelompokKeahlian?: ExpertisesGroup; // Added for dosen
   isActive: boolean;
   lastLogin?: Date;
   createdAt: Date;
@@ -72,11 +72,13 @@ export interface RegisterStudentRequest extends RegisterRequest {
   semester?: number; // Required for students
 }
 
-export interface RegisterDosenRequest extends Omit<RegisterRequest, 'semester'> {
-  kelompokKeahlian: KelompokKeahlian; // Required for dosen
+export interface RegisterDosenRequest
+  extends Omit<RegisterRequest, "semester"> {
+  kelompokKeahlian: ExpertisesGroup; // Required for dosen
 }
 
-export interface RegisterAdminRequest extends Omit<RegisterRequest, 'semester'> {
+export interface RegisterAdminRequest
+  extends Omit<RegisterRequest, "semester"> {
   // Admin tidak punya semester
 }
 

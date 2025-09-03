@@ -3,9 +3,9 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs/promises";
-import { 
+import {
   getProfileService,
-  updateProfileService
+  updateProfileService,
   // Comment dulu services yang belum diimplementasi
   // changePasswordService,
   // getStatusPengajuanService,
@@ -15,7 +15,7 @@ import {
 
 interface AuthRequest extends Request {
   user?: {
-    userId: number;     // Gunakan userId sesuai dengan middleware auth
+    userId: number; // Gunakan userId sesuai dengan middleware auth
     role: string;
   };
 }
@@ -23,40 +23,39 @@ interface AuthRequest extends Request {
 // Get Profile
 export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
-    console.log('🔍 getProfile - req.user:', req.user);
-    
+    console.log("🔍 getProfile - req.user:", req.user);
+
     const mahasiswaId = req.user?.userId; // Ganti dari id ke userId
-    
+
     if (!mahasiswaId) {
-      console.log('❌ req.user.userId is undefined');
+      console.log("❌ req.user.userId is undefined");
       return res.status(401).json({
         success: false,
-        message: "User tidak terautentikasi"
+        message: "User tidak terautentikasi",
       });
     }
 
-    console.log('🔍 Getting profile for mahasiswaId:', mahasiswaId);
+    console.log("🔍 Getting profile for mahasiswaId:", mahasiswaId);
     const profile = await getProfileService(mahasiswaId);
 
     if (!profile) {
       return res.status(404).json({
         success: false,
-        message: "Profile tidak ditemukan"
+        message: "Profile tidak ditemukan",
       });
     }
 
-    console.log('✅ Profile found:', profile);
+    console.log("✅ Profile found:", profile);
     return res.status(200).json({
       success: true,
       message: "Profile berhasil diambil",
-      data: profile
+      data: profile,
     });
-
   } catch (err: any) {
-    console.log('❌ getProfile error:', err);
+    console.log("❌ getProfile error:", err);
     return res.status(500).json({
       success: false,
-      message: err.message || "Terjadi kesalahan internal server"
+      message: err.message || "Terjadi kesalahan internal server",
     });
   }
 };
@@ -70,7 +69,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (!mahasiswaId) {
       return res.status(401).json({
         success: false,
-        message: "User tidak terautentikasi"
+        message: "User tidak terautentikasi",
       });
     }
 
@@ -78,7 +77,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (!nama || !nim || !nomorWhatsapp || !email) {
       return res.status(400).json({
         success: false,
-        message: "Nama, NIM, nomor WhatsApp, dan email wajib diisi"
+        message: "Nama, NIM, nomor WhatsApp, dan email wajib diisi",
       });
     }
 
@@ -87,7 +86,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
-        message: "Format email tidak valid"
+        message: "Format email tidak valid",
       });
     }
 
@@ -95,7 +94,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (!/^\d+$/.test(nim)) {
       return res.status(400).json({
         success: false,
-        message: "NIM harus berupa angka"
+        message: "NIM harus berupa angka",
       });
     }
 
@@ -103,27 +102,26 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (!/^\d{10,15}$/.test(nomorWhatsapp)) {
       return res.status(400).json({
         success: false,
-        message: "Nomor WhatsApp harus 10-15 digit angka"
+        message: "Nomor WhatsApp harus 10-15 digit angka",
       });
     }
 
     const updatedProfile = await updateProfileService(mahasiswaId, {
-      nama,
+      name: nama,
       nim,
-      nomorWhatsapp,
-      email
+      whatsapp_number: nomorWhatsapp,
+      email,
     });
 
     return res.status(200).json({
       success: true,
       message: "Profile berhasil diupdate",
-      data: updatedProfile
+      data: updatedProfile,
     });
-
   } catch (err: any) {
     return res.status(500).json({
       success: false,
-      message: err.message || "Terjadi kesalahan internal server"
+      message: err.message || "Terjadi kesalahan internal server",
     });
   }
 };
@@ -132,41 +130,44 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
   res.status(501).json({
     success: false,
-    message: "Upload profile picture belum diimplementasi"
+    message: "Upload profile picture belum diimplementasi",
   });
 };
 
 export const deleteProfilePicture = async (req: AuthRequest, res: Response) => {
   res.status(501).json({
     success: false,
-    message: "Delete profile picture belum diimplementasi"
+    message: "Delete profile picture belum diimplementasi",
   });
 };
 
 export const changePassword = async (req: AuthRequest, res: Response) => {
   res.status(501).json({
     success: false,
-    message: "Change password belum diimplementasi"
+    message: "Change password belum diimplementasi",
   });
 };
 
 export const getStatusPengajuan = async (req: AuthRequest, res: Response) => {
   res.status(501).json({
     success: false,
-    message: "Get status pengajuan belum diimplementasi"
+    message: "Get status pengajuan belum diimplementasi",
   });
 };
 
-export const requestPembimbingChange = async (req: AuthRequest, res: Response) => {
+export const requestPembimbingChange = async (
+  req: AuthRequest,
+  res: Response
+) => {
   res.status(501).json({
     success: false,
-    message: "Request pembimbing change belum diimplementasi"
+    message: "Request pembimbing change belum diimplementasi",
   });
 };
 
 export const updateJudulTA = async (req: AuthRequest, res: Response) => {
   res.status(501).json({
     success: false,
-    message: "Update judul TA belum diimplementasi"
+    message: "Update judul TA belum diimplementasi",
   });
 };

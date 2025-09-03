@@ -80,10 +80,11 @@ export class AuthController extends Controller {
         console.log("Failed to update last_login:", updateError);
       }
 
+      this.setStatus(200);
       return {
         message: "Login berhasil",
         token,
-        user: {
+        data: {
           userId: user.id,
           nama: user.nama,
           email: user.email,

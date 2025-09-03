@@ -7,19 +7,19 @@ const userRepository = new UserRepository();
 // Types (tetap sama)
 interface ProfileData {
   id?: number;
-  nama?: string;
+  name?: string;
   nim?: string;
-  nomorWhatsapp?: string;
+  whatsapp_number?: string;
   email?: string;
   profilePicture?: string | null;
   pembimbing1?: {
     id: number;
-    nama: string;
+    name: string;
     nip: string;
   } | null;
   pembimbing2?: {
     id: number;
-    nama: string;
+    name: string;
     nip: string;
   } | null;
   judulTA?: string | null;
@@ -42,9 +42,9 @@ export const getProfileService = async (
     // Return data profile (sesuaikan dengan field yang ada di user entity)
     return {
       id: user.id,
-      nama: user.nama || user.nama, // sesuaikan dengan field di database
-      nim: user.nim,
-      nomorWhatsapp: user.nomorWhatsapp || user.nomorWhatsapp, // sesuaikan field name
+      name: user.name || user.name, // sesuaikan dengan field di database
+      // nim: user.nim,
+      whatsapp_number: user.whatsapp_number || user.whatsapp_number, // sesuaikan field name
       email: user.email,
       //   profilePicture: user.profilePicture || null,
       // pembimbing1: null, // implement later jika ada relasi

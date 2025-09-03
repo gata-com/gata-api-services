@@ -87,6 +87,16 @@ app.set("trust proxy", 1);
 // Routes
 // ======================
 
+// Swagger UI Setup
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    explorer: true,
+    customSiteTitle: "API Documentation",
+  })
+);
+
 // Root endpoint with enhanced info
 app.get("/", (req: Request, res: Response) => {
   const response: ApiResponse = {
@@ -113,16 +123,6 @@ app.get("/", (req: Request, res: Response) => {
   res.status(200).json(response);
 });
 
-// Swagger UI Setup
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, {
-    explorer: true,
-    customSiteTitle: "API Documentation",
-  })
-);
-// API routes
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

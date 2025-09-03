@@ -10,9 +10,9 @@
     "dev": "npm run tsoaBuild && nodemon src/server.ts",
     "prod": "npm run build && npm start",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:revert": "npx typeorm migration:revert -d ./src/config/data-source.ts",
-    "migration:generate": "npx typeorm migration:generate -d ./src/config/data-source.ts",
-    "migration:run": "npx typeorm migration:run -d ./src/config/data-source.ts"
+    "migration:revert": "npx typeorm-ts-node-commonjs migration:revert -d ./src/config/data-source.ts",
+    "migration:generate": "npx typeorm-ts-node-commonjs migration:generate -d ./src/config/data-source.ts ./src/migrations/MigrationDB",
+    "migration:run": "npx typeorm-ts-node-commonjs migration:run -d ./src/config/data-source.ts"
   },
   "dependencies": {
     "@types/nodemailer": "^6.4.17",

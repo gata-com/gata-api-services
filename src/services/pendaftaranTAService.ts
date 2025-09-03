@@ -1,6 +1,12 @@
 // services/pendaftaranTAService.ts
-import  AppDataSource  from "../config/database";
-import { PendaftaranTA, AnggotaTA, TAType, TAStatus, SumberTopik } from "../entities/pendaftaranTA";
+import AppDataSource from "../config/database";
+import {
+  PendaftaranTA,
+  AnggotaTA,
+  TAType,
+  TAStatus,
+  SumberTopik,
+} from "../entities/_pendaftaranTA";
 import { Mahasiswa } from "../entities/mahasiswa";
 
 const pendaftaranTARepo = AppDataSource.getRepository(PendaftaranTA);
@@ -30,28 +36,36 @@ export interface CreatePendaftaranTAData {
 
 export const createPendaftaranTA = async (data: CreatePendaftaranTAData) => {
   // Validasi mahasiswa pendaftar
-  const mahasiswaPendaftar = await mahasiswaRepo.findOneBy({ id: data.mahasiswaPendaftarId });
-  if (!mahasiswaPendaftar) throw new Error("Mahasiswa pendaftar tidak ditemukan");
+  const mahasiswaPendaftar = await mahasiswaRepo.findOneBy({
+    id: data.mahasiswaPendaftarId,
+  });
+  if (!mahasiswaPendaftar)
+    throw new Error("Mahasiswa pendaftar tidak ditemukan");
 
   // Validasi jumlah anggota sesuai tipe TA
   if (data.tipeTA === TAType.REGULER && data.jumlahAnggota !== 1) {
     throw new Error("TA Reguler harus memiliki 1 anggota");
   }
-  if (data.tipeTA === TAType.CAPSTONE && (data.jumlahAnggota < 2 || data.jumlahAnggota > 3)) {
+  if (
+    data.tipeTA === TAType.CAPSTONE &&
+    (data.jumlahAnggota < 2 || data.jumlahAnggota > 3)
+  ) {
     throw new Error("TA Capstone harus memiliki 2-3 anggota");
   }
 
   // Validasi jumlah data anggota sesuai jumlah anggota yang dipilih
   if (data.anggotaTA.length !== data.jumlahAnggota) {
-    throw new Error(`Jumlah data anggota harus sesuai dengan jumlah anggota yang dipilih (${data.jumlahAnggota})`);
+    throw new Error(
+      `Jumlah data anggota harus sesuai dengan jumlah anggota yang dipilih (${data.jumlahAnggota})`
+    );
   }
 
   // Validasi semua anggota TA ada di database
-  const anggotaIds = data.anggotaTA.map(anggota => anggota.mahasiswaId);
+  const anggotaIds = data.anggotaTA.map((anggota) => anggota.mahasiswaId);
   const mahasiswaAnggota = await mahasiswaRepo.find({
-    where: anggotaIds.map(id => ({ id }))
+    where: anggotaIds.map((id) => ({ id })),
   });
-  
+
   if (mahasiswaAnggota.length !== anggotaIds.length) {
     throw new Error("Beberapa anggota TA tidak ditemukan di database");
   }
@@ -68,7 +82,7 @@ export const createPendaftaranTA = async (data: CreatePendaftaranTAData) => {
   }
 
   // Mulai transaction
-  return await AppDataSource.transaction(async manager => {
+  return await AppDataSource.transaction(async (manager) => {
     // Create pendaftaran TA
     const pendaftaran = manager.create(PendaftaranTA, {
       mahasiswaPendaftar,
@@ -88,12 +102,14 @@ export const createPendaftaranTA = async (data: CreatePendaftaranTAData) => {
     const savedPendaftaran = await manager.save(PendaftaranTA, pendaftaran);
 
     // Create anggota TA
-    const anggotaEntities = data.anggotaTA.map(anggotaData => {
-      const mahasiswa = mahasiswaAnggota.find(m => m.id === anggotaData.mahasiswaId);
+    const anggotaEntities = data.anggotaTA.map((anggotaData) => {
+      const mahasiswa = mahasiswaAnggota.find(
+        (m) => m.id === anggotaData.mahasiswaId
+      );
       return manager.create(AnggotaTA, {
         pendaftaranTA: savedPendaftaran,
         mahasiswa: mahasiswa!,
-        urutan: anggotaData.urutan
+        urutan: anggotaData.urutan,
       });
     });
 
@@ -102,7 +118,7 @@ export const createPendaftaranTA = async (data: CreatePendaftaranTAData) => {
     // Return dengan relasi
     return await manager.findOne(PendaftaranTA, {
       where: { id: savedPendaftaran.id },
-      relations: ['mahasiswaPendaftar', 'anggotaTA', 'anggotaTA.mahasiswa']
+      relations: ["mahasiswaPendaftar", "anggotaTA", "anggotaTA.mahasiswa"],
     });
   });
 };

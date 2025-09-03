@@ -1,7 +1,7 @@
 // controllers/mahasiswa/pendaftaranTA.ts
 import { Request, Response } from "express";
 import { createPendaftaranTA } from "../../services/pendaftaranTAService";
-import { TAType, TAStatus, SumberTopik } from "../../entities/pendaftaranTA";
+import { TAType, TAStatus, SumberTopik } from "../../entities/_pendaftaranTA";
 import path from "path";
 import fs from "fs/promises";
 
@@ -35,15 +35,25 @@ export const daftarTA = async (req: Request, res: Response) => {
     } catch (parseError) {
       return res.status(400).json({
         success: false,
-        message: "Format data anggota TA tidak valid (harus berupa JSON)"
+        message: "Format data anggota TA tidak valid (harus berupa JSON)",
       });
     }
 
     // Validasi field wajib
-    if (!mahasiswaPendaftarId || !anggotaTA || !tipeTA || !judul || !statusTA || !resumeKebaharuan || !dosenPembimbing1 || !sumberTopik) {
+    if (
+      !mahasiswaPendaftarId ||
+      !anggotaTA ||
+      !tipeTA ||
+      !judul ||
+      !statusTA ||
+      !resumeKebaharuan ||
+      !dosenPembimbing1 ||
+      !sumberTopik
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Semua field wajib diisi (kecuali dosenPembimbing2 dan file pendukung opsional).",
+        message:
+          "Semua field wajib diisi (kecuali dosenPembimbing2 dan file pendukung opsional).",
       });
     }
 
@@ -51,21 +61,27 @@ export const daftarTA = async (req: Request, res: Response) => {
     if (!Array.isArray(anggotaTA)) {
       return res.status(400).json({
         success: false,
-        message: "Data anggota TA harus berupa array"
+        message: "Data anggota TA harus berupa array",
       });
     }
 
     // Validasi enum values
     if (!(Object.values(TAType) as string[]).includes(tipeTA)) {
-      return res.status(400).json({ success: false, message: "Tipe TA tidak valid" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Tipe TA tidak valid" });
     }
 
     if (!(Object.values(TAStatus) as string[]).includes(statusTA)) {
-      return res.status(400).json({ success: false, message: "Status TA tidak valid" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Status TA tidak valid" });
     }
 
     if (!(Object.values(SumberTopik) as string[]).includes(sumberTopik)) {
-      return res.status(400).json({ success: false, message: "Sumber topik tidak valid" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Sumber topik tidak valid" });
     }
 
     // Validasi jumlah anggota
@@ -74,14 +90,14 @@ export const daftarTA = async (req: Request, res: Response) => {
       if (jumlahAnggotaNum !== 1) {
         return res.status(400).json({
           success: false,
-          message: "TA Reguler harus memiliki 1 anggota"
+          message: "TA Reguler harus memiliki 1 anggota",
         });
       }
     } else if (tipeTA === TAType.CAPSTONE) {
       if (jumlahAnggotaNum < 2 || jumlahAnggotaNum > 3) {
         return res.status(400).json({
           success: false,
-          message: "TA Capstone harus memiliki 2-3 anggota"
+          message: "TA Capstone harus memiliki 2-3 anggota",
         });
       }
     }
@@ -90,7 +106,7 @@ export const daftarTA = async (req: Request, res: Response) => {
     if (anggotaTA.length !== jumlahAnggotaNum) {
       return res.status(400).json({
         success: false,
-        message: `Jumlah data anggota harus sesuai dengan jumlah anggota yang dipilih (${jumlahAnggotaNum})`
+        message: `Jumlah data anggota harus sesuai dengan jumlah anggota yang dipilih (${jumlahAnggotaNum})`,
       });
     }
 
@@ -100,15 +116,17 @@ export const daftarTA = async (req: Request, res: Response) => {
       if (!anggota.mahasiswaId || !anggota.urutan) {
         return res.status(400).json({
           success: false,
-          message: `Data anggota ke-${i + 1} tidak lengkap (mahasiswaId dan urutan wajib diisi)`
+          message: `Data anggota ke-${
+            i + 1
+          } tidak lengkap (mahasiswaId dan urutan wajib diisi)`,
         });
       }
-      
+
       // Validasi urutan sesuai dengan index
       if (anggota.urutan !== i + 1) {
         return res.status(400).json({
           success: false,
-          message: `Urutan anggota ke-${i + 1} harus ${i + 1}`
+          message: `Urutan anggota ke-${i + 1} harus ${i + 1}`,
         });
       }
     }
@@ -117,7 +135,7 @@ export const daftarTA = async (req: Request, res: Response) => {
     if (!files?.draftTA || files.draftTA.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "File draft TA wajib diupload"
+        message: "File draft TA wajib diupload",
       });
     }
 
@@ -126,7 +144,7 @@ export const daftarTA = async (req: Request, res: Response) => {
       if (!files?.suratDispensasi || files.suratDispensasi.length === 0) {
         return res.status(400).json({
           success: false,
-          message: "Surat dispensasi wajib diupload untuk status dispensasi"
+          message: "Surat dispensasi wajib diupload untuk status dispensasi",
         });
       }
     }
@@ -135,7 +153,8 @@ export const daftarTA = async (req: Request, res: Response) => {
     if (resumeKebaharuan.length < 500) {
       return res.status(400).json({
         success: false,
-        message: "Resume kebaharuan minimal 500 karakter (ringkasan dari 5 jurnal pembanding)"
+        message:
+          "Resume kebaharuan minimal 500 karakter (ringkasan dari 5 jurnal pembanding)",
       });
     }
 
@@ -144,11 +163,14 @@ export const daftarTA = async (req: Request, res: Response) => {
     await fs.mkdir(uploadDir, { recursive: true });
 
     // Function untuk save file dengan nama format yang benar
-    const saveFile = async (file: Express.Multer.File, prefix: string): Promise<string> => {
+    const saveFile = async (
+      file: Express.Multer.File,
+      prefix: string
+    ): Promise<string> => {
       // Ambil NIM dan nama dari mahasiswa pendaftar
       const fileName = `${mahasiswaPendaftarId}_${prefix}_${Date.now()}.pdf`;
       const filePath = path.join(uploadDir, fileName);
-      
+
       await fs.writeFile(filePath, file.buffer);
       return `uploads/ta/${fileName}`;
     };
@@ -169,8 +191,15 @@ export const daftarTA = async (req: Request, res: Response) => {
     }
 
     // Save surat dispensasi (hanya jika status dispensasi)
-    if (statusTA === TAStatus.DISPENSASI && files.suratDispensasi && files.suratDispensasi[0]) {
-      suratDispensasiPath = await saveFile(files.suratDispensasi[0], "DISPENSASI");
+    if (
+      statusTA === TAStatus.DISPENSASI &&
+      files.suratDispensasi &&
+      files.suratDispensasi[0]
+    ) {
+      suratDispensasiPath = await saveFile(
+        files.suratDispensasi[0],
+        "DISPENSASI"
+      );
     }
 
     // Create pendaftaran TA
@@ -178,7 +207,7 @@ export const daftarTA = async (req: Request, res: Response) => {
       mahasiswaPendaftarId: parseInt(mahasiswaPendaftarId),
       anggotaTA: anggotaTA.map((anggota: any) => ({
         mahasiswaId: parseInt(anggota.mahasiswaId),
-        urutan: parseInt(anggota.urutan)
+        urutan: parseInt(anggota.urutan),
       })),
       tipeTA,
       jumlahAnggota: jumlahAnggotaNum,
@@ -198,14 +227,13 @@ export const daftarTA = async (req: Request, res: Response) => {
       message: "Pendaftaran TA berhasil",
       data: result,
     });
-
   } catch (err: any) {
     // Cleanup files jika terjadi error
     // (implementasi cleanup bisa ditambahkan di sini)
-    
-    return res.status(500).json({ 
-      success: false, 
-      message: err.message || "Terjadi kesalahan internal server"
+
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Terjadi kesalahan internal server",
     });
   }
 };

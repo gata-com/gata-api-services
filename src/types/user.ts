@@ -4,17 +4,17 @@ export type UserRole = "student" | "admin" | "lecturer";
 export type ExpertisesGroup = "RPLSI" | "AIDE" | "KMSI";
 
 export interface CreateUserData {
-  // nim: string;
+  nim: string;
+  semester?: number; // Made optional to match entity
   name: string;
-  // semester?: number; // Made optional to match entity
-  // nomorWhatsapp?: string; // Made optional to match entity
+  whatsapp_number?: string;
   email: string;
   password: string;
   // role?: UserRole;
   // ExpertisesGroup?: ExpertisesGroup; // Added for dosen
   // resetToken?: string; // Changed to camelCase to match entity
   // resetTokenExpires?: Date; // Changed to camelCase to match entity
-  // isActive?: boolean;
+  isActive?: boolean;
 }
 
 export interface UpdateUserData {
@@ -60,17 +60,17 @@ export interface UserResponse {
 }
 
 export interface RegisterRequest {
-  name: string; // Note: This maps to 'nama' in the entity
-  nim: string; // Untuk student = NIM, untuk dosen = NIP, untuk admin = Employee ID
+  name: string;
+  nim: string;
   email: string;
   password: string;
-  semester?: number; // Hanya untuk student
-  nomorWhatsapp?: string;
+  semester?: string;
+  whatsapp_number?: string;
 }
 
-export interface RegisterStudentRequest extends RegisterRequest {
-  semester?: number; // Required for students
-}
+// export interface RegisterStudentRequest extends RegisterRequest {
+//   semester?: number; // Required for students
+// }
 
 export interface RegisterDosenRequest
   extends Omit<RegisterRequest, "semester"> {

@@ -9,7 +9,6 @@ export const forgotPassword = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  console.log("=== FORGOT PASSWORD START ===");
 
   try {
     const { email } = req.body;
@@ -45,8 +44,8 @@ export const forgotPassword = async (
     resetTokenExpires.setHours(resetTokenExpires.getHours() + 1);
 
     // Update user dengan reset token
-    user.resetToken = resetToken;
-    user.resetTokenExpires = resetTokenExpires;
+    user.reset_token = resetToken;
+    user.reset_token_expires = resetTokenExpires;
 
     await userRepository.save(user);
     console.log("Reset token saved to database");
@@ -82,8 +81,8 @@ export const forgotPassword = async (
       console.error("Failed to send email:", emailError);
 
       // Rollback: hapus reset token jika email gagal
-      user.resetToken = undefined;
-      user.resetTokenExpires = undefined;
+      user.reset_token = undefined;
+      user.reset_token_expires = undefined;
       await userRepository.save(user);
 
       // Type guard untuk mengakses message property

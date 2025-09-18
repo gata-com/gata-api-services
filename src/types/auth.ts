@@ -1,5 +1,23 @@
 import { JwtPayload as BaseJwtPayload } from "jsonwebtoken";
 
+/*=====================
+  Student Interfaces
+=================*/
+
+export interface StudentRegiesterRequest {
+  nim: string;
+  semester: number;
+  name: string;
+  whatsapp_number?: string;
+  email: string;
+  password: string;
+}
+
+export interface StudentLoginRequest {
+  emailOrNim: string;
+  password: string;
+}
+
 export interface RegisterRequest {
   nim: string;
   nama: string;
@@ -14,7 +32,20 @@ export interface LoginRequest {
   password: string;
 }
 
-// Reset Password Interfaces 
+export interface AuthResponse {
+  user: {
+    id: number;
+    nim: string;
+    nama: string;
+    semester: number;
+    email: string;
+    role: string;
+    lastLogin?: Date;
+  };
+  token: string;
+}
+
+// Reset Password Interfaces
 export interface ForgotPasswordRequest {
   email: string;
 }
@@ -44,17 +75,4 @@ export interface JwtPayload extends BaseJwtPayload {
 export interface TokenPayload {
   userId: number;
   role?: string;
-}
-
-export interface AuthResponse {
-  user: {
-    id: number;
-    nim: string;
-    nama: string;
-    semester: number;
-    email: string;
-    role: string;
-    lastLogin?: Date;
-  };
-  token: string;
 }

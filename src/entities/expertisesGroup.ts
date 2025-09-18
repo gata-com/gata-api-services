@@ -11,7 +11,7 @@ export default class ExpertisesGroup {
   name!: expertGroupType;
 
   // Relationships
-  @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group_id)
+  @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group)
   lecturers!: Lecturer[];
 
   // *** Methods ***

@@ -1,9 +1,8 @@
-import { Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { UserRepository } from '../repositories/userRepository';
-import { AuthRequest, ApiResponse } from '../types';
-import { JwtPayload } from '../types/auth';
-import { config } from '../config/config';
+import { Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { UserRepository } from "../repositories/UserRepository";
+import { AuthRequest, ApiResponse } from "../types";
+import { JwtPayload } from "../types/auth";
 
 const userRepository = new UserRepository();
 
@@ -13,51 +12,54 @@ export const auth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.header('Authorization');
-    console.log('🔍 Auth Header:', authHeader);
-    
-    const token = authHeader?.replace('Bearer ', '');
-    console.log('🔍 Token:', token);
+    const authHeader = req.header("Authorization");
+    console.log("🔍 Auth Header:", authHeader);
+
+    const token = authHeader?.replace("Bearer ", "");
+    console.log("🔍 Token:", token);
 
     if (!token) {
-      console.log('❌ No token provided');
+      console.log("❌ No token provided");
       res.status(401).json({
         success: false,
-        message: 'Access denied. No token provided'
+        message: "Access denied. No token provided",
       });
       return;
     }
 
-    const decoded = jwt.verify(token, "your-very-strong-secret-here") as JwtPayload;
-    console.log('🔍 Decoded token:', decoded);
-    
+    const decoded = jwt.verify(
+      token,
+      "your-very-strong-secret-here"
+    ) as JwtPayload;
+    console.log("🔍 Decoded token:", decoded);
+
     const user = await userRepository.findById(decoded.userId);
-    console.log('🔍 User found:', user);
-    
-    if (!user || !user.isActive) {
-      console.log('❌ User not found or inactive');
+    console.log("🔍 User found:", user);
+
+    if (!user || !user.is_active) {
+      console.log("❌ User not found or inactive");
       res.status(401).json({
         success: false,
-        message: 'Token is invalid or user is deactivated'
+        message: "Token is invalid or user is deactivated",
       });
       return;
     }
 
     // ✅ QUICK FIX: Use type assertion
     (req.user as any) = {
-      id: decoded.userId,        // ✅ Set id
-      userId: decoded.userId,    // ✅ Keep userId untuk backward compatibility
-      email: user.email,         // ✅ Set email
-      role: user.role           // ✅ Set role
+      id: decoded.userId, // ✅ Set id
+      userId: decoded.userId, // ✅ Keep userId untuk backward compatibility
+      email: user.email, // ✅ Set email
+      role: user.role, // ✅ Set role
     };
-    
-    console.log('✅ req.user set:', req.user);
+
+    console.log("✅ req.user set:", req.user);
     next();
   } catch (error) {
-    console.log('❌ Auth error:', error);
+    console.log("❌ Auth error:", error);
     res.status(401).json({
       success: false,
-      message: 'Token is invalid'
+      message: "Token is invalid",
     });
   }
 };
@@ -67,10 +69,10 @@ export const adminAuth = async (
   res: Response<ApiResponse>,
   next: NextFunction
 ): Promise<void> => {
-  if (req.user?.role !== 'admin') {
+  if (req.user?.role !== "admin") {
     res.status(403).json({
       success: false,
-      message: 'Access denied. Admin privileges required'
+      message: "Access denied. Admin privileges required",
     });
     return;
   }
@@ -82,10 +84,10 @@ export const studentAuth = async (
   res: Response<ApiResponse>,
   next: NextFunction
 ): Promise<void> => {
-  if (req.user?.role !== 'student') {
+  if (req.user?.role !== "student") {
     res.status(403).json({
       success: false,
-      message: 'Access denied. Student privileges required'
+      message: "Access denied. Student privileges required",
     });
     return;
   }
@@ -93,7 +95,7 @@ export const studentAuth = async (
 };
 
 export const selfOrAdminAuth = async (
-  req: AuthRequest<{ id: string }>,
+  req: AuthRequest,
   res: Response<ApiResponse>,
   next: NextFunction
 ): Promise<void> => {
@@ -104,17 +106,40 @@ export const selfOrAdminAuth = async (
   if (isNaN(targetUserId)) {
     res.status(400).json({
       success: false,
-      message: 'Invalid user ID'
+      message: "Invalid user ID",
     });
     return;
   }
 
-  if (currentUserRole === 'admin' || currentUserId === targetUserId) {
+  if (currentUserRole === "admin" || currentUserId === targetUserId) {
     next();
   } else {
     res.status(403).json({
       success: false,
-      message: 'Access denied. You can only access your own profile'
+      message: "Access denied. You can only access your own profile",
     });
   }
+};
+
+// Authentication for google
+export const authenticateToken = async (
+  req: AuthRequest,
+  res: Response<ApiResponse>,
+  next: NextFunction
+): Promise<void> => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    res.status(401).json({ message: "Access token required" });
+    return;
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET!, (err: any, user: any) => {
+    if (err) {
+      res.status(403).json({ message: "Invalid token" });
+    }
+    req.user = user;
+    next();
+  });
 };

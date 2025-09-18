@@ -1,6 +1,6 @@
 // routes/mahasiswa/profile.ts
 import { Router } from "express";
-import { 
+import {
   getProfile,
   updateProfile,
   uploadProfilePicture,
@@ -8,7 +8,6 @@ import {
   changePassword,
   getStatusPengajuan,
   requestPembimbingChange,
-  updateJudulTA
 } from "../../controllers/mahasiswa/profileController";
 import { upload } from "../../middleware/upload";
 import { auth } from "../../middleware/auth";
@@ -19,26 +18,25 @@ const router = Router();
 router.use(auth);
 
 // Profile data
-router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
 
 // Profile picture
-router.post('/profile/picture', 
-  upload.single('profilePicture'), 
+router.post(
+  "/profile/picture",
+  upload.single("profilePicture"),
   uploadProfilePicture
 );
-router.delete('/profile/picture', deleteProfilePicture);
+router.delete("/profile/picture", deleteProfilePicture);
 
 // Password
-router.put('/profile/password', changePassword);
+router.put("/profile/password", changePassword);
 
 // Status pengajuan
-router.get('/profile/status-pengajuan', getStatusPengajuan);
+router.get("/profile/status-pengajuan", getStatusPengajuan);
 
 // Pembimbing change request
-router.post('/profile/request-pembimbing-change', requestPembimbingChange);
+router.post("/profile/request-pembimbing-change", requestPembimbingChange);
 
-// Judul TA
-router.put('/profile/judul-ta', updateJudulTA);
 
 export default router;

@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import AppDataSource from "../../config/database";
-import { User } from "../../entities/user";
+import User from "../../entities/user";
 
 export const resetPassword = async (
   req: Request,
@@ -60,23 +60,27 @@ export const resetPassword = async (
     // Cari user dengan token yang valid dan belum expired
     const user = await userRepository
       .createQueryBuilder("user")
-      .addSelect(["user.resetToken", "user.resetTokenExpires"])
+      .addSelect([
+        "user.resetToken",
+        "user.reset_token_expires",
+        "user.password",
+      ])
       .where("user.resetToken = :token", { token: cleanToken })
       .getOne();
 
     console.log("📊 Query result:", {
       userFound: !!user,
       userId: user?.id || null,
-      tokenExpires: user?.resetTokenExpires || null,
+      tokenExpires: user?.reset_token_expires || null,
       currentTime: new Date(),
-      isExpired: user?.resetTokenExpires
-        ? user.resetTokenExpires < new Date()
+      isExpired: user?.reset_token_expires
+        ? user.reset_token_expires < new Date()
         : null,
       // Debug raw user object
-      userResetToken: user?.resetToken
-        ? user.resetToken.substring(0, 20) + "..."
+      userResetToken: user?.reset_token
+        ? user.reset_token.substring(0, 20) + "..."
         : null,
-      hasResetTokenExpires: !!user?.resetTokenExpires,
+      hasResetTokenExpires: !!user?.reset_token_expires,
     });
 
     if (!user) {
@@ -89,7 +93,7 @@ export const resetPassword = async (
     }
 
     // Check if token is expired
-    if (!user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+    if (!user.reset_token_expires || user.reset_token_expires < new Date()) {
       console.log("❌ Token expired");
       return res.status(400).json({
         message: "Token tidak valid atau kadaluarsa",
@@ -110,8 +114,8 @@ export const resetPassword = async (
     // Update password dan hapus reset token
     console.log("💾 Updating user password and clearing reset token...");
     user.password = hashedPassword;
-    user.resetToken = undefined;
-    user.resetTokenExpires = undefined;
+    user.reset_token = undefined;
+    user.reset_token_expires = undefined;
 
     await userRepository.save(user);
 

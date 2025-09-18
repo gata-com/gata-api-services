@@ -5,8 +5,6 @@ import jwt from "jsonwebtoken";
 import AppDataSource from "../../config/database";
 import dotenv from "dotenv";
 
-import { Get } from "tsoa";
-
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
@@ -48,11 +46,11 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
     // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user.id,
-        email: user.email,
-        nama: user.nama, // Sesuai dengan field database
-        nim: user.nim,
+        id: user.id,
         role: user.role,
+        name: user.name, // Sesuai dengan field database
+        email: user.email,
+        nim: user.nim,
       },
       JWT_SECRET,
       { expiresIn: "1h" }

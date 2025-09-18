@@ -55,30 +55,30 @@ export default class FinalProjects {
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   })
-  supervisor_1_status: Array<string>;
+  supervisor_1_status!: string;
 
   @Column({
     type: "enum",
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   })
-  supervisor_2_status: Array<string>;
+  supervisor_2_status!: string;
 
   @Column({
     type: "enum",
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   })
-  admin_status: Array<string>;
+  admin_status!: string;
 
   @Column({ type: "text", nullable: true })
-  supervisor_1_note: string;
+  supervisor_1_note?: string;
 
   @Column({ type: "text", nullable: true })
-  supervisor_2_note: string;
+  supervisor_2_note?: string;
 
   @Column({ type: "text", nullable: true })
-  admin_note: string;
+  admin_note?: string;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
@@ -94,18 +94,18 @@ export default class FinalProjects {
 
   // *** Relationships ***
   @ManyToOne(() => ExpertisesGroup)
-  expertises_group_id: ExpertisesGroup;
+  expertises_group!: ExpertisesGroup;
 
-  @OneToMany(() => FinalProjectMembers, (member) => member.final_project_id)
-  members: FinalProjectMembers[];
+  @OneToMany(() => FinalProjectMembers, (member) => member.final_project)
+  members!: FinalProjectMembers[];
 
   // *** Method ***
 }
 
 // Final Project Members
 @Entity("final_project_members")
-@Index(["final_project_id"])
-@Index(["student_id"])
+@Index(["final_project"])
+@Index(["student"])
 export class FinalProjectMembers {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -113,19 +113,19 @@ export class FinalProjectMembers {
   @Column({ type: "text" })
   sub_title: string;
 
-  @CreateDateColumn({ name: "created_at" })
-  createdAt!: Date;
+  @CreateDateColumn()
+  created_at!: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt!: Date;
+  @UpdateDateColumn()
+  updated_at!: Date;
 
   // *** Relationships ***
   @ManyToOne(() => FinalProjects)
-  final_project_id!: FinalProjects;
+  final_project!: FinalProjects;
 
   @OneToOne(() => Student)
   @JoinColumn()
-  student_id!: Student;
+  student!: Student;
 
   // *** Method ***
 }

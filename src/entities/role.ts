@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Index,
 } from "typeorm";
 
 import ExpertisesGroup from "./expertisesGroup";
@@ -20,25 +21,27 @@ export default class Admin {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @CreateDateColumn({ name: "created_at" })
-  createdAt!: Date;
+  @CreateDateColumn()
+  created_at!: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt!: Date;
+  @UpdateDateColumn()
+  updated_at!: Date;
 
   // *** Relationships ***
   @OneToOne(() => User)
   @JoinColumn()
-  user_id!: User;
+  user!: User;
 
-  @OneToMany(() => Announcements, (announcement) => announcement.admin_id)
-  admin_id!: Announcements[];
+  @OneToMany(() => Announcements, (announcement) => announcement.admin)
+  announcements!: Announcements[];
 
   // *** Methods ***
 }
 
 // Lecturer
 @Entity("lecturer")
+@Index("IDX_nip_index", ["nip"])
+@Index(["lecturer_code"])
 export class Lecturer {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -55,25 +58,26 @@ export class Lecturer {
   @Column({ default: 15 })
   max_supervised_2!: number;
 
-  @CreateDateColumn({ name: "created_at" })
-  createdAt!: Date;
+  @CreateDateColumn()
+  created_at!: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt!: Date;
+  @UpdateDateColumn()
+  updated_at!: Date;
 
   // *** Relationships ***
   @OneToOne(() => User)
   @JoinColumn()
-  user_id!: User;
+  user!: User;
 
   @ManyToOne(() => ExpertisesGroup)
-  expertises_group_id!: ExpertisesGroup;
+  expertises_group!: ExpertisesGroup;
 
   // *** Method ***
 }
 
 // Student
 @Entity("student")
+@Index(["semester"])
 export class Student {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -81,16 +85,19 @@ export class Student {
   @Column({ unique: true, length: 9 })
   nim!: string; // Nomor Induk Mahasiswa
 
-  @CreateDateColumn({ name: "created_at" })
-  createdAt!: Date;
+  @Column({ default: 1 })
+  semester!: number;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt!: Date;
+  @CreateDateColumn()
+  created_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
 
   // *** Relationships ***
   @OneToOne(() => User)
   @JoinColumn()
-  user_id!: User;
+  user!: User;
 
   // *** Methods ***
 }

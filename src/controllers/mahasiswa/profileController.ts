@@ -12,13 +12,7 @@ import {
   // requestPembimbingChangeService,
   // updateJudulTAService
 } from "../../services/profileService";
-
-interface AuthRequest extends Request {
-  user?: {
-    userId: number; // Gunakan userId sesuai dengan middleware auth
-    role: string;
-  };
-}
+import { AuthRequest } from "@/types";
 
 // Get Profile
 export const getProfile = async (req: AuthRequest, res: Response) => {
@@ -29,31 +23,33 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 
     if (!mahasiswaId) {
       console.log("❌ req.user.userId is undefined");
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "User tidak terautentikasi",
       });
+      return;
     }
 
     console.log("🔍 Getting profile for mahasiswaId:", mahasiswaId);
     const profile = await getProfileService(mahasiswaId);
 
     if (!profile) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: "Profile tidak ditemukan",
       });
+      return;
     }
 
     console.log("✅ Profile found:", profile);
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Profile berhasil diambil",
       data: profile,
     });
   } catch (err: any) {
     console.log("❌ getProfile error:", err);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: err.message || "Terjadi kesalahan internal server",
     });
@@ -67,43 +63,48 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     const { nama, nim, nomorWhatsapp, email } = req.body;
 
     if (!mahasiswaId) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "User tidak terautentikasi",
       });
+      return;
     }
 
     // Validasi data yang diperlukan
     if (!nama || !nim || !nomorWhatsapp || !email) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Nama, NIM, nomor WhatsApp, dan email wajib diisi",
       });
+      return;
     }
 
     // Validasi format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Format email tidak valid",
       });
+      return;
     }
 
     // Validasi NIM (hanya angka)
     if (!/^\d+$/.test(nim)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "NIM harus berupa angka",
       });
+      return;
     }
 
     // Validasi nomor WhatsApp
     if (!/^\d{10,15}$/.test(nomorWhatsapp)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Nomor WhatsApp harus 10-15 digit angka",
       });
+      return;
     }
 
     const updatedProfile = await updateProfileService(mahasiswaId, {
@@ -113,16 +114,18 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       email,
     });
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Profile berhasil diupdate",
       data: updatedProfile,
     });
+    return;
   } catch (err: any) {
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: err.message || "Terjadi kesalahan internal server",
     });
+    return;
   }
 };
 

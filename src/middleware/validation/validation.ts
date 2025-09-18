@@ -10,7 +10,7 @@ export const validateRegister: ValidationChain[] = [
     .isNumeric()
     .withMessage("NIM must contain only numbers"),
 
-  body("nama")
+  body("name")
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage("Name must be between 2-100 characters")
@@ -21,7 +21,7 @@ export const validateRegister: ValidationChain[] = [
     .isInt({ min: 1, max: 14 })
     .withMessage("Semester must be between 1-14"),
 
-  body("nomorWhatsapp")
+  body("whatsappNumber")
     .trim()
     .matches(/^(\+62|62|0)[0-9]{9,13}$/)
     .withMessage("Invalid WhatsApp number format"),

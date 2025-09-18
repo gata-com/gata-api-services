@@ -15,7 +15,7 @@ import Admin from "./role";
 // }
 
 @Entity("announcements")
-@Index(["isPublished", "createdAt"])
+@Index(["is_published", "created_at"])
 export default class Announcements {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -27,19 +27,19 @@ export default class Announcements {
   content!: string;
 
   @Column({ type: "boolean", default: false })
-  isPublished!: boolean;
+  is_published!: boolean;
 
   @Column({ type: "enum", enum: ["low", "high"] })
   priority!: string;
 
-  @CreateDateColumn({ name: "created_at" })
-  createdAt!: Date;
+  @CreateDateColumn()
+  created_at!: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
-  updatedAt!: Date;
+  @UpdateDateColumn()
+  updated_at!: Date;
 
   // *** Relationships ***
   @ManyToOne(() => Admin)
-  admin_id!: Admin;
+  admin!: Admin;
   // *** Methods ***
 }

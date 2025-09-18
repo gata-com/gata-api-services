@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { daftarTA } from "../../controllers/mahasiswa/pendaftaranTAController";
+// import { daftarTA } from "../../controllers/mahasiswa/pendaftaranTAController";
 import { upload } from "../../middleware/upload";
 import { auth, studentAuth } from "../../middleware/auth";
-
 
 const router = Router();
 
@@ -14,8 +13,8 @@ router.post(
     { name: "draftTA", maxCount: 1 },
     { name: "filePendukung", maxCount: 1 },
     { name: "suratDispensasi", maxCount: 1 },
-  ]),
-  daftarTA
+  ])
+  // daftarTA
 );
 
 export default router;

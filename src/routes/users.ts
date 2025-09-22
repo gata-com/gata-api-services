@@ -7,7 +7,7 @@ import {
   resetPasswordValidation,
   verifyTokenValidation,
 } from "../middleware/resetPasswordValidation";
-import { handleValidationErrors } from "../middleware/validation/validation";
+import { handleValidationErrors } from "../middleware/validation/handleErrors";
 
 const router: Router = Router();
 const userController = new UserController();

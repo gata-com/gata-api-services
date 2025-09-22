@@ -4,42 +4,43 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import AppDataSource from "../../config/database";
 import dotenv from "dotenv";
+import { UserRepository } from "../../repositories/UserRepository";
+
+import { ApiResponse } from "@/types";
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
 
-export const login = async (req: Request, res: Response): Promise<Response> => {
+export const login = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
   try {
     const { email, password } = req.body;
 
+    const userRepo = new UserRepository();
+
     // Validasi input
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email dan password wajib diisi",
-      });
-    }
-
     // Cari user dengan raw query TypeORM
-    const users = await AppDataSource.query(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
+    const user = await userRepo.findByEmail(email);
 
-    if (users.length === 0) {
+    console.log("User found:", user);
+
+    if (!user) {
       return res.status(400).json({
-        message: "Email tidak ditemukan",
+        message: "Error Validation",
+        errors: { field: "email", msg: "Email tidak ditemukan" },
       });
     }
-
-    const user = users[0];
 
     // Validasi password
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
       return res.status(400).json({
-        message: "Password salah",
+        message: "Error Validation",
+        errors: { field: "password", msg: "Password salah" },
       });
     }
 
@@ -50,7 +51,6 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         role: user.role,
         name: user.name, // Sesuai dengan field database
         email: user.email,
-        nim: user.nim,
       },
       JWT_SECRET,
       { expiresIn: "1h" }
@@ -68,20 +68,18 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
 
     return res.status(200).json({
       message: "Login berhasil",
-      token,
-      user: {
-        userId: user.id,
-        nama: user.nama,
-        email: user.email,
-        nim: user.nim,
-        role: user.role,
+      data: {
+        token: token,
+        user: {
+          role: user.role,
+          email: user.email,
+        },
       },
     });
   } catch (error: any) {
-    console.error("Error in login:", error);
     return res.status(500).json({
       message: "Terjadi kesalahan",
-      error: process.env.NODE_ENV === "development" ? error : {},
+      errors: { field: "server", msg: error.message },
     });
   }
 };

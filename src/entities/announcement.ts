@@ -39,7 +39,7 @@ export default class Announcements {
   updated_at!: Date;
 
   // *** Relationships ***
-  @ManyToOne(() => Admin)
+  @ManyToOne(() => Admin, { onDelete: "CASCADE" })
   admin!: Admin;
   // *** Methods ***
 }

@@ -28,11 +28,13 @@ export default class Admin {
   updated_at!: Date;
 
   // *** Relationships ***
-  @OneToOne(() => User)
+  @OneToOne(() => User, { onDelete: "CASCADE" })
   @JoinColumn()
   user!: User;
 
-  @OneToMany(() => Announcements, (announcement) => announcement.admin)
+  @OneToMany(() => Announcements, (announcement) => announcement.admin, {
+    onDelete: "CASCADE",
+  })
   announcements!: Announcements[];
 
   // *** Methods ***
@@ -65,11 +67,11 @@ export class Lecturer {
   updated_at!: Date;
 
   // *** Relationships ***
-  @OneToOne(() => User)
+  @OneToOne(() => User, { onDelete: "CASCADE" })
   @JoinColumn()
   user!: User;
 
-  @ManyToOne(() => ExpertisesGroup)
+  @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group!: ExpertisesGroup;
 
   // *** Method ***
@@ -95,8 +97,8 @@ export class Student {
   updated_at!: Date;
 
   // *** Relationships ***
-  @OneToOne(() => User)
-  @JoinColumn()
+  @OneToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user!: User;
 
   // *** Methods ***

@@ -39,20 +39,23 @@ export class UserRepository {
       const user = manager.create(User, userData);
       const savedUser = await manager.save(user);
 
-      // Create student dengan userId yang otomatis terisi
-      const student = manager.create(Student, {
-        ...studentData,
-        userId: savedUser.id, // Foreign key otomatis terisi
-      });
-      await manager.save(student);
+      if (savedUser) {
+        // Create student dengan userId yang otomatis terisi
+        const student = manager.create(Student, {
+          ...studentData,
+          user: savedUser, // Foreign key otomatis terisi
+        });
+        await manager.save(student);
+      }
 
       // Return user dengan data student
-      return await this.findById(savedUser.id);
+      // return await this.findById(savedUser.id);
+      return savedUser.id;
     });
   }
 
   // Search user by id
-  async findById(id: number): Promise<User | null> {
+  async findById(id: number): Promise<any> {
     return await this.repository
       .createQueryBuilder("user")
       .innerJoin("user.student", "student")

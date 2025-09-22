@@ -43,7 +43,7 @@ export default class User {
   @Column({ unique: true, length: 255 })
   email!: string;
 
-  @Column({ length: 255, select: false })
+  @Column({ length: 255 })
   password!: string;
 
   @Column({ length: 20, nullable: true })
@@ -74,7 +74,7 @@ export default class User {
   updated_at?: Date;
 
   /** Relationships **/
-  @OneToOne(() => Student, (student) => student.user, { cascade: true })
+  @OneToOne(() => Student, (student) => student.user, { onDelete: "CASCADE" })
   student: Student;
 
   // Hash password before insert or update

@@ -11,7 +11,9 @@ export default class ExpertisesGroup {
   name!: expertGroupType;
 
   // Relationships
-  @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group)
+  @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group, {
+    onDelete: "CASCADE",
+  })
   lecturers!: Lecturer[];
 
   // *** Methods ***

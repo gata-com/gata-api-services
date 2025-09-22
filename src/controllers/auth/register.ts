@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { UserRepository } from "../../repositories/UserRepository";
-import { UserRole, RegisterRequest, ExpertisesGroup } from "../../types/user";
+import { UserRole, } from "../../types/user";
+import { ApiResponse } from "@/types";
 
 // Register Student
 export const registerStudent = async (
-  req: Request<RegisterRequest>,
-  res: Response
+  req: Request,
+  res: Response<ApiResponse>
 ) => {
   try {
     const { name, nim, email, password, semester, whatsapp_number } = req.body;
@@ -14,66 +15,30 @@ export const registerStudent = async (
     const userRepo = new UserRepository();
 
     // Validasi input required untuk student
-    if (!name) {
-      return res.status(400).json({
-        success: false,
-        message: "Nama wajib diisi",
-      });
-    }
-
-    if (!nim) {
-      return res.status(400).json({
-        success: false,
-        message: "NIM wajib diisi",
-      });
-    }
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email wajib diisi",
-      });
-    }
-
-    if (!password) {
-      return res.status(400).json({
-        success: false,
-        message: "Password wajib diisi",
-      });
-    }
-
     // Cek kalau nim atau email sudah ada
     const nimExist = await userRepo.findByNimWithStudent(nim);
     if (nimExist) {
       return res.status(400).json({
-        success: false,
-        message: "NIM sudah terdaftar",
+        message: "Error Validation",
+        errors: { field: "nim", msg: "NIM sudah terdaftar" },
       });
     }
 
     const emailExist = await userRepo.findByEmail(email);
     if (emailExist) {
       return res.status(400).json({
-        success: false,
-        message: "Email sudah terdaftar",
+        message: "Error Validation",
+        errors: { field: "email", msg: "Email sudah terdaftar" },
       });
     }
 
-    // Validasi email harus student
-    if (!email.endsWith("@student.itera.ac.id")) {
-      return res.status(400).json({
-        success: false,
-        message: "Hanya email student.itera.ac.id yang diperbolehkan",
-      });
-    }
-
-    // Validasi semester untuk student
-    if (semester && (semester < 1 || semester > 14)) {
-      return res.status(400).json({
-        success: false,
-        message: "Semester harus antara 1-14",
-      });
-    }
+    // // Validasi email harus student
+    // if (!email.endsWith("@student.itera.ac.id")) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Hanya email student.itera.ac.id yang diperbolehkan",
+    //   });
+    // }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -98,19 +63,11 @@ export const registerStudent = async (
     // Save user using repository
     const newUser = await userRepo.createUserWithStudent(userData, studentData);
 
+    console.log("ID student registered:", userRepo.findById(newUser));
+
     return res.status(201).json({
       message: "Registrasi student berhasil",
-      data: {
-        id: newUser.id,
-        role: newUser.role,
-        name: newUser.name,
-        nim: newUser.nim,
-        email: newUser.email,
-        semester: newUser.semester,
-        whatsapp_number: newUser.whatsapp_number,
-        is_active: newUser.is_active,
-        created_at: newUser.created_at,
-      },
+      data:{}
     });
   } catch (error) {
     console.error("Student registration error:", error);

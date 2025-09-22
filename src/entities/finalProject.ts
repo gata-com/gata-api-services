@@ -93,10 +93,12 @@ export default class FinalProjects {
   supervisor_2_id!: number;
 
   // *** Relationships ***
-  @ManyToOne(() => ExpertisesGroup)
+  @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group!: ExpertisesGroup;
 
-  @OneToMany(() => FinalProjectMembers, (member) => member.final_project)
+  @OneToMany(() => FinalProjectMembers, (member) => member.final_project, {
+    onDelete: "CASCADE",
+  })
   members!: FinalProjectMembers[];
 
   // *** Method ***
@@ -120,10 +122,10 @@ export class FinalProjectMembers {
   updated_at!: Date;
 
   // *** Relationships ***
-  @ManyToOne(() => FinalProjects)
+  @ManyToOne(() => FinalProjects, { onDelete: "CASCADE" })
   final_project!: FinalProjects;
 
-  @OneToOne(() => Student)
+  @OneToOne(() => Student, { onDelete: "CASCADE" })
   @JoinColumn()
   student!: Student;
 

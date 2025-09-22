@@ -20,6 +20,7 @@ import {
   validateRegister,
   validateLogin,
 } from "../middleware/validation/validation";
+import { handleValidationErrors } from "../middleware/validation/handleErrors";
 import {
   forgotPasswordValidation,
   resetPasswordValidation,
@@ -72,15 +73,25 @@ router.get(
 );
 
 // Basic routes
-// router.post("/register", validateRegister, registerStudent);
-// router.post("/login", validateLogin, login);
-// router.get("/profile", auth, getProfile);
-// router.post("/refresh", auth, refreshToken);
+router.post(
+  "/register",
+  validateRegister,
+  // handleValidationErrors,
+  registerStudent
+);
+router.post(
+  "/login",
+  validateLogin,
+  // handleValidationErrors,
+  login
+);
+router.get("/profile", auth, getProfile);
+router.post("/refresh", auth, refreshToken);
 
 // // Reset password routes
-// router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
-// router.get("/reset-password/:token", verifyTokenValidation, verifyResetToken);
-// router.post("/reset-password", /* resetPasswordValidation, */ resetPassword);
+router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
+router.get("/reset-password/:token", verifyTokenValidation, verifyResetToken);
+router.post("/reset-password", /* resetPasswordValidation, */ resetPassword);
 
 // Test route untuk debug
 router.get("/test", (req, res) => {

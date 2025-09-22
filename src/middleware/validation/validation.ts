@@ -1,46 +1,48 @@
-import { body, ValidationChain, validationResult } from "express-validator";
-import { ApiResponse } from "../../types";
-import { Request, Response, NextFunction } from "express";
+import { body, ValidationChain } from "express-validator";
 
 export const validateRegister: ValidationChain[] = [
   body("nim")
     .trim()
     .isLength({ min: 8, max: 12 })
-    .withMessage("NIM must be 8-12 characters")
-    .isNumeric()
-    .withMessage("NIM must contain only numbers"),
+    .withMessage("NIM hanya boleh antara 8-12 karakter"),
+
+  body("semester")
+    .isInt({ min: 1, max: 14 })
+    .withMessage("Semester hanya boleh antara 1-14"),
 
   body("name")
     .trim()
     .isLength({ min: 2, max: 100 })
-    .withMessage("Name must be between 2-100 characters")
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage("Name can only contain letters and spaces"),
+    .withMessage("Name hanya boleh antara 2-100 karakter"),
+  // .matches(/^[a-zA-Z\s]+$/)
+  // .withMessage("Name hanya boleh mengandung huruf dan spasi"),
 
-  body("semester")
-    .isInt({ min: 1, max: 14 })
-    .withMessage("Semester must be between 1-14"),
+  // body("whatsappNumber")
+  //   .trim()
+  //   .matches(/^(\+62|62|0)8[1-9][0-9]{6,9}$/)
+  //   .withMessage("Format nomor WhatsApp tidak valid"),
 
-  body("whatsappNumber")
-    .trim()
-    .matches(/^(\+62|62|0)[0-9]{9,13}$/)
-    .withMessage("Invalid WhatsApp number format"),
-
-  body("email").isEmail().normalizeEmail().withMessage("Invalid email format"),
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Format email tidak valid"),
 
   body("password")
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-    ),
+    .isLength({ min: 8 })
+    .withMessage("Password harus memiliki minimal 8 karakter"),
+  // .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+  // .withMessage(
+  //   "Password harus mengandung setidaknya satu huruf besar, satu huruf kecil, dan satu angka"
+  // ),
 ];
 
 export const validateLogin: ValidationChain[] = [
-  body("email").isEmail().normalizeEmail().withMessage("Invalid email format"),
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Format email tidak valid"),
 
-  body("password").notEmpty().withMessage("Password is required"),
+  body("password").notEmpty().withMessage("Password harus diisi"),
 ];
 
 export const validateUpdateUser: ValidationChain[] = [
@@ -48,53 +50,33 @@ export const validateUpdateUser: ValidationChain[] = [
     .optional()
     .trim()
     .isLength({ min: 2, max: 100 })
-    .withMessage("Name must be between 2-100 characters")
+    .withMessage("Nama hanya boleh antara 2-100 karakter")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage("Name can only contain letters and spaces"),
+    .withMessage("Nama hanya boleh mengandung huruf dan spasi"),
 
   body("semester")
     .optional()
     .isInt({ min: 1, max: 14 })
-    .withMessage("Semester must be between 1-14"),
+    .withMessage("Semester hanya boleh antara 1-14"),
 
   body("nomorWhatsapp")
     .optional()
     .trim()
     .matches(/^(\+62|62|0)[0-9]{9,13}$/)
-    .withMessage("Invalid WhatsApp number format"),
+    .withMessage("Format nomor WhatsApp tidak valid"),
 
   body("email")
     .optional()
     .isEmail()
     .normalizeEmail()
-    .withMessage("Invalid email format"),
+    .withMessage("Format email tidak valid"),
 
   body("password")
     .optional()
     .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-    ),
+    .withMessage("Password harus memiliki minimal 6 karakter"),
+  // .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+  // .withMessage(
+  //   "Password harus mengandung setidaknya satu huruf besar, satu huruf kecil, dan satu angka"
+  // ),
 ];
-
-export const handleValidationErrors = (
-  req: Request,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): void => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    const errorMessages = errors.array().map((error) => error.msg);
-    res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: errorMessages,
-    });
-    return;
-  }
-
-  next();
-};

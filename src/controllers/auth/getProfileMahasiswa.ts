@@ -1,13 +1,7 @@
 import { Request, Response } from "express";
 import db from "../../config/database";
+import { AuthRequest } from "../../types";
 
-// Extend Request interface untuk include user
-interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    email: string;
-  };
-}
 export const getProfile = async (
   req: AuthRequest,
   res: Response

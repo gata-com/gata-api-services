@@ -28,10 +28,10 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
     const token = generateToken(user);
 
     // Redirect ke frontend dengan token
-    res.redirect(`${process.env.FRONTEND_URL}/auth/login?token=${token}`);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
   } catch (error) {
     res.redirect(
-      `${process.env.FRONTEND_URL}/auth/login?error=AuthenticationFailed`
+      `${process.env.FRONTEND_URL}/auth/callback?error=AuthenticationFailed`
     );
   }
 };
@@ -50,6 +50,6 @@ export const logout = (req: Request, res: Response) => {
     if (err) {
       return res.status(500).json({ message: "Logout failed" });
     }
-    return res.json({ message: "Logged out successfully" });
+    return res.status(200).json({ message: "Logged out successfully" });
   });
 };

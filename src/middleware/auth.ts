@@ -4,6 +4,8 @@ import { UserRepository } from "../repositories/UserRepository";
 import { AuthRequest, ApiResponse } from "../types";
 import { JwtPayload } from "../types/auth";
 
+import dotenv from "dotenv";
+
 const userRepository = new UserRepository();
 
 export const auth = async (
@@ -13,13 +15,10 @@ export const auth = async (
 ): Promise<void> => {
   try {
     const authHeader = req.header("Authorization");
-    console.log("🔍 Auth Header:", authHeader);
 
     const token = authHeader?.replace("Bearer ", "");
-    console.log("🔍 Token:", token);
 
     if (!token) {
-      console.log("❌ No token provided");
       res.status(401).json({
         success: false,
         message: "Access denied. No token provided",
@@ -27,17 +26,11 @@ export const auth = async (
       return;
     }
 
-    const decoded = jwt.verify(
-      token,
-      "your-very-strong-secret-here"
-    ) as JwtPayload;
-    console.log("🔍 Decoded token:", decoded);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
     const user = await userRepository.findById(decoded.userId);
-    console.log("🔍 User found:", user);
 
     if (!user || !user.is_active) {
-      console.log("❌ User not found or inactive");
       res.status(401).json({
         success: false,
         message: "Token is invalid or user is deactivated",
@@ -52,11 +45,8 @@ export const auth = async (
       email: user.email, // ✅ Set email
       role: user.role, // ✅ Set role
     };
-
-    console.log("✅ req.user set:", req.user);
     next();
   } catch (error) {
-    console.log("❌ Auth error:", error);
     res.status(401).json({
       success: false,
       message: "Token is invalid",

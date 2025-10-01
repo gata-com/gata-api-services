@@ -2,8 +2,9 @@ import { Router } from "express";
 import passport from "../config/google";
 
 // Controller imports
-import { registerStudent } from "../controllers/auth/register";
+import { register } from "../controllers/auth/register";
 import { login } from "../controllers/auth/login";
+import { logout } from "../controllers/auth/logout";
 import { forgotPassword } from "../controllers/auth/forgotPassword";
 import { resetPassword } from "../controllers/auth/resetPassword";
 import { getProfile } from "../controllers/auth/getProfileMahasiswa";
@@ -12,7 +13,6 @@ import { verifyResetToken } from "../controllers/auth/verifyResetToken";
 import {
   googleAuthCallback,
   getProfile as getGoogleProfile,
-  logout,
 } from "../controllers/auth/googleController";
 
 // Middleware imports
@@ -49,9 +49,40 @@ router.get(
   googleAuthCallback
 );
 
+// ============Standard Auth routes============
+router.post(
+  "/register",
+  // validateRegister,
+  // handleValidationErrors,
+  register
+);
+router.post(
+  "/login",
+  // validateLogin,
+  // handleValidationErrors,
+  login
+);
+
+// Reset password routes
+router.post(
+  "/forgot-password",
+  // forgotPasswordValidation,
+  forgotPassword
+);
+router.post(
+  "/reset-password/:token",
+  // verifyTokenValidation,
+  verifyResetToken
+);
+router.post("/reset-password", /* resetPasswordValidation, */ resetPassword);
+
 //============ Protected Routes ============
+router.post("/logout", logout);
+
 router.get("/profile", authenticateToken, getGoogleProfile);
-router.post("/logout", authenticateToken, logout);
+
+router.get("/profile", auth, getProfile);
+router.post("/refresh", auth, refreshToken);
 
 //============ Protected Routes using Role ============
 router.get(
@@ -71,27 +102,6 @@ router.get(
     res.json({ message: "Dosen dashboard" });
   }
 );
-
-// Basic routes
-router.post(
-  "/register",
-  validateRegister,
-  // handleValidationErrors,
-  registerStudent
-);
-router.post(
-  "/login",
-  validateLogin,
-  // handleValidationErrors,
-  login
-);
-router.get("/profile", auth, getProfile);
-router.post("/refresh", auth, refreshToken);
-
-// // Reset password routes
-router.post("/forgot-password", forgotPasswordValidation, forgotPassword);
-router.get("/reset-password/:token", verifyTokenValidation, verifyResetToken);
-router.post("/reset-password", /* resetPasswordValidation, */ resetPassword);
 
 // Test route untuk debug
 router.get("/test", (req, res) => {

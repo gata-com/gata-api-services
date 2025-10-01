@@ -4,7 +4,7 @@ import { JwtPayload as BaseJwtPayload } from "jsonwebtoken";
   Student Interfaces
 =================*/
 
-export interface StudentRegiesterRequest {
+export interface RegisterRequest {
   nim: string;
   semester: number;
   name: string;
@@ -13,22 +13,21 @@ export interface StudentRegiesterRequest {
   password: string;
 }
 
-export interface StudentLoginRequest {
-  emailOrNim: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  nim: string;
-  nama: string;
-  semester: number;
-  nomorWhatsapp: string;
-  email: string;
-  password: string;
-}
-
 export interface LoginRequest {
   email: string;
+  password: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface VerifyTokenRequest {
+  token: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
   password: string;
 }
 
@@ -48,12 +47,6 @@ export interface AuthResponse {
 // Reset Password Interfaces
 export interface ForgotPasswordRequest {
   email: string;
-}
-
-export interface ResetPasswordRequest {
-  token: string;
-  new_password: string;
-  confirm_password: string;
 }
 
 export interface VerifyTokenRequest {

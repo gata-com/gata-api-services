@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { Repository, QueryRunner } from "typeorm";
 import AppDataSource from "../config/database";
 import User from "../entities/user";
 import { Student } from "../entities/role";
@@ -13,11 +13,19 @@ import { PaginationResult, PaginationQuery } from "../types";
 
 export class UserRepository {
   public repository: Repository<User>;
+  public qr: any;
   private studentRepository: Repository<Student>;
 
-  constructor() {
-    this.repository = AppDataSource.getRepository(User);
-    this.studentRepository = AppDataSource.getRepository(Student);
+  constructor(private queryRunner?: QueryRunner) {
+    if (queryRunner) {
+      this.repository = queryRunner.manager.getRepository(User);
+      this.studentRepository = queryRunner.manager.getRepository(Student);
+    } else {
+      this.repository = AppDataSource.getRepository(User);
+      this.studentRepository = AppDataSource.getRepository(Student);
+    }
+
+    this.qr = AppDataSource.createQueryRunner();
   }
 
   async findAllActive(): Promise<User[]> {
@@ -34,7 +42,7 @@ export class UserRepository {
     userData: Partial<User>,
     studentData: Partial<Student>
   ): Promise<any> {
-    return await AppDataSource.manager.transaction(async (manager) => {
+    const id = await AppDataSource.manager.transaction(async (manager) => {
       // Create dan save user terlebih dahulu
       const user = manager.create(User, userData);
       const savedUser = await manager.save(user);
@@ -49,17 +57,18 @@ export class UserRepository {
       }
 
       // Return user dengan data student
-      // return await this.findById(savedUser.id);
       return savedUser.id;
     });
+
+    return await this.findById(id);
   }
 
   // Search user by id
-  async findById(id: number): Promise<any> {
+  async findById(id: number): Promise<User | null> {
     return await this.repository
       .createQueryBuilder("user")
-      .innerJoin("user.student", "student")
-      .where("student.userId = :id", { id })
+      .innerJoinAndSelect("user.student", "student")
+      .where("user.id = :id", { id })
       .getOne();
   }
 

@@ -10,6 +10,11 @@ export interface ApiResponse<T = unknown> {
   pagination?: PaginationMeta;
 }
 
+export interface ErrorValidation {
+  field: string;
+  msg: string;
+}
+
 // Pagination metadata
 export interface PaginationMeta {
   page: number;

@@ -27,6 +27,15 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
 
     const token = generateToken(user);
 
+    // Save token in the cookie (more secure)
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     // Redirect ke frontend dengan token
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
   } catch (error) {
@@ -43,13 +52,4 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
-};
-
-export const logout = (req: Request, res: Response) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).json({ message: "Logout failed" });
-    }
-    return res.status(200).json({ message: "Logged out successfully" });
-  });
 };

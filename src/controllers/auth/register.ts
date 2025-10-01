@@ -1,81 +1,53 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import { UserRepository } from "../../repositories/UserRepository";
-import { UserRole, } from "../../types/user";
 import { ApiResponse } from "@/types";
+import { RegisterRequest } from "@/types/auth";
+import { AuthService } from "@/services/auth/AuthServices";
+import { UserRepository } from "@/repositories/UserRepository";
 
 // Register Student
-export const registerStudent = async (
-  req: Request,
+export const register = async (
+  req: Request<RegisterRequest>,
   res: Response<ApiResponse>
 ) => {
   try {
-    const { name, nim, email, password, semester, whatsapp_number } = req.body;
+    const registerService = new AuthService();
+    const result = await registerService.register(req.body);
 
-    const userRepo = new UserRepository();
-
-    // Validasi input required untuk student
-    // Cek kalau nim atau email sudah ada
-    const nimExist = await userRepo.findByNimWithStudent(nim);
-    if (nimExist) {
+    if ("error" in result && result.error) {
       return res.status(400).json({
         message: "Error Validation",
-        errors: { field: "nim", msg: "NIM sudah terdaftar" },
+        errors: result.error,
       });
     }
 
-    const emailExist = await userRepo.findByEmail(email);
-    if (emailExist) {
-      return res.status(400).json({
-        message: "Error Validation",
-        errors: { field: "email", msg: "Email sudah terdaftar" },
-      });
-    }
-
-    // // Validasi email harus student
-    // if (!email.endsWith("@student.itera.ac.id")) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Hanya email student.itera.ac.id yang diperbolehkan",
-    //   });
-    // }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user data
-    const userData = {
-      role: "student" as UserRole,
-      semester: semester,
-      name: name,
-      email: email,
-      password: hashedPassword,
-      is_active: true,
-      whatsapp_number: whatsapp_number,
-    };
-
-    // Create student data
-    const studentData = {
-      nim: nim,
-      semester: semester,
-    };
-
-    // Save user using repository
-    const newUser = await userRepo.createUserWithStudent(userData, studentData);
-
-    console.log("ID student registered:", userRepo.findById(newUser));
+    // cookie for middleware authentication
+    // For production, consider setting 'secure: true' and 'sameSite' appropriately
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     return res.status(201).json({
       message: "Registrasi student berhasil",
-      data:{}
+      data: {
+        token: result.token,
+        user: {
+          email: result.user.email,
+          role: result.user.role,
+          name: result.user.name,
+        },
+      },
     });
   } catch (error) {
-    console.error("Student registration error:", error);
     return res.status(500).json({
-      success: false,
-      message:
-        "Terjadi kesalahan server :" +
-        (error instanceof Error ? error.message : "Unknown error"),
+      message: "Terjadi kesalahan",
+      errors: {
+        field: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
     });
   }
 };

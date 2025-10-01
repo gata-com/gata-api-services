@@ -1,85 +1,56 @@
 // controllers/auth/login.ts
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import AppDataSource from "../../config/database";
 import dotenv from "dotenv";
-import { UserRepository } from "../../repositories/UserRepository";
-
+import { AuthService } from "../../services/auth/AuthServices";
 import { ApiResponse } from "@/types";
+import { LoginRequest } from "@/types/auth";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
-
 export const login = async (
-  req: Request,
+  req: Request<LoginRequest>,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { email, password } = req.body;
+    const authService = new AuthService();
+    const result = await authService.login(req.body);
 
-    const userRepo = new UserRepository();
-
-    // Validasi input
-    // Cari user dengan raw query TypeORM
-    const user = await userRepo.findByEmail(email);
-
-    console.log("User found:", user);
-
-    if (!user) {
+    if ("error" in result && result.error) {
       return res.status(400).json({
         message: "Error Validation",
-        errors: { field: "email", msg: "Email tidak ditemukan" },
+        errors: result.error,
       });
     }
 
-    // Validasi password
-    const validPassword = await bcrypt.compare(password, user.password);
+    // cookie for middleware authentication
+    // For production, consider setting 'secure: true' and 'sameSite' appropriately
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-    if (!validPassword) {
-      return res.status(400).json({
-        message: "Error Validation",
-        errors: { field: "password", msg: "Password salah" },
-      });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        id: user.id,
-        role: user.role,
-        name: user.name, // Sesuai dengan field database
-        email: user.email,
-      },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    // Update last login
-    try {
-      await AppDataSource.query(
-        "UPDATE users SET last_login = NOW() WHERE id = ?",
-        [user.id]
-      );
-    } catch (updateError) {
-      console.log("Failed to update last_login:", updateError);
-    }
-
+    // result is now guaranteed to have token and user
     return res.status(200).json({
       message: "Login berhasil",
       data: {
-        token: token,
+        token: result.token,
         user: {
-          role: user.role,
-          email: user.email,
+          name: result.user.name,
+          role: result.user.role,
+          email: result.user.email,
         },
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     return res.status(500).json({
       message: "Terjadi kesalahan",
-      errors: { field: "server", msg: error.message },
+      errors: {
+        field: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
     });
   }
 };

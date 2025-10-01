@@ -94,8 +94,8 @@ app.use(passport.session());
 app.set("trust proxy", 1);
 
 // Passport
-// app.use(passport.initialize());
-// app.use(passport.session());
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ======================
 // Routes

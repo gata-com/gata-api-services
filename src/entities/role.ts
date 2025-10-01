@@ -97,7 +97,7 @@ export class Student {
   updated_at!: Date;
 
   // *** Relationships ***
-  @OneToOne(() => User, { onDelete: "CASCADE" })
+  @OneToOne(() => User, (user) => user.student, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
   user!: User;
 

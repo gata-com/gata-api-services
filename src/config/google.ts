@@ -32,6 +32,7 @@ passport.use(
         user = userRepository.repository.create({
           googleId: profile.id,
           email: email,
+          password: "",
           name: profile.displayName,
           role: role,
           is_active: true,

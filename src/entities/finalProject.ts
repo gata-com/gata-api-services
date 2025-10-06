@@ -24,6 +24,40 @@ import { Student } from "./role";
 //   REJECTED = "rejected",
 // }
 
+// Final Project Periods
+@Entity("final_project_periods")
+export class FinalProjectPeriods {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ type: "date" })
+  start_date: string;
+
+  @Column({ type: "date" })
+  end_date: string;
+
+  @Column({ type: "text", nullable: true })
+  description?: string;
+
+  @CreateDateColumn()
+  created_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
+
+  // *** Relationships ***
+  @OneToMany(
+    () => FinalProjects,
+    (finalProject) => finalProject.final_project_period,
+    {
+      onDelete: "CASCADE",
+    }
+  )
+  final_projects!: FinalProjects[];
+
+  // *** Method ***
+}
+
 //  Final Projects
 @Entity("final_projects")
 @Index(["supervisor_1_status"])
@@ -32,7 +66,7 @@ import { Student } from "./role";
 @Index(["type"])
 @Index(["supervisor_1_id"])
 @Index(["supervisor_2_id"])
-export default class FinalProjects {
+export class FinalProjects {
   @PrimaryGeneratedColumn()
   id!: number;
 
@@ -100,6 +134,9 @@ export default class FinalProjects {
     onDelete: "CASCADE",
   })
   members!: FinalProjectMembers[];
+
+  @ManyToOne(() => FinalProjectPeriods, { onDelete: "CASCADE" })
+  final_project_period!: FinalProjectPeriods;
 
   // *** Method ***
 }

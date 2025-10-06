@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { Lecturer } from "./role";
+import { FinalProjects } from "./finalProject";
 import { ExpertisesGroup as expertGroupType } from "../types/user";
 
 @Entity("expertises_group")
@@ -10,11 +11,20 @@ export default class ExpertisesGroup {
   @Column({ type: "enum", enum: ["RPLSI", "AIDE", "KMSI"], unique: true })
   name!: expertGroupType;
 
-  // Relationships
+  // *** Relationships ***
   @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group, {
     onDelete: "CASCADE",
   })
   lecturers!: Lecturer[];
+
+  @OneToMany(
+    () => FinalProjects,
+    (finalProject) => finalProject.expertises_group,
+    {
+      onDelete: "CASCADE",
+    }
+  )
+  final_projects!: FinalProjects[];
 
   // *** Methods ***
 }

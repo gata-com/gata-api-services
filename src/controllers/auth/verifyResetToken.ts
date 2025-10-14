@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { AuthService } from "@/services/auth/AuthServices";
+import { AuthService } from "@/services/auth/authServices";
 import { VerifyTokenRequest } from "@/types/auth";
 
 export const verifyResetToken = async (

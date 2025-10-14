@@ -1,7 +1,7 @@
 // controllers/auth/login.ts
 import { Request, Response } from "express";
 import dotenv from "dotenv";
-import { AuthService } from "../../services/auth/AuthServices";
+import { AuthService } from "../../services/auth/authServices";
 import { ApiResponse } from "@/types";
 import { LoginRequest } from "@/types/auth";
 

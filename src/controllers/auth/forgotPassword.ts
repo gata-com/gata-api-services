@@ -1,7 +1,7 @@
 // controllers/auth/forgotPassword.ts
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { AuthService } from "@/services/auth/AuthServices";
+import { AuthService } from "@/services/auth/authServices";
 import { ForgotPasswordRequest } from "@/types/auth";
 
 export const forgotPassword = async (

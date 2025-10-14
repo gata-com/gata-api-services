@@ -7,7 +7,7 @@ import {
   Index,
   ManyToOne,
 } from "typeorm";
-import Admin from "./role";
+import User from "./user";
 
 // enum AnnouncementPriority {
 //   LOW = "low",
@@ -39,7 +39,7 @@ export default class Announcements {
   updated_at!: Date;
 
   // *** Relationships ***
-  @ManyToOne(() => Admin, { onDelete: "CASCADE" })
-  admin!: Admin;
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  user!: User;
   // *** Methods ***
 }

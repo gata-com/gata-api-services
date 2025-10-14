@@ -11,7 +11,7 @@ import {
   Index,
 } from "typeorm";
 import ExpertisesGroup from "./expertisesGroup";
-import { Student } from "./role";
+import { Student, Lecturer } from "./role";
 
 // enum FinalProjectType {
 //   REGULAR = "regular",
@@ -30,10 +30,10 @@ export class FinalProjectPeriods {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: "date" })
+  @Column()
   start_date: string;
 
-  @Column({ type: "date" })
+  @Column()
   end_date: string;
 
   @Column({ type: "text", nullable: true })
@@ -64,24 +64,23 @@ export class FinalProjectPeriods {
 @Index(["supervisor_2_status"])
 @Index(["admin_status"])
 @Index(["type"])
-@Index(["supervisor_1_id"])
-@Index(["supervisor_2_id"])
 export class FinalProjects {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({
-    type: "text",
-  })
-  title: string;
-
   @Column({ type: "enum", enum: ["regular", "capstone"] })
   type: string;
+
+  @Column({ type: "enum", enum: ["baru", "dispensasi"] })
+  status!: string;
+
+  @Column({ type: "enum", enum: ["dosen", "perusahaan", "mandiri"] })
+  source_topic!: string;
 
   @Column({ type: "text", nullable: true })
   description?: string;
 
-  @Column()
+  @Column({ default: 3, nullable: true })
   max_members: number;
 
   @Column({
@@ -120,12 +119,6 @@ export class FinalProjects {
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 
-  @Column()
-  supervisor_1_id!: number;
-
-  @Column({ nullable: true })
-  supervisor_2_id!: number;
-
   // *** Relationships ***
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group!: ExpertisesGroup;
@@ -137,6 +130,12 @@ export class FinalProjects {
 
   @ManyToOne(() => FinalProjectPeriods, { onDelete: "CASCADE" })
   final_project_period!: FinalProjectPeriods;
+
+  @ManyToOne(() => Lecturer, { onDelete: "CASCADE" })
+  supervisor_1!: Lecturer;
+
+  @ManyToOne(() => Lecturer, { onDelete: "CASCADE", nullable: true })
+  supervisor_2!: Lecturer;
 
   // *** Method ***
 }
@@ -150,7 +149,16 @@ export class FinalProjectMembers {
   id!: number;
 
   @Column({ type: "text" })
-  sub_title: string;
+  title: string;
+
+  @Column({ type: "text" })
+  resume: string;
+
+  @Column()
+  draft_path: string;
+
+  @Column()
+  dispen_path: string;
 
   @CreateDateColumn()
   created_at!: Date;

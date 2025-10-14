@@ -16,16 +16,6 @@ import {
 } from "../controllers/auth/googleController";
 
 // Middleware imports
-import {
-  validateRegister,
-  validateLogin,
-} from "../middleware/validation/validation";
-import { handleValidationErrors } from "../middleware/validation/handleErrors";
-import {
-  forgotPasswordValidation,
-  resetPasswordValidation,
-  verifyTokenValidation,
-} from "../middleware/resetPasswordValidation";
 import { auth } from "../middleware/auth";
 import { authenticateToken } from "../middleware/auth";
 import {
@@ -34,6 +24,12 @@ import {
   requireAdmin,
   requireLecturerOrAdmin,
 } from "@/middleware/role";
+
+import {
+  validateRegister,
+  validateLogin,
+} from "../middleware/validation/validation";
+import { handleValidationErrors } from "../middleware/validation/handleErrors";
 
 const router: Router = Router();
 
@@ -50,6 +46,9 @@ router.get(
 );
 
 // ============Standard Auth routes============
+
+router.post("/test/login", validateLogin, handleValidationErrors);
+
 router.post(
   "/register",
   // validateRegister,

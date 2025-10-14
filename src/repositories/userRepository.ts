@@ -28,11 +28,11 @@ export class UserRepository {
     this.qr = AppDataSource.createQueryRunner();
   }
 
-  async findAllActive(): Promise<User[]> {
-    return await this.repository.find({ where: { is_active: true } });
-  }
-
-  // create new user
+  /**
+   * Create new user
+   * @param userData
+   * @returns
+   */
   async create(userData: Partial<User>): Promise<User> {
     const user = this.repository.create(userData);
     return await this.repository.save(user);
@@ -63,13 +63,12 @@ export class UserRepository {
     return await this.findById(id);
   }
 
-  // Search user by id
-  async findById(id: number): Promise<User | null> {
-    return await this.repository
-      .createQueryBuilder("user")
-      .innerJoinAndSelect("user.student", "student")
-      .where("user.id = :id", { id })
-      .getOne();
+  /**
+   * Find user
+   * @returns
+   */
+  async findAllActive(): Promise<User[]> {
+    return await this.repository.find({ where: { is_active: true } });
   }
 
   // Search user by email
@@ -77,6 +76,40 @@ export class UserRepository {
     return await this.repository.findOne({
       where: { email },
     });
+  }
+
+  async findById(id: number): Promise<User | null> {
+    return await this.repository.findOne({
+      where: { id },
+    });
+  }
+  // find by query email (like %email%) if role is student
+  async findByQueryEmail(query: string): Promise<User[]> {
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.student", "student")
+      .where("user.email LIKE :query", { query: `%${query}%` })
+      .andWhere("user.role = :role", { role: "student" })
+      .select(["user.id", "user.name", "user.email", "student.id"])
+      .getMany();
+  }
+
+  // find all lecturers
+  async findAllWithLecturer(): Promise<User[]> {
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.lecturer", "lecturer")
+      .where("user.role = :role", { role: "lecturer" })
+      .select(["user.id", "user.name", "user.email", "lecturer.id"])
+      .getMany();
+  }
+  // Search user by id
+  async findByIdWithStudent(id: number): Promise<User | null> {
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.student", "student")
+      .where("user.id = :id", { id })
+      .getOne();
   }
 
   async findByIdWithPassword(id: number): Promise<User | null> {

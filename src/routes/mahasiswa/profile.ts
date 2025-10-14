@@ -9,7 +9,6 @@ import {
   getStatusPengajuan,
   requestPembimbingChange,
 } from "../../controllers/mahasiswa/profileController";
-import { upload } from "../../middleware/upload";
 import { auth } from "../../middleware/auth";
 
 const router = Router();
@@ -22,11 +21,11 @@ router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
 
 // Profile picture
-router.post(
-  "/profile/picture",
-  upload.single("profilePicture"),
-  uploadProfilePicture
-);
+// router.post(
+//   "/profile/picture",
+//   upload.single("profilePicture"),
+//   uploadProfilePicture
+// );
 router.delete("/profile/picture", deleteProfilePicture);
 
 // Password
@@ -37,6 +36,5 @@ router.get("/profile/status-pengajuan", getStatusPengajuan);
 
 // Pembimbing change request
 router.post("/profile/request-pembimbing-change", requestPembimbingChange);
-
 
 export default router;

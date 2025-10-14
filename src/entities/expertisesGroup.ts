@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { Lecturer } from "./role";
 import { FinalProjects } from "./finalProject";
 import { ExpertisesGroup as expertGroupType } from "../types/user";
@@ -8,8 +15,17 @@ export default class ExpertisesGroup {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: "enum", enum: ["RPLSI", "AIDE", "KMSI"], unique: true })
-  name!: expertGroupType;
+  @Column({ unique: true })
+  name!: string;
+
+  @Column({ type: "text", nullable: true })
+  description?: string;
+
+  @CreateDateColumn()
+  created_at?: Date;
+
+  @UpdateDateColumn()
+  updated_at?: Date;
 
   // *** Relationships ***
   @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group, {

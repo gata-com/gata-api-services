@@ -1,16 +1,11 @@
-// controllers/auth/resetPassword.ts
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { ResetPasswordRequest } from "@/types/auth";
-import { AuthService } from "@/services/auth/authServices";
+import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirService";
 
-export const resetPassword = async (
-  req: Request<ResetPasswordRequest>,
-  res: Response<ApiResponse>
-): Promise<Response> => {
+export const getLecturer = async (req: Request, res: Response<ApiResponse>) => {
   try {
-    const authService = new AuthService();
-    const result = await authService.resetPassword(req.body);
+    const tugasAkhirService = new TugasAkhirService();
+    const result = await tugasAkhirService.getLecturers();
 
     if ("error" in result && result.error) {
       return res.status(400).json({
@@ -18,10 +13,9 @@ export const resetPassword = async (
         errors: result.error,
       });
     }
-
     return res.status(200).json({
-      message: "Password berhasil direset",
-      data: {},
+      message: "Data dosen ditemukan",
+      data: result.data,
     });
   } catch (error) {
     return res.status(500).json({

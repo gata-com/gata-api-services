@@ -29,17 +29,26 @@ passport.use(
           role = "lecturer";
         }
 
-        user = userRepository.repository.create({
-          googleId: profile.id,
-          email: email,
-          password: "",
-          name: profile.displayName,
-          role: role,
-          is_active: true,
-        });
+        // email must be @student.itera.ac.id
+        // if (!email?.endsWith("@student.itera.ac.id")) {
+        //   return done(
+        //     new Error("Email must be from student.itera.ac.id"),
+        //     undefined
+        //   );
+        // }
 
-        user = await userRepository.repository.save(user);
-        done(null, user);
+        const newUser = await userRepository.createUserWithStudent(
+          {
+            googleId: profile.id,
+            email: email,
+            password: "",
+            name: profile.displayName,
+            role: role,
+            is_active: true,
+          },
+          {}
+        );
+        done(null, newUser);
       } catch (error) {
         done(error as Error, undefined);
       }

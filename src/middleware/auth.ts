@@ -4,8 +4,6 @@ import { UserRepository } from "../repositories/UserRepository";
 import { AuthRequest, ApiResponse } from "../types";
 import { JwtPayload } from "../types/auth";
 
-import dotenv from "dotenv";
-
 const userRepository = new UserRepository();
 
 export const auth = async (
@@ -20,7 +18,6 @@ export const auth = async (
 
     if (!token) {
       res.status(401).json({
-        success: false,
         message: "Access denied. No token provided",
       });
       return;
@@ -28,11 +25,10 @@ export const auth = async (
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
-    const user = await userRepository.findById(decoded.userId);
+    const user = await userRepository.findById(parseInt(decoded.id));
 
     if (!user || !user.is_active) {
       res.status(401).json({
-        success: false,
         message: "Token is invalid or user is deactivated",
       });
       return;
@@ -40,73 +36,16 @@ export const auth = async (
 
     // ✅ QUICK FIX: Use type assertion
     (req.user as any) = {
-      id: decoded.userId, // ✅ Set id
-      userId: decoded.userId, // ✅ Keep userId untuk backward compatibility
-      email: user.email, // ✅ Set email
-      role: user.role, // ✅ Set role
+      id: decoded.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
     };
     next();
-  } catch (error) {
+  } catch (error: any) {
     res.status(401).json({
-      success: false,
+      errors: error.message,
       message: "Token is invalid",
-    });
-  }
-};
-
-export const adminAuth = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  if (req.user?.role !== "admin") {
-    res.status(403).json({
-      success: false,
-      message: "Access denied. Admin privileges required",
-    });
-    return;
-  }
-  next();
-};
-
-export const studentAuth = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  if (req.user?.role !== "student") {
-    res.status(403).json({
-      success: false,
-      message: "Access denied. Student privileges required",
-    });
-    return;
-  }
-  next();
-};
-
-export const selfOrAdminAuth = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  const targetUserId = parseInt(req.params.id, 10);
-  const currentUserId = req.user?.userId;
-  const currentUserRole = req.user?.role;
-
-  if (isNaN(targetUserId)) {
-    res.status(400).json({
-      success: false,
-      message: "Invalid user ID",
-    });
-    return;
-  }
-
-  if (currentUserRole === "admin" || currentUserId === targetUserId) {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: "Access denied. You can only access your own profile",
     });
   }
 };

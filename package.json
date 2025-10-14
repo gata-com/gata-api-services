@@ -9,9 +9,11 @@
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "prod": "npm run build && npm start",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migrate:fresh": "ts-node ./src/scripts/migration-fresh.ts"
+    "migrate:fresh": "ts-node ./src/scripts/migration-fresh.ts",
+    "seed": "ts-node ./src/seeds/seed.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@types/nodemailer": "^6.4.17",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
@@ -24,6 +26,7 @@
     "express-session": "^1.18.2",
     "express-validator": "^7.0.1",
     "helmet": "^7.0.0",
+    "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
@@ -34,7 +37,8 @@
     "reflect-metadata": "^0.1.14",
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "typeorm-extension": "^3.7.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

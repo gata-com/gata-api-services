@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 import crypto from "crypto";
 import { UserRepository } from "../../repositories/UserRepository";
 import { UserRole } from "../../types/user";
@@ -11,13 +11,29 @@ import {
   VerifyTokenRequest,
   ResetPasswordRequest,
 } from "@/types/auth";
-import { sendResetPasswordEmail } from "../../services/emailService";
+import { sendResetPasswordEmail } from "../emailService";
 
 export class AuthService {
   private userRepo: UserRepository;
+  private JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
   constructor() {
     this.userRepo = new UserRepository();
+  }
+
+  private async generateJWT(user: any): Promise<string> {
+    const token = await new SignJWT({
+      id: user.id,
+      role: user.role,
+      name: user.name, // Sesuai dengan field database
+      email: user.email,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d") // Token berlaku 7 hari
+      .sign(this.JWT_SECRET);
+
+    return token;
   }
 
   async login(
@@ -25,7 +41,6 @@ export class AuthService {
   ): Promise<
     { error: null; token: string; user: any } | { error: ErrorValidation }
   > {
-    const JWT_SECRET = process.env.JWT_SECRET || "secretkey";
     const { email, password } = data;
 
     // transaction DB
@@ -57,16 +72,7 @@ export class AuthService {
       }
 
       // Generate JWT token
-      const token = jwt.sign(
-        {
-          id: user.id,
-          role: user.role,
-          name: user.name, // Sesuai dengan field database
-          email: user.email,
-        },
-        JWT_SECRET,
-        { expiresIn: "1h" }
-      );
+      const token = await this.generateJWT(user);
 
       // update last login
       const updateUser = await this.userRepo.updateLastLogin(user.id);
@@ -99,6 +105,16 @@ export class AuthService {
 
       const nimExist = await this.userRepo.findByNimWithStudent(nim);
       const emailExist = await this.userRepo.findByEmail(email);
+
+      // email harus berakhiran @student.itera.ac.id
+      // if (!email.endsWith("@student.itera.ac.id")) {
+      //   return {
+      //     error: {
+      //       field: "email",
+      //       msg: "Email harus @student.itera.ac.id",
+      //     },
+      //   };
+      // }
 
       if (nimExist) {
         return {
@@ -274,7 +290,7 @@ export class AuthService {
         return {
           error: {
             field: "token",
-            msg: "Token tidak valid atau kadaluarsa",
+            msg: "Token tidak valid",
           },
         };
       }
@@ -283,8 +299,14 @@ export class AuthService {
         return {
           error: {
             field: "token",
-            msg: "Token tidak valid atau kadaluarsa",
+            msg: "Token kadaluarsa",
           },
+        };
+      }
+
+      if (!password) {
+        return {
+          error: { field: "password", msg: "Password harus diisi" },
         };
       }
 

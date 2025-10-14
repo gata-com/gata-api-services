@@ -55,13 +55,10 @@ export interface VerifyTokenRequest {
 
 // Extend the base JwtPayload from jsonwebtoken
 export interface JwtPayload extends BaseJwtPayload {
-  userId: number;
-  role?: string;
-  email?: string;
-  nama?: string;
-  nim?: string;
-  iat?: number;
-  exp?: number;
+  id: string;
+  role: string;
+  name: string;
+  email: string;
 }
 
 // For token generation (without iat, exp which are added by jwt.sign)

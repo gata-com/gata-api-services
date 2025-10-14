@@ -4,7 +4,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { errorHandler } from "./middleware/errorHandler";
 import { config } from "./config/config";
 import { ApiResponse, ErrorResponse } from "./types";
 import session from "express-session";
@@ -20,7 +19,8 @@ import AppDataSource from "./config/database";
 // Route imports
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
-import mahasiswaRoutes from "./routes/mahasiswa/profile";
+import mahasiswaRoutes from "./routes/mahasiswa";
+import adminRoutes from "./routes/admin";
 
 // Load environment variables
 dotenv.config();
@@ -141,8 +141,9 @@ app.get("/", (req: Request, res: Response) => {
 
 // API routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
+// app.use("/api/users", userRoutes);
 app.use("/api/mahasiswa", mahasiswaRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Enhanced health check endpoint
 app.get("/api/health", async (req: Request, res: Response) => {
@@ -311,8 +312,5 @@ app.all("*", (req: Request, res: Response) => {
   };
   res.status(404).json(response);
 });
-
-// Global error handling middleware
-app.use(errorHandler);
 
 export default app;

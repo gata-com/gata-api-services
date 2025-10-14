@@ -13,32 +13,7 @@ import {
 
 import ExpertisesGroup from "./expertisesGroup";
 import User from "./user";
-import Announcements from "./announcement";
-
-// Admin
-@Entity("admin")
-export default class Admin {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
-  @CreateDateColumn()
-  created_at!: Date;
-
-  @UpdateDateColumn()
-  updated_at!: Date;
-
-  // *** Relationships ***
-  @OneToOne(() => User, { onDelete: "CASCADE" })
-  @JoinColumn()
-  user!: User;
-
-  @OneToMany(() => Announcements, (announcement) => announcement.admin, {
-    onDelete: "CASCADE",
-  })
-  announcements!: Announcements[];
-
-  // *** Methods ***
-}
+import { FinalProjects } from "./finalProject";
 
 // Lecturer
 @Entity("lecturer")
@@ -48,8 +23,8 @@ export class Lecturer {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true })
-  nip!: number;
+  @Column({ length: 15, unique: true })
+  nip!: string;
 
   @Column({ length: 10, nullable: true })
   lecturer_code!: string;
@@ -74,6 +49,12 @@ export class Lecturer {
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group!: ExpertisesGroup;
 
+  @OneToMany(() => FinalProjects, (fp) => fp.supervisor_1)
+  supervisedProjects!: FinalProjects[];
+
+  @OneToMany(() => FinalProjects, (fp) => fp.supervisor_2)
+  coSupervisedProjects!: FinalProjects[];
+
   // *** Method ***
 }
 
@@ -84,11 +65,11 @@ export class Student {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ unique: true, length: 9 })
-  nim!: string; // Nomor Induk Mahasiswa
+  @Column({ unique: true, length: 9, nullable: true })
+  nim?: string; // Nomor Induk Mahasiswa
 
-  @Column({ default: 1 })
-  semester!: number;
+  @Column({ default: 7, nullable: true })
+  semester?: number;
 
   @CreateDateColumn()
   created_at!: Date;

@@ -7,11 +7,13 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Index,
+  OneToMany,
 } from "typeorm";
 import bcrypt from "bcryptjs";
 import { config } from "../config/config";
 import { OneToOne } from "typeorm";
-import { Student } from "./role";
+import { Lecturer, Student } from "./role";
+import Announcements from "./announcement";
 
 //  enum UserRole {
 //   STUDENT = "student",
@@ -53,7 +55,6 @@ export default class User {
   @Column({ length: 255, nullable: true, select: false })
   reset_token?: string;
 
-  // MySQL: Use DATETIME instead of datetime
   @Column({
     type: "datetime",
     nullable: true,
@@ -77,6 +78,17 @@ export default class User {
   @OneToOne(() => Student, (student) => student.user, { onDelete: "CASCADE" })
   student: Student;
 
+  @OneToOne(() => Lecturer, (lecturer) => lecturer.user, {
+    onDelete: "CASCADE",
+  })
+  lecturer: Lecturer;
+
+  @OneToMany(() => Announcements, (announcement) => announcement.user, {
+    onDelete: "CASCADE",
+  })
+  announcements!: Announcements[];
+
+  /** Method **/
   // Hash password before insert or update
   @BeforeInsert()
   @BeforeUpdate()

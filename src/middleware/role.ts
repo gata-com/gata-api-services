@@ -2,7 +2,7 @@ import { Response, NextFunction } from "express";
 import { AuthRequest, ApiResponse } from "../types";
 
 export const requireRole = (roles: string[]) => {
-  return (req: AuthRequest, res: Response<ApiResponse>, next: NextFunction) => {
+  return (req: any, res: Response<ApiResponse>, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }

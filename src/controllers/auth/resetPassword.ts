@@ -5,7 +5,7 @@ import { ResetPasswordRequest } from "@/types/auth";
 import { AuthService } from "@/services/auth/authServices";
 
 export const resetPassword = async (
-  req: Request<ResetPasswordRequest>,
+  req: Request,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {

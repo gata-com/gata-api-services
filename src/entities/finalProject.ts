@@ -26,6 +26,8 @@ import { Student, Lecturer } from "./role";
 
 // Final Project Periods
 @Entity("final_project_periods")
+@Index(["start_date"])
+@Index(["end_date"])
 export class FinalProjectPeriods {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -63,7 +65,6 @@ export class FinalProjectPeriods {
 @Index(["supervisor_1_status"])
 @Index(["supervisor_2_status"])
 @Index(["admin_status"])
-@Index(["type"])
 export class FinalProjects {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -114,10 +115,10 @@ export class FinalProjects {
   admin_note?: string;
 
   @CreateDateColumn({ name: "created_at" })
-  createdAt!: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: "updated_at" })
-  updatedAt!: Date;
+  updated_at!: Date;
 
   // *** Relationships ***
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
@@ -158,7 +159,19 @@ export class FinalProjectMembers {
   draft_path: string;
 
   @Column()
-  dispen_path: string;
+  draft_filename!: string;
+
+  @Column()
+  draft_size!: string;
+
+  @Column({ nullable: true })
+  dispen_path?: string;
+
+  @Column({ nullable: true })
+  dispen_filename?: string;
+
+  @Column({ nullable: true })
+  dispen_size?: string;
 
   @CreateDateColumn()
   created_at!: Date;

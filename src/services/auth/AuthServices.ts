@@ -25,7 +25,7 @@ export class AuthService {
     const token = await new SignJWT({
       id: user.id,
       role: user.role,
-      name: user.name, // Sesuai dengan field database
+      name: user.name, // Sesuai dengan path database
       email: user.email,
     })
       .setProtectedHeader({ alg: "HS256" })
@@ -53,7 +53,7 @@ export class AuthService {
       if (!user) {
         return {
           error: {
-            field: "email",
+            path: "email",
             msg: "Email tidak ditemukan",
           },
         };
@@ -65,7 +65,7 @@ export class AuthService {
       if (!validPassword) {
         return {
           error: {
-            field: "password",
+            path: "password",
             msg: "Password salah",
           },
         };
@@ -110,7 +110,7 @@ export class AuthService {
       // if (!email.endsWith("@student.itera.ac.id")) {
       //   return {
       //     error: {
-      //       field: "email",
+      //       path: "email",
       //       msg: "Email harus @student.itera.ac.id",
       //     },
       //   };
@@ -118,12 +118,12 @@ export class AuthService {
 
       if (nimExist) {
         return {
-          error: { field: "nim", msg: "NIM sudah terdaftar" },
+          error: { path: "nim", msg: "NIM sudah terdaftar" },
         };
       }
       if (emailExist) {
         return {
-          error: { field: "email", msg: "Email sudah terdaftar" },
+          error: { path: "email", msg: "Email sudah terdaftar" },
         };
       }
 
@@ -162,7 +162,7 @@ export class AuthService {
       // If login failed, return the error
       if ("error" in loginResult && loginResult.error) {
         return {
-          error: { field: loginResult.error.field, msg: loginResult.error.msg },
+          error: { path: loginResult.error.path, msg: loginResult.error.msg },
         };
       }
 
@@ -189,7 +189,7 @@ export class AuthService {
 
       if (!user) {
         return {
-          error: { field: "email", msg: "Email tidak ditemukan" },
+          error: { path: "email", msg: "Email tidak ditemukan" },
         };
       }
 
@@ -215,7 +215,7 @@ export class AuthService {
         if (!emailSent) {
           return {
             error: {
-              field: "email",
+              path: "email",
               msg: "Gagal mengirim email reset password",
             },
           };
@@ -251,7 +251,7 @@ export class AuthService {
       const { token } = data;
       if (!token) {
         return {
-          error: { field: "token", msg: "Token tidak ditemukan" },
+          error: { path: "token", msg: "Token tidak ditemukan" },
         };
       }
 
@@ -259,7 +259,7 @@ export class AuthService {
 
       if (!user) {
         return {
-          error: { field: "token", msg: "Token tidak valid atau kadaluarsa" },
+          error: { path: "token", msg: "Token tidak valid atau kadaluarsa" },
         };
       }
       // commit transaction
@@ -280,7 +280,7 @@ export class AuthService {
 
       if (!token) {
         return {
-          error: { field: "token", msg: "Token tidak ditemukan" },
+          error: { path: "token", msg: "Token tidak ditemukan" },
         };
       }
 
@@ -289,7 +289,7 @@ export class AuthService {
       if (!user) {
         return {
           error: {
-            field: "token",
+            path: "token",
             msg: "Token tidak valid",
           },
         };
@@ -298,7 +298,7 @@ export class AuthService {
       if (!user.reset_token_expires || user.reset_token_expires < new Date()) {
         return {
           error: {
-            field: "token",
+            path: "token",
             msg: "Token kadaluarsa",
           },
         };
@@ -306,7 +306,7 @@ export class AuthService {
 
       if (!password) {
         return {
-          error: { field: "password", msg: "Password harus diisi" },
+          error: { path: "password", msg: "Password harus diisi" },
         };
       }
 

@@ -7,6 +7,17 @@ const storage = multer.memoryStorage();
 // Konfigurasi multer
 const upload = multer({
   storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Hanya izinkan file PDF
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files are allowed"));
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Maksimum 50MB per file
+  },
 });
 
 // Export berbagai konfigurasi upload

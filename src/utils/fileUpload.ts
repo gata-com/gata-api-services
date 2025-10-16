@@ -7,7 +7,7 @@ const mkdir = promisify(fs.mkdir);
 
 export class FileUploadUtil {
   private uploadDir: string;
-  private baseDir: string = "src/storages";
+  private baseDir: string = "src/storages/";
 
   constructor() {
     this.uploadDir = path.join(process.cwd(), this.baseDir);
@@ -96,12 +96,19 @@ export class FileUploadUtil {
   /**
    * Sanitize filename untuk keamanan
    */
-  private sanitizeFilename(filename: string): string {
+  sanitizeFilename(filename: string): string {
     // Remove path traversal attempts dan karakter berbahaya
     return filename
       .replace(/[^a-zA-Z0-9._-]/g, "_")
       .replace(/_{2,}/g, "_")
-      .substring(0, 200); // Limit length
+      .substring(0, 50); // Limit length
+  }
+
+  /**
+   * Byte to MB converter
+   */
+  bytesToMB(bytes: number): any {
+    return (bytes / (1024 * 1024)).toFixed(2); // 2 angka di belakang koma
   }
 
   /**

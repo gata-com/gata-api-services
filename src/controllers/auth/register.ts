@@ -4,10 +4,7 @@ import { RegisterRequest } from "@/types/auth";
 import { AuthService } from "@/services/auth/authServices";
 
 // Register Student
-export const register = async (
-  req: Request<RegisterRequest>,
-  res: Response<ApiResponse>
-) => {
+export const register = async (req: Request, res: Response<ApiResponse>) => {
   try {
     const registerService = new AuthService();
     const result = await registerService.register(req.body);

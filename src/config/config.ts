@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: parseInt(process.env.PORT || "5000", 10),
@@ -18,11 +20,8 @@ export const config = {
     name: process.env.DB_NAME,
 
     // Common Properties - MySQL optimized defaults
-    synchronize:
-      process.env.DB_SYNC === "true" || process.env.NODE_ENV === "development",
-    logging:
-      process.env.DB_LOGGING === "true" ||
-      process.env.NODE_ENV === "development",
+    synchronize: !isProduction, // Disable synchronize in production
+    logging: process.env.DB_LOGGING === "true",
 
     // MySQL specific connection options
     connectionTimeout: parseInt(
@@ -141,19 +140,19 @@ if (missingEnvVars.length > 0) {
 }
 
 // Enhanced database configuration logging
-console.log("=== DATABASE CONFIGURATION ===");
-console.log(`🗄️  Database type: ${config.database.type}`);
+// console.log("=== DATABASE CONFIGURATION ===");
+// console.log(`🗄️  Database type: ${config.database.type}`);
 
-console.log(`🏠 MySQL host: ${config.database.host}:${config.database.port}`);
-console.log(`🏷️  MySQL database: ${config.database.name}`);
-console.log(`👤 MySQL username: ${config.database.username}`);
-console.log(`🔄 MySQL synchronize: ${config.database.synchronize}`);
-console.log(`📝 MySQL logging: ${config.database.logging}`);
-console.log(
-  `⏱️  MySQL connection timeout: ${config.database.connectionTimeout}ms`
-);
-console.log(`🔗 MySQL max connections: ${config.database.maxConnections}`);
+// console.log(`🏠 MySQL host: ${config.database.host}:${config.database.port}`);
+// console.log(`🏷️  MySQL database: ${config.database.name}`);
+// console.log(`👤 MySQL username: ${config.database.username}`);
+// console.log(`🔄 MySQL synchronize: ${config.database.synchronize}`);
+// console.log(`📝 MySQL logging: ${config.database.logging}`);
+// console.log(
+//   `⏱️  MySQL connection timeout: ${config.database.connectionTimeout}ms`
+// );
+// console.log(`🔗 MySQL max connections: ${config.database.maxConnections}`);
 
-console.log(`🌍 Environment: ${config.nodeEnv}`);
-console.log(`🚀 Server port: ${config.port}`);
-console.log("================================");
+// console.log(`🌍 Environment: ${config.nodeEnv}`);
+// console.log(`🚀 Server port: ${config.port}`);
+// console.log("================================");

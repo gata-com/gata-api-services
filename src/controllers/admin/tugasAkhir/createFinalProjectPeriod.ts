@@ -25,10 +25,7 @@ export const getCurrentPeriod = async (
   }
 };
 
-export const create = async (
-  req: Request<FinalProjectPeriodsRequest>,
-  res: Response<ApiResponse>
-) => {
+export const create = async (req: Request, res: Response<ApiResponse>) => {
   try {
     const finalProjectPeriodService = new TugasAkhirService();
     const result = await finalProjectPeriodService.createPeriod(req.body);

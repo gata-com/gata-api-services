@@ -11,7 +11,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface ErrorValidation {
-  field: string;
+  path: string;
   msg: string;
 }
 

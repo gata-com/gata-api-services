@@ -22,7 +22,9 @@ import Announcements from "./announcement";
 // }
 
 @Entity("users")
-@Index(["reset_token"]) // Index untuk reset token
+@Index(["role"])
+@Index(["reset_token"])
+@Index(["email"])
 export default class User {
   @PrimaryGeneratedColumn()
   id!: number;

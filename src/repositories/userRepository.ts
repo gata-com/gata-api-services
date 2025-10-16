@@ -84,14 +84,30 @@ export class UserRepository {
     });
   }
   // find by query email (like %email%) if role is student
-  async findByQueryEmail(query: string): Promise<User[]> {
-    return await this.repository
+  async findByQueryEmail(query: string): Promise<Partial<User>[]> {
+    const users = await this.repository
       .createQueryBuilder("user")
       .innerJoinAndSelect("user.student", "student")
       .where("user.email LIKE :query", { query: `%${query}%` })
       .andWhere("user.role = :role", { role: "student" })
       .select(["user.id", "user.name", "user.email", "student.id"])
       .getMany();
+
+    return users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      studentId: u.student.id,
+    }));
+  }
+
+  async findUserWithStudentById(id: number): Promise<Partial<User> | null> {
+    return await this.studentRepository
+      .createQueryBuilder("student")
+      .innerJoinAndSelect("student.user", "user")
+      .where("user.id = :id", { id })
+      .select(["student.id"])
+      .getOne();
   }
 
   // find all lecturers

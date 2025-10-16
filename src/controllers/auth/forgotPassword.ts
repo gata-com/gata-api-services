@@ -5,7 +5,7 @@ import { AuthService } from "@/services/auth/authServices";
 import { ForgotPasswordRequest } from "@/types/auth";
 
 export const forgotPassword = async (
-  req: Request<ForgotPasswordRequest>,
+  req: Request,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {

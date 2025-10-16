@@ -5,3 +5,5 @@ client_secret.apps.googleusercontent.com.json
 src/config/data-source.ts
 uploads/*
 !uploads/.gitkeep
+src/stograges/*
+!src/storages/.gitkeep

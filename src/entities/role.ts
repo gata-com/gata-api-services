@@ -13,7 +13,7 @@ import {
 
 import ExpertisesGroup from "./expertisesGroup";
 import User from "./user";
-import { FinalProjects } from "./finalProject";
+import { FinalProjects, FinalProjectMembers } from "./finalProject";
 
 // Lecturer
 @Entity("lecturer")
@@ -81,6 +81,11 @@ export class Student {
   @OneToOne(() => User, (user) => user.student, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
   user!: User;
+
+  @OneToOne(() => FinalProjectMembers, (fpm) => fpm.student, {
+    onDelete: "CASCADE",
+  })
+  final_project_members!: FinalProjectMembers;
 
   // *** Methods ***
 }

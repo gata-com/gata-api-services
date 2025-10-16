@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import express, { Application, Request, Response } from "express";
+import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -18,7 +19,7 @@ import AppDataSource from "./config/database";
 
 // Route imports
 import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
+// import userRoutes from "./routes/users";
 import mahasiswaRoutes from "./routes/mahasiswa";
 import adminRoutes from "./routes/admin";
 
@@ -97,6 +98,18 @@ app.set("trust proxy", 1);
 app.use(passport.initialize());
 app.use(passport.session());
 
+// ======================
+// Setup Path absolute storages
+// ======================
+
+const finalProjectsPath = path.join(
+  process.cwd(),
+  "src",
+  "storages",
+  "final-projects"
+);
+
+app.use("/final-projects", express.static(finalProjectsPath));
 // ======================
 // Routes
 // ======================

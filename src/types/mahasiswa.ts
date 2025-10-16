@@ -8,13 +8,13 @@ export interface FinalProjectCreateRequest {
   source_topic: string;
   supervisor1Id: string;
   supervisor2Id: string;
-  finalProjectPeriodId: string | null;
+  finalProjectPeriodId: string;
   members: FinalProjectData[];
 }
 
 export interface FinalProjectData {
   email: string;
-  student: any;
+  studentId: string;
   title: string;
   resume: string;
   draft_path?: Express.Multer.File | null;

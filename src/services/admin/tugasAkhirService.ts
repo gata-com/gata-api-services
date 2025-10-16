@@ -29,12 +29,12 @@ export class TugasAkhirService {
 
       if (!start_date) {
         return {
-          error: { field: "start_date", msg: "Tanggal buka harus diisi" },
+          error: { path: "start_date", msg: "Tanggal buka harus diisi" },
         };
       }
       if (!end_date) {
         return {
-          error: { field: "end_date", msg: "Tanggal tutup harus diisi" },
+          error: { path: "end_date", msg: "Tanggal tutup harus diisi" },
         };
       }
 
@@ -42,7 +42,7 @@ export class TugasAkhirService {
       if (new Date(start_date) >= new Date(end_date)) {
         return {
           error: {
-            field: "start_date",
+            path: "start_date",
             msg: "Tanggal buka harus sebelum tanggal tutup",
           },
         };
@@ -58,7 +58,7 @@ export class TugasAkhirService {
       if (isStartDateExists) {
         return {
           error: {
-            field: "start_date",
+            path: "start_date",
             msg: "Tanggal buka sudah terdaftar",
           },
         };

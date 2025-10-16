@@ -4,7 +4,7 @@ import { AuthService } from "@/services/auth/authServices";
 import { VerifyTokenRequest } from "@/types/auth";
 
 export const verifyResetToken = async (
-  req: Request<VerifyTokenRequest>,
+  req: Request,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {

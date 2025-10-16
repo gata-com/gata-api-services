@@ -8,7 +8,7 @@ import { LoginRequest } from "@/types/auth";
 dotenv.config();
 
 export const login = async (
-  req: Request<LoginRequest>,
+  req: Request,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {

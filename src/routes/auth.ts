@@ -18,17 +18,14 @@ import {
 // Middleware imports
 import { auth } from "../middleware/auth";
 import { authenticateToken } from "../middleware/auth";
-import {
-  requireStudent,
-  requireLecturer,
-  requireAdmin,
-  requireLecturerOrAdmin,
-} from "@/middleware/role";
+import { requireStudent, requireLecturer } from "@/middleware/role";
 
 import {
   validateRegister,
   validateLogin,
-} from "../middleware/validation/validation";
+  forgotPasswordValidation,
+  resetPasswordValidation,
+} from "../middleware/validation/auth";
 import { handleValidationErrors } from "../middleware/validation/handleErrors";
 
 const router: Router = Router();
@@ -47,33 +44,23 @@ router.get(
 
 // ============Standard Auth routes============
 
-router.post("/test/login", validateLogin, handleValidationErrors);
-
-router.post(
-  "/register",
-  // validateRegister,
-  // handleValidationErrors,
-  register
-);
-router.post(
-  "/login",
-  // validateLogin,
-  // handleValidationErrors,
-  login
-);
+router.post("/register", validateRegister, handleValidationErrors, register);
+router.post("/login", validateLogin, handleValidationErrors, login);
 
 // Reset password routes
 router.post(
   "/forgot-password",
-  // forgotPasswordValidation,
+  forgotPasswordValidation,
+  handleValidationErrors,
   forgotPassword
 );
+router.post("/reset-password/:token", verifyResetToken);
 router.post(
-  "/reset-password/:token",
-  // verifyTokenValidation,
-  verifyResetToken
+  "/reset-password",
+  resetPasswordValidation,
+  handleValidationErrors,
+  resetPassword
 );
-router.post("/reset-password", /* resetPasswordValidation, */ resetPassword);
 
 //============ Protected Routes ============
 router.post("/logout", logout);
@@ -101,21 +88,5 @@ router.get(
     res.json({ message: "Dosen dashboard" });
   }
 );
-
-// Test route untuk debug
-router.get("/test", (req, res) => {
-  res.json({
-    message: "Auth routes working!",
-    routes: [
-      "POST /register",
-      "POST /login",
-      "GET /profile",
-      "POST /refresh",
-      "POST /forgot-password",
-      "GET /reset-password/:token",
-      "POST /reset-password",
-    ],
-  });
-});
 
 export default router;

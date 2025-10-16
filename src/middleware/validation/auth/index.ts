@@ -40,6 +40,8 @@ export const validateRegister: ValidationChain[] = [
 
 export const validateLogin: ValidationChain[] = [
   body("email")
+    .notEmpty()
+    .withMessage("Email tidak boleh kosong")
     .isEmail()
     .normalizeEmail()
     .withMessage("Format email tidak valid"),

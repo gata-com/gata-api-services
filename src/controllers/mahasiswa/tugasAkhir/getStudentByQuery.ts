@@ -15,7 +15,7 @@ export const getStudentByQuery = async (
       return res.status(400).json({
         message: "Query parameter is required",
         errors: {
-          field: "query",
+          path: "query",
           msg: "Query parameter cannot be empty",
         },
       });
@@ -38,7 +38,7 @@ export const getStudentByQuery = async (
     return res.status(500).json({
       message: "Terjadi kesalahan",
       errors: {
-        field: "server",
+        path: "server",
         msg: error instanceof Error ? error.message : "Unknown error",
       },
     });

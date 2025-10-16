@@ -27,7 +27,7 @@ export const resetPassword = async (
     return res.status(500).json({
       message: "Terjadi kesalahan",
       errors: {
-        field: "server",
+        path: "server",
         msg: error instanceof Error ? error.message : "Unknown error",
       },
     });

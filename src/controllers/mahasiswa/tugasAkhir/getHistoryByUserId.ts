@@ -12,6 +12,13 @@ export const getHistoryByUserId = async (
     const finalProjectService = new TugasAkhirService();
     const result = await finalProjectService.getHistoryByUserId(userId);
 
+    if ("error" in result && result.error) {
+      return res.status(400).json({
+        message: "Error Validation",
+        errors: result.error,
+      });
+    }
+
     return res.status(200).json({
       message: "Riwayat tugas akhir berhasil diambil",
       data: result,
@@ -20,7 +27,7 @@ export const getHistoryByUserId = async (
     return res.status(500).json({
       message: "Terjadi kesalahan",
       errors: {
-        field: "server",
+        path: "server",
         msg: error instanceof Error ? error.message : "Unknown error",
       },
     });

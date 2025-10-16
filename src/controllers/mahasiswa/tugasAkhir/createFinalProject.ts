@@ -24,7 +24,7 @@ export const create = async (req: Request, res: Response<ApiResponse>) => {
     return res.status(500).json({
       message: "Terjadi kesalahan",
       errors: {
-        field: "server",
+        path: "server",
         msg: error instanceof Error ? error.message : "Unknown error",
       },
     });

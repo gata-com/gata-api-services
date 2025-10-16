@@ -129,7 +129,6 @@ if (process.env.NODE_ENV !== "production") {
 // Root endpoint with enhanced info
 app.get("/", (req: Request, res: Response) => {
   const response: ApiResponse = {
-    success: true,
     message: "GATA Server",
     data: {
       version: "1.0.0",
@@ -188,7 +187,6 @@ app.get("/api/health", async (req: Request, res: Response) => {
     }
 
     const response: ApiResponse = {
-      success: true,
       message: "Server health check",
       data: {
         status: "OK",
@@ -265,7 +263,6 @@ app.get("/api/db-status", async (req: Request, res: Response) => {
     }
 
     const response: ApiResponse = {
-      success: true,
       message: "Database status check",
       data: {
         type: AppDataSource.options.type,

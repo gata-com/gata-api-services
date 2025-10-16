@@ -44,7 +44,7 @@ export default class User {
   @Column({ length: 255 })
   name!: string;
 
-  @Column({ unique: true, length: 255 })
+  @Column({ length: 255 })
   email!: string;
 
   @Column({ length: 255 })

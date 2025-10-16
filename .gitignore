@@ -6,3 +6,4 @@ src/config/data-source.ts
 uploads/*
 !uploads/.gitkeep
 src/storages/*
+src/migrations/*

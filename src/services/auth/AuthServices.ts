@@ -37,7 +37,7 @@ export class AuthService {
   }
 
   async login(
-    data: LoginRequest
+      data: LoginRequest
   ): Promise<
     { error: null; token: string; user: any } | { error: ErrorValidation }
   > {

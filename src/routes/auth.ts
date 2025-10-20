@@ -43,7 +43,6 @@ router.get(
 );
 
 // ============Standard Auth routes============
-
 router.post("/register", validateRegister, handleValidationErrors, register);
 router.post("/login", validateLogin, handleValidationErrors, login);
 

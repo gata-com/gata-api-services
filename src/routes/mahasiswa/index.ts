@@ -2,7 +2,7 @@ import { Router } from "express";
 import tugasAkhir from "./tugasAkhir";
 import profileRoutes from "./profile";
 import { requireStudent } from "@/middleware/role";
-import { auth } from "../../middleware/auth";
+import { auth } from "@/middleware/auth";
 
 const router = Router();
 

@@ -1,8 +1,8 @@
 import { Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { UserRepository } from "../repositories/UserRepository";
-import { AuthRequest, ApiResponse } from "../types";
-import { JwtPayload } from "../types/auth";
+import { UserRepository } from "@/repositories/UserRepository";
+import { AuthRequest, ApiResponse } from "@/types";
+import { JwtPayload } from "@/types/auth";
 
 const userRepository = new UserRepository();
 

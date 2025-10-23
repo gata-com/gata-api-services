@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { UserRepository } from "../../repositories/UserRepository";
 import { UserRole } from "../../types/user";
 import { ErrorValidation } from "@/types";
+import { ServicesReturn } from "@/types";
 import {
   RegisterRequest,
   LoginRequest,
@@ -37,7 +38,7 @@ export class AuthService {
   }
 
   async login(
-      data: LoginRequest
+    data: LoginRequest
   ): Promise<
     { error: null; token: string; user: any } | { error: ErrorValidation }
   > {

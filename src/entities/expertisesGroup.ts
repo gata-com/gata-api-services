@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { Lecturer } from "./role";
+import { Lecturer } from "./lecturer";
 import { FinalProjects } from "./finalProject";
 import { ExpertisesGroup as expertGroupType } from "../types/user";
 

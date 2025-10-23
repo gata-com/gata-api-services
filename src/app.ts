@@ -21,6 +21,7 @@ import AppDataSource from "./config/database";
 import authRoutes from "./routes/auth";
 // import userRoutes from "./routes/users";
 import mahasiswaRoutes from "./routes/mahasiswa";
+import dosenRoutes from "./routes/dosen";
 import adminRoutes from "./routes/admin";
 
 // Load environment variables
@@ -155,6 +156,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 // app.use("/api/users", userRoutes);
 app.use("/api/mahasiswa", mahasiswaRoutes);
+app.use("/api/dosen", dosenRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Enhanced health check endpoint

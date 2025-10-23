@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
 import { FinalProjectPeriodsRequest } from "@/types/admin";
-import { TugasAkhirService } from "@/services/admin/tugasAkhirService";
+import { TugasAkhirService } from "@/services/admin/tugasAkhirServices";
 
 export const getCurrentPeriod = async (
   req: Request,

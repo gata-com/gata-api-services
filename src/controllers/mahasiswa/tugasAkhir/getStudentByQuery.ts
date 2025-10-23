@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirService";
+import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirServices";
 
 export const getStudentByQuery = async (
   req: Request,

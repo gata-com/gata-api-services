@@ -10,10 +10,9 @@ import {
   JoinColumn,
   Index,
 } from "typeorm";
-
-import ExpertisesGroup from "./expertisesGroup";
 import User from "./user";
-import { FinalProjects, FinalProjectMembers } from "./finalProject";
+import ExpertisesGroup from "./expertisesGroup";
+import { FinalProjects } from "./finalProject";
 
 // Lecturer
 @Entity("lecturer")
@@ -56,36 +55,4 @@ export class Lecturer {
   coSupervisedProjects!: FinalProjects[];
 
   // *** Method ***
-}
-
-// Student
-@Entity("student")
-@Index(["semester"])
-export class Student {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
-  @Column({ unique: true, length: 9, nullable: true })
-  nim?: string; // Nomor Induk Mahasiswa
-
-  @Column({ default: 7, nullable: true })
-  semester?: number;
-
-  @CreateDateColumn()
-  created_at!: Date;
-
-  @UpdateDateColumn()
-  updated_at!: Date;
-
-  // *** Relationships ***
-  @OneToOne(() => User, (user) => user.student, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "userId" })
-  user!: User;
-
-  @OneToOne(() => FinalProjectMembers, (fpm) => fpm.student, {
-    onDelete: "CASCADE",
-  })
-  final_project_members!: FinalProjectMembers;
-
-  // *** Methods ***
 }

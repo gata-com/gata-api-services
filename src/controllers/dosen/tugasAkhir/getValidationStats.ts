@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { FinalProjectCreateRequest } from "@/types/mahasiswa";
-import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirServices";
+import { TugasAkhirService } from "@/services/dosen/tugasAkhirServices";
 
-export const create = async (req: Request, res: Response<ApiResponse>) => {
+export const getValidationStats = async (
+  req: Request,
+  res: Response<ApiResponse>
+) => {
   try {
-    const finalProjectService = new TugasAkhirService();
+    const { userId } = req.params;
 
-    const result = await finalProjectService.createFinalProject(
-      req,
-      req.body as FinalProjectCreateRequest
-    );
+    const tugasAkhirService = new TugasAkhirService();
+    const result = await tugasAkhirService.getValidationStats(parseInt(userId));
 
     if ("error" in result && result.error) {
       return res.status(400).json({
@@ -18,9 +18,8 @@ export const create = async (req: Request, res: Response<ApiResponse>) => {
         errors: result.error,
       });
     }
-
-    return res.status(201).json({
-      message: "Tugas akhir berhasil dibuat",
+    return res.status(200).json({
+      message: "Data ditemukan",
       data: result.data,
     });
   } catch (error) {

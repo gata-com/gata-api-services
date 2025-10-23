@@ -1,6 +1,7 @@
 import { FinalProjectPeriodsRepository } from "@/repositories/FinalProjectPeriodsRepository";
 import { ErrorValidation } from "@/types";
 import { FinalProjectPeriodsRequest } from "@/types/admin";
+import { ServicesReturn } from "@/types";
 
 export class TugasAkhirService {
   private repository: FinalProjectPeriodsRepository;
@@ -19,7 +20,7 @@ export class TugasAkhirService {
 
   async createPeriod(
     data: FinalProjectPeriodsRequest
-  ): Promise<{ error: null; data: any } | { error: ErrorValidation }> {
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
     // transaction DB
     await this.repository.qr.connect();
     await this.repository.qr.startTransaction();
@@ -27,26 +28,15 @@ export class TugasAkhirService {
     try {
       const { start_date, end_date, description } = data;
 
-      if (!start_date) {
-        return {
-          error: { path: "start_date", msg: "Tanggal buka harus diisi" },
-        };
-      }
-      if (!end_date) {
-        return {
-          error: { path: "end_date", msg: "Tanggal tutup harus diisi" },
-        };
-      }
-
       // start_date must be before end_date
-      if (new Date(start_date) >= new Date(end_date)) {
-        return {
-          error: {
-            path: "start_date",
-            msg: "Tanggal buka harus sebelum tanggal tutup",
-          },
-        };
-      }
+      // if (new Date(start_date) >= new Date(end_date)) {
+      //   return {
+      //     error: {
+      //       path: "start_date",
+      //       msg: "Tanggal buka harus sebelum tanggal tutup",
+      //     },
+      //   };
+      // }
 
       // start_date must be unique
       const existingPeriods = await this.repository.findAll();

@@ -2,6 +2,7 @@ import { Request } from "express";
 import { UserRepository } from "@/repositories/UserRepository";
 import { FinalProjectRepository } from "@/repositories/FinalProjectRepository";
 import { ErrorValidation } from "@/types";
+import { ServicesReturn } from "@/types";
 import {
   FinalProjectSearchByQueryRequest,
   FinalProjectCreateRequest,
@@ -19,7 +20,7 @@ export class TugasAkhirService {
 
   async getDataByQuery(
     data: FinalProjectSearchByQueryRequest
-  ): Promise<{ error: null; data: any } | { error: ErrorValidation }> {
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
     try {
       const result = await this.userRepo.findByQueryEmail(data.query);
       return { error: null, data: result };
@@ -28,9 +29,7 @@ export class TugasAkhirService {
     }
   }
 
-  async getLecturers(): Promise<
-    { error: null; data: any } | { error: ErrorValidation }
-  > {
+  async getLecturers(): Promise<ServicesReturn | { error: ErrorValidation }> {
     try {
       const result = await this.userRepo.findAllWithLecturer();
       return { error: null, data: result };
@@ -41,7 +40,7 @@ export class TugasAkhirService {
 
   async getHistoryByUserId(
     userId: string
-  ): Promise<{ error: null; data: any } | { error: ErrorValidation }> {
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
     try {
       const studentId = await this.userRepo.findUserWithStudentById(
         parseInt(userId)
@@ -59,7 +58,7 @@ export class TugasAkhirService {
 
       // Format result sesuai kebutuhan frontend
       // filter member hanya yang sesuai dengan studentId
-      // ambil semua student dari members dan masukkan ke array kemudian masukkan ke result dengan key bernama allStudents
+      // ambil semua student dari members dan masukkan ke array kemudian masukkan ke result dengan key bernama students
       if (result) {
         (result as any).students = result.members.map((m: any) => m.student);
         (result as any).documents = result.members.map((m: any) => {
@@ -98,7 +97,7 @@ export class TugasAkhirService {
   async createFinalProject(
     req: Request,
     data: FinalProjectCreateRequest
-  ): Promise<{ error: null; data: any } | { error: ErrorValidation }> {
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
     // transaction DB
     await this.finalProjectRepo.qr.connect();
     await this.finalProjectRepo.qr.startTransaction();

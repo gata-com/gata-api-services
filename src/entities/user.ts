@@ -12,7 +12,8 @@ import {
 import bcrypt from "bcryptjs";
 import { config } from "../config/config";
 import { OneToOne } from "typeorm";
-import { Lecturer, Student } from "./role";
+import { Student } from "./student";
+import { Lecturer } from "./lecturer";
 import Announcements from "./announcement";
 
 //  enum UserRole {

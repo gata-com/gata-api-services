@@ -4,8 +4,8 @@ import AppDataSource from "../config/data-source";
 
 // sesuaikan path import entity sesuai struktur proyek Anda
 import User from "../entities/user";
-import { Lecturer } from "../entities/role";
-import { Student } from "../entities/role";
+import { Lecturer } from "../entities/student";
+import { Student } from "../entities/student";
 import ExpertisesGroup from "../entities/expertisesGroup";
 
 const expertiseList = [

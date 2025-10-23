@@ -1,7 +1,7 @@
 import { Repository, QueryRunner } from "typeorm";
 import AppDataSource from "../config/database";
 import User from "../entities/user";
-import { Student } from "../entities/role";
+import { Student } from "../entities/student";
 import {
   CreateUserData,
   UpdateUserData,

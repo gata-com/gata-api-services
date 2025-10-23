@@ -14,6 +14,12 @@ export interface ErrorValidation {
   msg: string;
 }
 
+export interface ServicesReturn {
+  error: null;
+  data: any;
+  pagination?: PaginationMeta;
+}
+
 // Pagination metadata
 export interface PaginationMeta {
   page: number;

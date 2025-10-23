@@ -11,7 +11,8 @@ import {
   Index,
 } from "typeorm";
 import ExpertisesGroup from "./expertisesGroup";
-import { Student, Lecturer } from "./role";
+import { Student } from "./student";
+import { Lecturer } from "./lecturer";
 
 // enum FinalProjectType {
 //   REGULAR = "regular",

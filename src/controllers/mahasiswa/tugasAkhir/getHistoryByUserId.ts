@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
 import { FinalProjectCreateRequest } from "@/types/mahasiswa";
-import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirService";
+import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirServices";
 
 export const getHistoryByUserId = async (
   req: Request,

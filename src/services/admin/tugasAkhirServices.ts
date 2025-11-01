@@ -1,18 +1,21 @@
 import { FinalProjectPeriodsRepository } from "@/repositories/FinalProjectPeriodsRepository";
+import { FinalProjectRepository } from "@/repositories/FinalProjectRepository";
 import { ErrorValidation } from "@/types";
 import { FinalProjectPeriodsRequest } from "@/types/admin";
 import { ServicesReturn } from "@/types";
 
 export class TugasAkhirService {
-  private repository: FinalProjectPeriodsRepository;
+  private fpRepo: FinalProjectRepository;
+  private fppRepo: FinalProjectPeriodsRepository;
 
   constructor() {
-    this.repository = new FinalProjectPeriodsRepository();
+    this.fpRepo = new FinalProjectRepository();
+    this.fppRepo = new FinalProjectPeriodsRepository();
   }
 
   async getCurrentPeriod() {
     try {
-      return await this.repository.findCurrentPeriod();
+      return await this.fppRepo.findCurrentPeriod();
     } catch (error) {
       throw error;
     }
@@ -22,8 +25,9 @@ export class TugasAkhirService {
     data: FinalProjectPeriodsRequest
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
     // transaction DB
-    await this.repository.qr.connect();
-    await this.repository.qr.startTransaction();
+    const qr = this.fppRepo.AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
     try {
       const { start_date, end_date, description } = data;
@@ -39,7 +43,7 @@ export class TugasAkhirService {
       // }
 
       // start_date must be unique
-      const existingPeriods = await this.repository.findAll();
+      const existingPeriods = await this.fppRepo.findAll();
       const isStartDateExists = existingPeriods.some(
         (period) =>
           new Date(period.start_date).toDateString() ===
@@ -54,19 +58,38 @@ export class TugasAkhirService {
         };
       }
 
-      const createdData = await this.repository.create(data);
+      const createdData = await this.fppRepo.create(data);
 
       // commit transaction
-      await this.repository.qr.commitTransaction();
+      await qr.commitTransaction();
 
       return { error: null, data: createdData };
     } catch (error) {
       // rollback transaction on error
-      await this.repository.qr.rollbackTransaction();
+      await qr.rollbackTransaction();
       throw error;
     } finally {
       // release query runner
-      await this.repository.qr.release();
+      await qr.release();
     }
   }
+
+  async getDosen(): Promise<ServicesReturn | { error: ErrorValidation }> {
+    try {
+      const data = await this.fpRepo.getDosen();
+      return { error: null, data };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getPengajuan(): Promise<ServicesReturn | { error: ErrorValidation }> {
+    try {
+      const data = await this.fpRepo.getPengajuan();
+      return { error: null, data };
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }

@@ -17,6 +17,7 @@ export const validateFPApproval: ValidationChain[] = [
     .withMessage("supervisor_choices tidak ditemukan")
     .isIn(["1", "2"])
     .withMessage("supervisor_choices harus berupa 1 atau 2"),
+  body("note").optional(),
 ];
 
 export const validateFPValidation: ValidationChain[] = [

@@ -1,4 +1,5 @@
 import { UserRepository } from "@/repositories/UserRepository";
+import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { FinalProjectRepository } from "@/repositories/FinalProjectRepository";
 import { ErrorValidation } from "@/types";
 import { ServicesReturn } from "@/types";
@@ -7,10 +8,12 @@ import { FPApprovalRequest } from "@/types/dosen";
 export class TugasAkhirService {
   // private repository:
   private userRepo: UserRepository;
+  private lecturerRepo: LecturerRepository;
   private finalProjectRepo: FinalProjectRepository;
 
   constructor() {
     this.userRepo = new UserRepository();
+    this.lecturerRepo = new LecturerRepository();
     this.finalProjectRepo = new FinalProjectRepository();
   }
 
@@ -63,20 +66,19 @@ export class TugasAkhirService {
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
     try {
       // Cek apakah fpId ada
-      const finalProject = await this.finalProjectRepo.findById(data.fpId);
-      if (!finalProject) {
+      const fp = await this.finalProjectRepo.findById(data.fpId);
+      if (!fp) {
         return {
           error: { path: "server", msg: "Tugas akhir tidak ditemukan" },
         };
       }
 
-      // Lakukan proses approval
-      if (data.supervisor_choices === "1") {
-        finalProject.supervisor_1_status = data.status;
-      } else if (data.supervisor_choices === "2") {
-        finalProject.supervisor_2_status = data.status;
+      const result = await this.finalProjectRepo.approval(data);
+      const { error } = result;
+
+      if (error) {
+        return { error: error };
       }
-      const result = await this.finalProjectRepo.repository.save(finalProject);
 
       return { error: null, data: result };
     } catch (error) {

@@ -1,4 +1,4 @@
-import { body, ValidationChain } from "express-validator";
+import { body, ValidationChain, param } from "express-validator";
 
 export const validateCreateFinalProjectPeriod: ValidationChain[] = [
   body("start_date").notEmpty().withMessage("Start date tidak boleh kosong"),
@@ -18,3 +18,4 @@ export const validateCreateFinalProjectPeriod: ValidationChain[] = [
     .isString()
     .withMessage("Description harus berupa string"),
 ];
+

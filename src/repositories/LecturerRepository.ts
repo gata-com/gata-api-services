@@ -5,7 +5,7 @@ import { Lecturer } from "@/entities/lecturer";
 export class LecturerRepository {
   public repository: Repository<Lecturer>;
 
-  public qr: any;
+  public AppDataSource: any;
 
   constructor(private queryRunner?: QueryRunner) {
     if (queryRunner) {
@@ -14,14 +14,81 @@ export class LecturerRepository {
       this.repository = AppDataSource.getRepository(Lecturer);
     }
 
-    this.qr = AppDataSource.createQueryRunner();
+    this.AppDataSource = AppDataSource;
   }
 
   /**
-   * CREATE
+   * CREATE n UPDATE
    *
    * @returns
    */
+
+  async onFPAproval(data: any): Promise<any> {
+    const qr = AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+
+    try {
+      const { id, choices } = data;
+      const lc = await this.repository.findOne({ where: { id } });
+
+      if (choices === "1") {
+        if (lc) {
+          const finalSum = lc.current_supervised_1 + 1;
+          // cek apakah setelah ditambah melebihi max_supervised_1
+          if (finalSum > lc.max_supervised_1) {
+            return {
+              error: {
+                path: "server",
+                msg: "Kuota pembimbing 1 telah penuh",
+              },
+            };
+          }
+
+          // proses update jika tadak melebihi max
+          await this.repository
+            .createQueryBuilder()
+            .update(Lecturer)
+            .set({
+              current_supervised_1: finalSum,
+            })
+            .where("id = :id", { id })
+            .execute();
+        }
+      } else if (choices === "2") {
+        if (lc) {
+          const finalSum = lc.current_supervised_2 + 1;
+          // cek apakah setelah ditambah melebihi max_supervised_2
+          if (finalSum > lc.max_supervised_2) {
+            return {
+              error: {
+                path: "server",
+                msg: "Kuota pembimbing 2 telah penuh",
+              },
+            };
+          }
+          // proses update jika tadak melebihi max
+          await this.repository
+            .createQueryBuilder()
+            .update(Lecturer)
+            .set({
+              current_supervised_2: finalSum,
+            })
+            .where("id = :id", { id })
+            .execute();
+        }
+      }
+
+      await qr.commitTransaction();
+
+      return { error: null };
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
+    }
+  }
 
   /**
    * FIND
@@ -33,5 +100,11 @@ export class LecturerRepository {
       .createQueryBuilder("lc")
       .where("lc.userId = :userId", { userId })
       .getOne();
+  }
+
+  async findById(id: number): Promise<Lecturer | null> {
+    return await this.repository.findOne({
+      where: { id },
+    });
   }
 }

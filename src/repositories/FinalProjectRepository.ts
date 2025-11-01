@@ -3,32 +3,95 @@ import AppDataSource from "../config/database";
 import { LecturerRepository } from "./LecturerRepository";
 import { FinalProjectPeriodsRepository } from "./FinalProjectPeriodsRepository";
 import { FinalProjects, FinalProjectMembers } from "@/entities/finalProject";
+import { Lecturer } from "@/entities/lecturer";
 import { FinalProjectData } from "@/types/mahasiswa";
 import fileUploadUtil from "@/utils/fileUpload";
-import { parse } from "path";
+import { FPApprovalRequest } from "@/types/dosen";
 
 export class FinalProjectRepository {
   public repository: Repository<FinalProjects>;
   public memberRepository: Repository<FinalProjectMembers>;
-  public lecturerRepository: LecturerRepository;
-  public fppRepository: FinalProjectPeriodsRepository;
-  public qr: any;
+  public lecturerRepository: Repository<Lecturer>;
+  public lcRepo: LecturerRepository;
+  public fppRepo: FinalProjectPeriodsRepository;
+
+  public AppDataSource: any;
 
   constructor(private queryRunner?: QueryRunner) {
     if (queryRunner) {
       this.repository = queryRunner.manager.getRepository(FinalProjects);
       this.memberRepository =
         queryRunner.manager.getRepository(FinalProjectMembers);
-      this.lecturerRepository = new LecturerRepository(queryRunner);
-      this.fppRepository = new FinalProjectPeriodsRepository(queryRunner);
+      this.lecturerRepository = queryRunner.manager.getRepository(Lecturer);
+      this.lcRepo = new LecturerRepository(queryRunner);
+      this.fppRepo = new FinalProjectPeriodsRepository(queryRunner);
     } else {
       this.repository = AppDataSource.getRepository(FinalProjects);
       this.memberRepository = AppDataSource.getRepository(FinalProjectMembers);
-      this.lecturerRepository = new LecturerRepository();
-      this.fppRepository = new FinalProjectPeriodsRepository();
+      this.lecturerRepository = AppDataSource.getRepository(Lecturer);
+      this.lcRepo = new LecturerRepository();
+      this.fppRepo = new FinalProjectPeriodsRepository();
     }
 
-    this.qr = AppDataSource.createQueryRunner();
+    this.AppDataSource = AppDataSource;
+  }
+
+  async syncAdminStatus(): Promise<any> {
+    const qr = AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+
+    try {
+      await this.repository
+        .createQueryBuilder()
+        .update(FinalProjects)
+        .set({ admin_status: "approved" })
+        .where(
+          "supervisor_1_status = :status1 AND supervisor_2_status = :status2",
+          { status1: "approved", status2: "approved" }
+        )
+        .execute();
+
+      await this.repository
+        .createQueryBuilder()
+        .update(FinalProjects)
+        .set({ admin_status: "rejected" })
+        .where(
+          "supervisor_1_status = :status1 OR supervisor_2_status = :status2",
+          { status1: "rejected", status2: "rejected" }
+        )
+        .execute();
+
+      await qr.commitTransaction();
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
+    }
+  }
+
+  async syncSup2StatusIfNull(): Promise<any> {
+    const qr = AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      await this.repository
+        .createQueryBuilder()
+        .update(FinalProjects)
+        .set({
+          supervisor_2_status: () =>
+            `CASE WHEN supervisor2Id IS NULL THEN supervisor_1_status ELSE supervisor_2_status END`,
+        })
+        .execute();
+
+      await qr.commitTransaction();
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
+    }
   }
 
   /**
@@ -144,6 +207,7 @@ export class FinalProjectRepository {
   async findById(id: number): Promise<FinalProjects | null> {
     return await this.repository.findOne({
       where: { id },
+      relations: ["supervisor_1", "supervisor_2"],
     });
   }
 
@@ -169,33 +233,6 @@ export class FinalProjectRepository {
         .innerJoinAndSelect("fpm.student", "fpmStu")
         .innerJoinAndSelect("fpmStu.user", "fpmStuUser")
         .where("fp.id = :fpId", { fpId })
-        .select([
-          "fp.id",
-          "fp.created_at",
-          "fp.type",
-          "fp.status",
-          "fp.source_topic",
-          "fp.admin_status",
-          "sup1.id",
-          "sup2.id",
-          "sup1User.name",
-          "sup2User.name",
-
-          // members
-          "fpm.id",
-          "fpm.title",
-          "fpm.resume",
-          "fpm.draft_path",
-          "fpm.draft_filename",
-          "fpm.draft_size",
-          "fpm.dispen_path",
-          "fpm.dispen_filename",
-          "fpm.dispen_size",
-          "fpm.created_at",
-          "fpmStu.id",
-          "fpmStu.nim",
-          "fpmStuUser.name",
-        ])
         .getOne();
     }
 
@@ -210,29 +247,28 @@ export class FinalProjectRepository {
 
   async checkPeriod(userId: number): Promise<any> {
     // search lecturer
-    const lc = await this.lecturerRepository.findByUserId(userId);
+    const lc = await this.lcRepo.findByUserId(userId);
 
-    if (!lc) {
-      return null;
-    }
+    // if (!lc) {
+    //   return null;
+    // }
 
-    // cek apakah masuk periode tugas akhir
+    // cari final project
     const fp = await this.repository
       .createQueryBuilder("fp")
       .innerJoinAndSelect("fp.final_project_period", "fpp")
       .where(
         "fp.supervisor1Id = :lecturerId OR fp.supervisor2Id = :lecturerId",
-        { lecturerId: lc.id }
+        { lecturerId: lc?.id }
       )
       .getOne();
 
+    // jika tidak ada final project just return data lecturer
     if (!fp) {
       return null;
     }
 
-    const period = await this.fppRepository.findById(
-      fp.final_project_period.id
-    );
+    const period = await this.fppRepo.findById(fp?.final_project_period?.id);
 
     if (!period) {
       return null;
@@ -257,25 +293,13 @@ export class FinalProjectRepository {
       return null;
     }
 
-    const sup1 = await this.repository
-      .createQueryBuilder("fp")
-      .where("fp.supervisor1Id = :lecturerId", { lecturerId: lc.id })
-      .andWhere("fp.supervisor_1_status = :status", { status: "approved" })
-      .getCount();
-
-    const sup2 = await this.repository
-      .createQueryBuilder("fp")
-      .where("fp.supervisor2Id = :lecturerId", { lecturerId: lc.id })
-      .andWhere("fp.supervisor_2_status = :status", { status: "approved" })
-      .getCount();
-
     result = {
-      remaining_quota_sup1: lc.max_supervised_1 - sup1,
-      remaining_quota_sup2: lc.max_supervised_2 - sup2,
+      remaining_quota_sup1: lc.max_supervised_1 - lc.current_supervised_1,
+      remaining_quota_sup2: lc.max_supervised_2 - lc.current_supervised_2,
       max_quota_sup1: lc.max_supervised_1,
       max_quota_sup2: lc.max_supervised_2,
-      filled_quota_sup1: sup1,
-      filled_quota_sup2: sup2,
+      filled_quota_sup1: lc.current_supervised_1,
+      filled_quota_sup2: lc.current_supervised_2,
     };
 
     return result;
@@ -343,5 +367,115 @@ export class FinalProjectRepository {
       .getMany();
 
     return result;
+  }
+
+  async approval(data: FPApprovalRequest): Promise<any> {
+    const qr = AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+
+    const { fpId, status, supervisor_choices, note } = data;
+
+    try {
+      const fp = await this.findById(fpId);
+
+      let lcData: { id?: number; choices: string } = { id: 0, choices: "" };
+
+      // kurangi kuota dosen bimbingan jika status approved
+      if (status === "approved") {
+        if (supervisor_choices === "1") {
+          lcData = { id: fp?.supervisor_1.id, choices: "1" };
+        } else if (supervisor_choices === "2") {
+          lcData = { id: fp?.supervisor_2?.id, choices: "2" };
+        }
+      }
+
+      // kurangi kuota dosen bimbingan dahulu
+      const result = await this.lcRepo.onFPAproval(lcData);
+      const { error } = result;
+
+      if (error) {
+        return { error: error };
+      }
+
+      // ganti status sesuai pilihan dosen pembimbing 1 atau 2
+      if (supervisor_choices === "1") {
+        await this.repository
+          .createQueryBuilder()
+          .update(FinalProjects)
+          .set({
+            supervisor_1_status: status,
+            supervisor_1_note: note ? note : "",
+          })
+          .where("id = :fpId", { fpId })
+          .execute();
+      } else if (supervisor_choices === "2") {
+        await this.repository
+          .createQueryBuilder()
+          .update(FinalProjects)
+          .set({
+            supervisor_2_status: status,
+            supervisor_2_note: note ? note : "",
+          })
+          .where("id = :fpId", { fpId })
+          .execute();
+      }
+
+      await qr.commitTransaction();
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
+    }
+
+    try {
+      // sinkronisasi jika sup2 NULL akan disamakan dengan sup1 status
+      await this.syncSup2StatusIfNull();
+
+      // sinkronisasi admin status
+      await this.syncAdminStatus();
+    } catch (error) {
+      throw error;
+    }
+
+    return { error: null };
+  }
+
+  /**
+   * Admin
+   *
+   * @returns
+   */
+  async getDosen(): Promise<any> {
+    try {
+      const result = await this.lecturerRepository
+        .createQueryBuilder("lc")
+        .innerJoinAndSelect("lc.user", "lcUser")
+        .getMany();
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getPengajuan(): Promise<any> {
+    try {
+      const result = await this.repository
+        .createQueryBuilder("fp")
+        .innerJoinAndSelect("fp.members", "fpm")
+        .innerJoinAndSelect("fp.supervisor_1", "sup1")
+        .leftJoinAndSelect("fp.supervisor_2", "sup2") // left join karena bisa saja null
+        .innerJoinAndSelect("sup1.user", "sup1User")
+        .leftJoinAndSelect("sup2.user", "sup2User") // left join karena bisa saja null
+        .innerJoinAndSelect("fpm.student", "fpmStu")
+        .innerJoinAndSelect("fpmStu.user", "fpmStuUser")
+        .getMany();
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 }

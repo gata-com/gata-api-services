@@ -9,6 +9,8 @@ import {
   OneToOne,
   JoinColumn,
   Index,
+  BeforeInsert,
+  BeforeUpdate,
 } from "typeorm";
 import ExpertisesGroup from "./expertisesGroup";
 import { Student } from "./student";

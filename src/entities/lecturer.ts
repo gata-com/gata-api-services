@@ -28,6 +28,12 @@ export class Lecturer {
   @Column({ length: 10, nullable: true })
   lecturer_code!: string;
 
+  @Column({ default: 0 })
+  current_supervised_1!: number;
+
+  @Column({ default: 0 })
+  current_supervised_2!: number;
+
   @Column({ default: 15 })
   max_supervised_1!: number;
 
@@ -49,10 +55,10 @@ export class Lecturer {
   expertises_group!: ExpertisesGroup;
 
   @OneToMany(() => FinalProjects, (fp) => fp.supervisor_1)
-  supervisedProjects!: FinalProjects[];
+  supervisor_1!: FinalProjects[];
 
   @OneToMany(() => FinalProjects, (fp) => fp.supervisor_2)
-  coSupervisedProjects!: FinalProjects[];
+  supervisor_2!: FinalProjects[];
 
   // *** Method ***
 }

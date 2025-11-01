@@ -5,6 +5,7 @@ import AppDataSource, {
   closeDatabase,
 } from "./config/database";
 import { config } from "./config/config";
+import { initializeCronJobs } from "./jobs";
 
 const PORT = config.port || 5000;
 
@@ -33,13 +34,8 @@ const checkDatabaseHealth = async (retries = 3): Promise<boolean> => {
 
 // Start server with enhanced error handling
 const startServer = async () => {
-  // console.log("🚀 Starting server...");
-  // console.log(`📊 Environment: ${config.nodeEnv}`);
-  // console.log(`🔧 Node.js version: ${process.version}`);
-
   try {
     // Initialize database with retry logic
-    console.log("🔄 Initializing database connection...");
     await initializeDatabase();
 
     // Verify database health
@@ -50,37 +46,11 @@ const startServer = async () => {
 
     console.log("✅ Database is healthy and ready");
 
+    // Initialize scheduled jobs
+    initializeCronJobs();
+
     // Start HTTP server
-    const server = app.listen(PORT, () => {
-      // console.log('='.repeat(50));
-      // console.log(`🌟 SERVER STARTED SUCCESSFULLY`);
-      // console.log(`🚀 Server running on port ${PORT}`);
-      // console.log(`🌍 Environment: ${config.nodeEnv}`);
-      // console.log(`🗄️  Database: ${config.database.type.toUpperCase()}`);
-      // if (config.database.type === 'mysql') {
-      //   console.log(`🏠 MySQL: ${config.database.host}:${config.database.port}/${config.database.name}`);
-      // }
-      // console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-      // console.log(`📋 API docs: http://localhost:${PORT}/`);
-      // console.log('='.repeat(50));
-      // // Email configuration debug
-      // console.log('\n=== EMAIL CONFIGURATION ===');
-      // console.log(`📧 SMTP Host: ${config.email.host}`);
-      // console.log(`🔌 SMTP Port: ${config.email.port}`);
-      // console.log(`👤 SMTP User: ${config.email.user || 'Not configured'}`);
-      // console.log(`🔐 SMTP Pass: ${config.email.password ? '✅ Configured' : '❌ Not configured'}`);
-      // console.log(`📨 SMTP From: ${config.email.from}`);
-      // console.log(`🌐 Frontend URL: ${config.app.frontendUrl}`);
-      // Check if SMTP is ready
-      // if (config.email.user && config.email.password) {
-      //   console.log("✅ SMTP server is ready to send emails");
-      // } else {
-      //   console.log(
-      //     "⚠️ SMTP configuration incomplete - email features disabled"
-      //   );
-      // }
-      // console.log("============================\n");
-    });
+    const server = app.listen(PORT, () => {});
 
     // Enhanced graceful shutdown
     const shutdown = async (signal: string) => {
@@ -157,9 +127,6 @@ const startServer = async () => {
       // MySQL specific error suggestions
       if (error.message.includes("ECONNREFUSED")) {
         console.error("💡 Suggestion: Make sure MySQL server is running");
-        console.error("   - Windows: Check Services for MySQL");
-        console.error("   - Linux: sudo systemctl status mysql");
-        console.error("   - macOS: brew services list | grep mysql");
       } else if (error.message.includes("ER_ACCESS_DENIED_ERROR")) {
         console.error("💡 Suggestion: Check database credentials in .env file");
       } else if (error.message.includes("ER_BAD_DB_ERROR")) {

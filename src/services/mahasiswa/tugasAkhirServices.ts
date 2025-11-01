@@ -99,8 +99,9 @@ export class TugasAkhirService {
     data: FinalProjectCreateRequest
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
     // transaction DB
-    await this.finalProjectRepo.qr.connect();
-    await this.finalProjectRepo.qr.startTransaction();
+    const qr = this.finalProjectRepo.AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
     try {
       // Parse body data
       const bodyData = data;
@@ -184,17 +185,17 @@ export class TugasAkhirService {
         );
 
       // commit transaction
-      await this.finalProjectRepo.qr.commitTransaction();
+      await qr.commitTransaction();
 
       return { error: null, data: createdData };
     } catch (error) {
       // rollback transaction on error
-      await this.finalProjectRepo.qr.rollbackTransaction();
+      await qr.rollbackTransaction();
 
       throw error;
     } finally {
       // release query runner
-      await this.finalProjectRepo.qr.release();
+      await qr.release();
     }
   }
 }

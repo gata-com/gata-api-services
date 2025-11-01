@@ -3,3 +3,8 @@ export interface FinalProjectPeriodsRequest {
   end_date: string;
   description?: string;
 }
+
+export interface FPApprovalRequest {
+  fpId: number;
+  status: "approved" | "rejected";
+}

@@ -1,14 +1,11 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { TugasAkhirService } from "@/services/dosen/tugasAkhirServices";
-import { FPApprovalRequest } from "@/types/dosen";
+import { TugasAkhirService } from "@/services/admin/tugasAkhirServices";
 
-export const approval = async (req: Request, res: Response<ApiResponse>) => {
-  const body: FPApprovalRequest = req.body;
-
+export const getDosen = async (req: Request, res: Response<ApiResponse>) => {
   try {
-    const finalProjectService = new TugasAkhirService();
-    const result = await finalProjectService.approval(body);
+    const tugasAkhirService = new TugasAkhirService();
+    const result = await tugasAkhirService.getDosen();
 
     if ("error" in result && result.error) {
       return res.status(400).json({
@@ -16,9 +13,10 @@ export const approval = async (req: Request, res: Response<ApiResponse>) => {
         errors: result.error,
       });
     }
-
-    return res.status(201).json({
-      message: "Tugas akhir berhasil divalidasi",
+    return res.status(200).json({
+      message: "Data ditemukan",
+      data: result.data,
+      // pagination: {
     });
   } catch (error) {
     return res.status(500).json({

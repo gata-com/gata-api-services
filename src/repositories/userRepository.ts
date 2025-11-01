@@ -116,7 +116,19 @@ export class UserRepository {
       .createQueryBuilder("user")
       .innerJoinAndSelect("user.lecturer", "lecturer")
       .where("user.role = :role", { role: "lecturer" })
-      .select(["user.id", "user.name", "user.email", "lecturer.id"])
+      .andWhere(
+        "lecturer.current_supervised_1 < lecturer.max_supervised_1 OR lecturer.current_supervised_2 < lecturer.max_supervised_2"
+      )
+      .select([
+        "user.id",
+        "user.name",
+        "user.email",
+        "lecturer.id",
+        "lecturer.current_supervised_1",
+        "lecturer.current_supervised_2",
+        "lecturer.max_supervised_1",
+        "lecturer.max_supervised_2",
+      ])
       .getMany();
   }
   // Search user by id

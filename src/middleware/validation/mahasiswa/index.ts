@@ -1,4 +1,4 @@
-import { body, ValidationChain } from "express-validator";
+import { body, ValidationChain, param } from "express-validator";
 
 export const validateCreateFinalProject: ValidationChain[] = [
   body("type").trim().notEmpty().withMessage("Tipe tugas akhir harus diisi"),
@@ -85,4 +85,18 @@ export const validateCreateFinalProject: ValidationChain[] = [
     .trim()
     .notEmpty()
     .withMessage("Resume tugas akhir anggota harus diisi"),
+];
+
+export const validateFPChangeSupervisor: ValidationChain[] = [
+  body("fpId")
+    .notEmpty()
+    .withMessage("ID Tugas Akhir harus diisi")
+    .isInt()
+    .withMessage("ID Tugas Akhir harus berupa angka"),
+  body("supervisor_1"),
+  body("supervisor_2"),
+];
+
+export const validateFPDelete: ValidationChain[] = [
+  param("id").notEmpty().withMessage("ID Tugas Akhir harus diisi"),
 ];

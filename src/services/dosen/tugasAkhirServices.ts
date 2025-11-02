@@ -3,18 +3,29 @@ import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { FinalProjectRepository } from "@/repositories/FinalProjectRepository";
 import { ErrorValidation } from "@/types";
 import { ServicesReturn } from "@/types";
-import { FPApprovalRequest } from "@/types/dosen";
+import { FPApprovalRequest, FPAddSlotRequest } from "@/types/dosen";
+import { FinalProjectPeriodsRepository } from "@/repositories/FinalProjectPeriodsRepository";
 
 export class TugasAkhirService {
   // private repository:
   private userRepo: UserRepository;
   private lecturerRepo: LecturerRepository;
   private finalProjectRepo: FinalProjectRepository;
+  private fppRepo: FinalProjectPeriodsRepository;
 
   constructor() {
     this.userRepo = new UserRepository();
     this.lecturerRepo = new LecturerRepository();
     this.finalProjectRepo = new FinalProjectRepository();
+    this.fppRepo = new FinalProjectPeriodsRepository();
+  }
+
+  async getCurrentPeriodApproval() {
+    try {
+      return await this.fppRepo.findCurrentPeriodApproval();
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getValidationStats(
@@ -79,6 +90,29 @@ export class TugasAkhirService {
       if (error) {
         return { error: error };
       }
+
+      return { error: null, data: result };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addSlot(
+    data: FPAddSlotRequest
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
+    const { userId, supervisorType, amount } = data;
+
+    try {
+      // cek apakah dosen ada
+      const lc = await this.lecturerRepo.findByUserId(userId);
+
+      if (!lc) {
+        return {
+          error: { path: "server", msg: "Dosen tidak ditemukan" },
+        };
+      }
+
+      const result = await this.lecturerRepo.addSlot(lc.id, data);
 
       return { error: null, data: result };
     } catch (error) {

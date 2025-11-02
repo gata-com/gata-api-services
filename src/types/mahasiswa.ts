@@ -20,3 +20,9 @@ export interface FinalProjectData {
   draft_path?: Express.Multer.File | null;
   dispen_path?: Express.Multer.File | null;
 }
+
+export interface FPChangeSupervisorRequest {
+  fpId: number;
+  supervisor_1: number | null;
+  supervisor_2: number | null;
+}

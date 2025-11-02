@@ -31,6 +31,7 @@ import { Lecturer } from "./lecturer";
 @Entity("final_project_periods")
 @Index(["start_date"])
 @Index(["end_date"])
+@Index(["approval_end_date"])
 export class FinalProjectPeriods {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -40,6 +41,9 @@ export class FinalProjectPeriods {
 
   @Column()
   end_date: string;
+
+  @Column()
+  approval_end_date: string;
 
   @Column({ type: "text", nullable: true })
   description?: string;

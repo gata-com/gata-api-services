@@ -1,6 +1,7 @@
 import { Repository, QueryRunner } from "typeorm";
 import AppDataSource from "../config/database";
 import { Lecturer } from "@/entities/lecturer";
+import { FPAddSlotRequest } from "@/types/dosen";
 
 export class LecturerRepository {
   public repository: Repository<Lecturer>;
@@ -90,6 +91,41 @@ export class LecturerRepository {
     }
   }
 
+  async addSlot(lcId: number, data: FPAddSlotRequest): Promise<any> {
+    const qr = AppDataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const { userId, supervisorType, amount } = data;
+      const lc = await this.repository
+        .createQueryBuilder()
+        .update(Lecturer)
+        .set({
+          ...(supervisorType === "1"
+            ? {
+                max_supervised_1: () => `max_supervised_1 + ${amount}`,
+              }
+            : {}),
+          ...(supervisorType === "2"
+            ? {
+                max_supervised_2: () => `max_supervised_2 + ${amount}`,
+              }
+            : {}),
+        })
+        .where("id = :lcId", { lcId })
+        .execute();
+
+      await qr.commitTransaction();
+
+      return lc;
+    } catch (error) {
+      await qr.rollbackTransaction();
+      throw error;
+    } finally {
+      await qr.release();
+    }
+  }
+
   /**
    * FIND
    *
@@ -107,4 +143,5 @@ export class LecturerRepository {
       where: { id },
     });
   }
+
 }

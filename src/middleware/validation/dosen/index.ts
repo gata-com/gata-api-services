@@ -28,3 +28,21 @@ export const validateFPValidation: ValidationChain[] = [
     .isInt()
     .withMessage("userId harus berupa angka"),
 ];
+
+export const validateFPAddSlot: ValidationChain[] = [
+  body("userId")
+    .notEmpty()
+    .withMessage("userId tidak ditemukan")
+    .isInt()
+    .withMessage("userId harus berupa angka"),
+  body("supervisorType")
+    .notEmpty()
+    .withMessage("supervisorType tidak ditemukan")
+    .isIn(["1", "2"])
+    .withMessage("supervisorType harus berupa 1 atau 2"),
+  body("amount")
+    .notEmpty()
+    .withMessage("amount tidak ditemukan")
+    .isInt({ min: 1 })
+    .withMessage("amount harus berupa angka minimal 1"),
+];

@@ -27,6 +27,12 @@ export class FinalProjectPeriodsRepository {
     this.AppDataSource = AppDataSource;
   }
 
+  /**
+   *
+   * CREATE n UPDATE
+   * @returns
+   */
+
   async create(
     periodData: Partial<FinalProjectPeriods>
   ): Promise<FinalProjectPeriods> {
@@ -70,6 +76,24 @@ export class FinalProjectPeriodsRepository {
     }
   }
 
+  /**
+   *
+   * FIND
+   * @returns
+   */
+
+  async findCurrentPeriodApproval(): Promise<FinalProjectPeriods | null> {
+    // get current date in YYYY-MM-DD format
+    const currentDate = new Date().toISOString().split("T")[0];
+    return await this.repository.findOne({
+      where: {
+        start_date: LessThanOrEqual(currentDate),
+        approval_end_date: GreaterThanOrEqual(currentDate),
+      },
+      order: { start_date: "DESC" },
+    });
+  }
+
   async findCurrentPeriod(): Promise<FinalProjectPeriods | null> {
     // get current date in YYYY-MM-DD format
     const currentDate = new Date().toISOString().split("T")[0];
@@ -87,7 +111,7 @@ export class FinalProjectPeriodsRepository {
     const currentDate = new Date().toISOString().split("T")[0];
     return await this.repository.findOne({
       where: {
-        end_date: LessThanOrEqual(currentDate),
+        approval_end_date: LessThanOrEqual(currentDate),
       },
       order: { end_date: "DESC" },
     });

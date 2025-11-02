@@ -1,11 +1,18 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { TugasAkhirService } from "@/services/admin/tugasAkhirServices";
+import { FPChangeSupervisorRequest } from "@/types/mahasiswa";
+import { TugasAkhirService } from "@/services/mahasiswa/tugasAkhirServices";
 
-export const create = async (req: Request, res: Response<ApiResponse>) => {
+export const changeSupervisor = async (
+  req: Request,
+  res: Response<ApiResponse>
+) => {
   try {
-    const finalProjectPeriodService = new TugasAkhirService();
-    const result = await finalProjectPeriodService.createPeriod(req.body);
+    const finalProjectService = new TugasAkhirService();
+
+    const result = await finalProjectService.changeSupervisor(
+      req.body as FPChangeSupervisorRequest
+    );
 
     if ("error" in result && result.error) {
       return res.status(400).json({
@@ -15,7 +22,7 @@ export const create = async (req: Request, res: Response<ApiResponse>) => {
     }
 
     return res.status(201).json({
-      message: "Periode tugas akhir berhasil dibuat",
+      message: "Dosen pembimbing berhasil diubah",
     });
   } catch (error) {
     return res.status(500).json({

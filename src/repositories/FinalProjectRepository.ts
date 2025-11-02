@@ -4,9 +4,10 @@ import { LecturerRepository } from "./LecturerRepository";
 import { FinalProjectPeriodsRepository } from "./FinalProjectPeriodsRepository";
 import { FinalProjects, FinalProjectMembers } from "@/entities/finalProject";
 import { Lecturer } from "@/entities/lecturer";
-import { FinalProjectData } from "@/types/mahasiswa";
+import { FinalProjectData, FPChangeSupervisorRequest } from "@/types/mahasiswa";
 import fileUploadUtil from "@/utils/fileUpload";
 import { FPApprovalRequest } from "@/types/dosen";
+import { th } from "@faker-js/faker/.";
 
 export class FinalProjectRepository {
   public repository: Repository<FinalProjects>;
@@ -239,58 +240,45 @@ export class FinalProjectRepository {
     return result;
   }
 
+  async changeSupervisor(data: FPChangeSupervisorRequest): Promise<any> {
+    const { fpId, supervisor_1, supervisor_2 } = data;
+
+    return await this.repository
+      .createQueryBuilder()
+      .update(FinalProjects)
+      .set({
+        admin_status: "pending",
+        supervisor_1_status: () =>
+          "CASE WHEN :supervisor_1 IS NOT NULL THEN 'pending' ELSE supervisor_1_status END",
+        supervisor_2_status: () =>
+          "CASE WHEN :supervisor_2 IS NOT NULL THEN 'pending' ELSE supervisor_2_status END",
+        supervisor_1: () =>
+          "CASE WHEN :supervisor_1 IS NOT NULL THEN :supervisor_1 ELSE supervisor1Id END",
+        supervisor_2: () =>
+          "CASE WHEN :supervisor_2 IS NOT NULL THEN :supervisor_2 ELSE supervisor2Id END",
+      })
+      .where("id = :fpId", { fpId })
+      .setParameters({ supervisor_1, supervisor_2 })
+      .execute();
+  }
+
+  async deleteFP(id: number): Promise<any> {
+    return await this.repository.delete({ id });
+  }
+
   /**
    * Dosen
    *
    * @returns
    */
 
-  async checkPeriod(userId: number): Promise<any> {
-    // search lecturer
-    const lc = await this.lcRepo.findByUserId(userId);
-
-    // if (!lc) {
-    //   return null;
-    // }
-
-    // cari final project
-    const fp = await this.repository
-      .createQueryBuilder("fp")
-      .innerJoinAndSelect("fp.final_project_period", "fpp")
-      .where(
-        "fp.supervisor1Id = :lecturerId OR fp.supervisor2Id = :lecturerId",
-        { lecturerId: lc?.id }
-      )
-      .getOne();
-
-    // jika tidak ada final project just return data lecturer
-    if (!fp) {
-      return null;
-    }
-
-    const period = await this.fppRepo.findById(fp?.final_project_period?.id);
-
-    if (!period) {
-      return null;
-    }
-
-    // cek apakah sekarang dalam rentang start_date dan end_date
-    const currentDate = new Date().toISOString().split("T")[0];
-    if (!(period.start_date <= currentDate && currentDate <= period.end_date)) {
-      return null;
-    }
-
-    // returning lc.id jika peride valid
-    return lc;
-  }
-
   async findValidationStats(userId: number): Promise<any> {
     let result = null;
 
     // cek lc id ada dan periode tugas akhir valid
-    const lc = await this.checkPeriod(userId);
+    const lc = await this.lcRepo.findByUserId(userId);
     if (!lc) {
-      return null;
+      throw new Error("Dosen tidak ditemukan");
     }
 
     result = {
@@ -308,11 +296,11 @@ export class FinalProjectRepository {
   async findValidationData(userId: number): Promise<any> {
     let result = null;
 
-    // cek lc id ada dan periode tugas akhir valid
-    const lc = await this.checkPeriod(userId);
+    // search lecturer
+    const lc = await this.lcRepo.findByUserId(userId);
 
     if (!lc) {
-      return null;
+      throw new Error("Dosen tidak ditemukan");
     }
 
     // search data

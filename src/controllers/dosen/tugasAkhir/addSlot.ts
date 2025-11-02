@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { TugasAkhirService } from "@/services/admin/tugasAkhirServices";
+import { TugasAkhirService } from "@/services/dosen/tugasAkhirServices";
+import { FPAddSlotRequest } from "@/types/dosen";
 
-export const create = async (req: Request, res: Response<ApiResponse>) => {
+export const addSlot = async (req: Request, res: Response<ApiResponse>) => {
+  const body: FPAddSlotRequest = req.body;
+
   try {
-    const finalProjectPeriodService = new TugasAkhirService();
-    const result = await finalProjectPeriodService.createPeriod(req.body);
+    const finalProjectService = new TugasAkhirService();
+    const result = await finalProjectService.addSlot(body);
 
     if ("error" in result && result.error) {
       return res.status(400).json({
@@ -15,7 +18,7 @@ export const create = async (req: Request, res: Response<ApiResponse>) => {
     }
 
     return res.status(201).json({
-      message: "Periode tugas akhir berhasil dibuat",
+      message: "Slot berhasil ditambahkan",
     });
   } catch (error) {
     return res.status(500).json({

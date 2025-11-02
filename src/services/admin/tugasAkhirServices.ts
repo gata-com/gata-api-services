@@ -13,9 +13,9 @@ export class TugasAkhirService {
     this.fppRepo = new FinalProjectPeriodsRepository();
   }
 
-  async getCurrentPeriod() {
+  async getCurrentPeriodApproval() {
     try {
-      return await this.fppRepo.findCurrentPeriod();
+      return await this.fppRepo.findCurrentPeriodApproval();
     } catch (error) {
       throw error;
     }
@@ -30,19 +30,9 @@ export class TugasAkhirService {
     await qr.startTransaction();
 
     try {
-      const { start_date, end_date, description } = data;
+      const { start_date } = data;
 
-      // start_date must be before end_date
-      // if (new Date(start_date) >= new Date(end_date)) {
-      //   return {
-      //     error: {
-      //       path: "start_date",
-      //       msg: "Tanggal buka harus sebelum tanggal tutup",
-      //     },
-      //   };
-      // }
-
-      // start_date must be unique
+      // start_date harus unik
       const existingPeriods = await this.fppRepo.findAll();
       const isStartDateExists = existingPeriods.some(
         (period) =>
@@ -57,6 +47,12 @@ export class TugasAkhirService {
           },
         };
       }
+
+      // end_data tambah 7 hari untuk approval_end_date
+      const endDate = new Date(data.end_date);
+      const approvalEndDate = new Date(endDate);
+      approvalEndDate.setDate(endDate.getDate() + 7);
+      data.approval_end_date = approvalEndDate.toISOString().split("T")[0];
 
       const createdData = await this.fppRepo.create(data);
 
@@ -91,5 +87,4 @@ export class TugasAkhirService {
       throw error;
     }
   }
-
 }

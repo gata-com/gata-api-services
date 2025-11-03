@@ -7,7 +7,6 @@ import { Lecturer } from "@/entities/lecturer";
 import { FinalProjectData, FPChangeSupervisorRequest } from "@/types/mahasiswa";
 import fileUploadUtil from "@/utils/fileUpload";
 import { FPApprovalRequest } from "@/types/dosen";
-import { th } from "@faker-js/faker/.";
 
 export class FinalProjectRepository {
   public repository: Repository<FinalProjects>;
@@ -208,7 +207,7 @@ export class FinalProjectRepository {
   async findById(id: number): Promise<FinalProjects | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: ["supervisor_1", "supervisor_2"],
+      relations: ["supervisor_1", "supervisor_2", "members"],
     });
   }
 
@@ -263,7 +262,24 @@ export class FinalProjectRepository {
   }
 
   async deleteFP(id: number): Promise<any> {
-    return await this.repository.delete({ id });
+    try {
+      const fp = await this.findById(id);
+      if (!fp) {
+        throw new Error("Final project not found");
+      }
+
+      for (const member of fp.members) {
+        await fileUploadUtil.deleteFile(member.draft_path);
+
+        if (member.dispen_path) {
+          await fileUploadUtil.deleteFile(member.dispen_path);
+        }
+      }
+
+      await this.repository.delete(id);
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**

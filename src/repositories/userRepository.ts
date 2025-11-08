@@ -163,6 +163,21 @@ export class UserRepository {
     });
   }
 
+  async findByIdWithStudentAndFPMAndFPAndFPP(
+    id: number
+  ): Promise<User | null> { 
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.student", "student")
+      .innerJoinAndSelect("student.final_project_members", "fpm")
+      .innerJoinAndSelect("fpm.final_project", "fp")
+      .innerJoinAndSelect("fp.final_project_period", "fpp")
+      .where("user.id = :id", { id })
+      .getOne();
+    
+
+  }
+
   async findAllWithPagination(
     query: UserQueryParams & PaginationQuery
   ): Promise<PaginationResult<User>> {

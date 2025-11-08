@@ -8,6 +8,7 @@ import {
 import AppDataSource from "../config/database";
 import { FinalProjectPeriods } from "@/entities/finalProject";
 import { FinalProjects } from "@/entities/finalProject";
+import { Lecturer } from "@/entities/lecturer";
 
 export function GreaterThanOrEqual<T>(value: T): FindOperator<T> {
   return MoreThanOrEqual(value);
@@ -82,7 +83,7 @@ export class FinalProjectPeriodsRepository {
    * @returns
    */
 
-  async findCurrentPeriodApproval(): Promise<FinalProjectPeriods | null> {
+  async findCurrentPeriodOverall(): Promise<FinalProjectPeriods | null> {
     // get current date in YYYY-MM-DD format
     const currentDate = new Date().toISOString().split("T")[0];
     return await this.repository.findOne({
@@ -90,7 +91,19 @@ export class FinalProjectPeriodsRepository {
         start_date: LessThanOrEqual(currentDate),
         approval_end_date: GreaterThanOrEqual(currentDate),
       },
-      order: { start_date: "DESC" },
+      order: { end_date: "DESC" },
+    });
+  }
+
+  async findCurrentPeriodApproval(): Promise<FinalProjectPeriods | null> {
+    // get current date in YYYY-MM-DD format
+    const currentDate = new Date().toISOString().split("T")[0];
+    return await this.repository.findOne({
+      where: {
+        end_date: LessThanOrEqual(currentDate),
+        approval_end_date: GreaterThanOrEqual(currentDate),
+      },
+      order: { end_date: "DESC" },
     });
   }
 

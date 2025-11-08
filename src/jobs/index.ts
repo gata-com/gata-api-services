@@ -2,7 +2,7 @@ import cron from "node-cron";
 import { finalProjectAutoRejectJob } from "./schedulers/finalProjectAutoReject";
 
 export const initializeCronJobs = () => {
-  // Jalanan job setiap hari pada pukul 00:00
+  // Job 1: Auto-reject pending final projects setiap hari pada pukul 00:00
   cron.schedule(
     "0 0 * * *",
     async () => {

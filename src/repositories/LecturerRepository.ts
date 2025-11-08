@@ -1,7 +1,7 @@
 import { Repository, QueryRunner } from "typeorm";
 import AppDataSource from "../config/database";
 import { Lecturer } from "@/entities/lecturer";
-import { FPAddSlotRequest } from "@/types/dosen";
+import { FPAddSlotRequest } from "@/types/lecturer";
 
 export class LecturerRepository {
   public repository: Repository<Lecturer>;
@@ -144,4 +144,10 @@ export class LecturerRepository {
     });
   }
 
+  async findAllWithGA(): Promise<any> {
+    return this.repository
+      .createQueryBuilder("lc")
+      .innerJoinAndSelect("lc.guidance_availability", "ga")
+      .getMany();
+  }
 }

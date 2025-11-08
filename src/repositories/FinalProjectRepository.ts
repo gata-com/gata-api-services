@@ -4,9 +4,9 @@ import { LecturerRepository } from "./LecturerRepository";
 import { FinalProjectPeriodsRepository } from "./FinalProjectPeriodsRepository";
 import { FinalProjects, FinalProjectMembers } from "@/entities/finalProject";
 import { Lecturer } from "@/entities/lecturer";
-import { FinalProjectData, FPChangeSupervisorRequest } from "@/types/mahasiswa";
+import { FinalProjectData, FPChangeSupervisorRequest } from "@/types/student";
 import fileUploadUtil from "@/utils/fileUpload";
-import { FPApprovalRequest } from "@/types/dosen";
+import { FPApprovalRequest } from "@/types/lecturer";
 
 export class FinalProjectRepository {
   public repository: Repository<FinalProjects>;
@@ -457,6 +457,30 @@ export class FinalProjectRepository {
         .createQueryBuilder("lc")
         .innerJoinAndSelect("lc.user", "lcUser")
         .getMany();
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Update final project with specific fields
+   * @param fpId - Final Project ID
+   * @param data - Data to update
+   * @returns Update result
+   */
+  async updateFinalProject(
+    fpId: number,
+    data: Partial<FinalProjects>
+  ): Promise<any> {
+    try {
+      const result = await this.repository
+        .createQueryBuilder()
+        .update(FinalProjects)
+        .set(data)
+        .where("id = :fpId", { fpId })
+        .execute();
 
       return result;
     } catch (error) {

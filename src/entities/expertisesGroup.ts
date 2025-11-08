@@ -8,7 +8,7 @@ import {
 } from "typeorm";
 import { Lecturer } from "./lecturer";
 import { FinalProjects } from "./finalProject";
-import { ExpertisesGroup as expertGroupType } from "../types/user";
+import { DefenseSubmission } from "./defenses";
 
 @Entity("expertises_group")
 export default class ExpertisesGroup {
@@ -41,6 +41,11 @@ export default class ExpertisesGroup {
     }
   )
   final_projects!: FinalProjects[];
+
+  @OneToMany(() => DefenseSubmission, (defense) => defense.expertises_group, {
+    onDelete: "CASCADE",
+  })
+  defense_submission!: DefenseSubmission[];
 
   // *** Methods ***
 }

@@ -20,8 +20,8 @@ import AppDataSource from "./config/database";
 // Route imports
 import authRoutes from "./routes/auth";
 // import userRoutes from "./routes/users";
-import mahasiswaRoutes from "./routes/mahasiswa";
-import dosenRoutes from "./routes/dosen";
+import mahasiswaRoutes from "./routes/student";
+import dosenRoutes from "./routes/lecturer";
 import adminRoutes from "./routes/admin";
 
 // Load environment variables

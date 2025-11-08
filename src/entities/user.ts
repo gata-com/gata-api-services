@@ -15,13 +15,6 @@ import { OneToOne } from "typeorm";
 import { Student } from "./student";
 import { Lecturer } from "./lecturer";
 import Announcements from "./announcement";
-
-//  enum UserRole {
-//   STUDENT = "student",
-//   ADMIN = "admin",
-//   LECTURER = "lecturer",
-// }
-
 @Entity("users")
 @Index(["role"])
 @Index(["reset_token"])

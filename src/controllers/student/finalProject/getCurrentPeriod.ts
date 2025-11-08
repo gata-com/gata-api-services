@@ -1,15 +1,14 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { TugasAkhirService } from "@/services/admin/tugasAkhirServices";
+import { TugasAkhirService } from "@/services/student/tugasAkhirServices";
 
-export const getCurrentPeriodApproval = async (
+export const getCurrentPeriod = async (
   req: Request,
   res: Response<ApiResponse>
 ) => {
   try {
     const finalProjectPeriodService = new TugasAkhirService();
-    const currentPeriod =
-      await finalProjectPeriodService.getCurrentPeriodOverall();
+    const currentPeriod = await finalProjectPeriodService.getCurrentPeriod();
     return res.status(200).json({
       message: "Periode tugas akhir saat ini",
       data: currentPeriod,

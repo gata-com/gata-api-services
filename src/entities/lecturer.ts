@@ -12,7 +12,9 @@ import {
 } from "typeorm";
 import User from "./user";
 import ExpertisesGroup from "./expertisesGroup";
+import { LecturerExpertise } from "./lecturerExpertise";
 import { FinalProjects } from "./finalProject";
+import { GuidanceAvailability } from "./guidance";
 
 // Lecturer
 @Entity("lecturer")
@@ -51,6 +53,12 @@ export class Lecturer {
   @JoinColumn()
   user!: User;
 
+  @OneToMany(() => LecturerExpertise, (le) => le.lecturer, {
+    cascade: true,
+    eager: true,
+  })
+  expertises!: LecturerExpertise[];
+
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group!: ExpertisesGroup;
 
@@ -59,6 +67,9 @@ export class Lecturer {
 
   @OneToMany(() => FinalProjects, (fp) => fp.supervisor_2)
   supervisor_2!: FinalProjects[];
+
+  @OneToMany(() => GuidanceAvailability, (ga) => ga.lecturer)
+  guidance_availability!: GuidanceAvailability[];
 
   // *** Method ***
 }

@@ -21,6 +21,14 @@ export class TugasAkhirService {
     }
   }
 
+  async getCurrentPeriodOverall() {
+    try {
+      return await this.fppRepo.findCurrentPeriodOverall();
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async createPeriod(
     data: FinalProjectPeriodsRequest
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
@@ -87,4 +95,5 @@ export class TugasAkhirService {
       throw error;
     }
   }
+
 }

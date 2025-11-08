@@ -15,17 +15,7 @@ import {
 import ExpertisesGroup from "./expertisesGroup";
 import { Student } from "./student";
 import { Lecturer } from "./lecturer";
-
-// enum FinalProjectType {
-//   REGULAR = "regular",
-//   CAPSTONE = "capstone",
-// }
-
-// enum FinalProjectStatus {
-//   PENDING = "pending",
-//   APPROVED = "approved",
-//   REJECTED = "rejected",
-// }
+import { GuidanceSession } from "./guidance";
 
 // Final Project Periods
 @Entity("final_project_periods")
@@ -105,6 +95,9 @@ export class FinalProjects {
   })
   supervisor_2_status!: string;
 
+  @Column({ type: "boolean", default: false, nullable: true })
+  is_only_sup_1?: boolean;
+
   @Column({
     type: "enum",
     enum: ["pending", "approved", "rejected"],
@@ -128,6 +121,7 @@ export class FinalProjects {
   updated_at!: Date;
 
   // *** Relationships ***
+
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group!: ExpertisesGroup;
 
@@ -135,6 +129,11 @@ export class FinalProjects {
     onDelete: "CASCADE",
   })
   members!: FinalProjectMembers[];
+
+  @OneToMany(() => GuidanceSession, (gs) => gs.final_project, {
+    onDelete: "CASCADE",
+  })
+  guidance_sessions!: GuidanceSession[];
 
   @ManyToOne(() => FinalProjectPeriods, { onDelete: "CASCADE" })
   final_project_period!: FinalProjectPeriods;

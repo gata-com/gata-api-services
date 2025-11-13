@@ -123,7 +123,10 @@ export class FinalProjects {
   // *** Relationships ***
 
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
-  expertises_group!: ExpertisesGroup;
+  expertises_group_1!: ExpertisesGroup;
+
+  @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
+  expertises_group_2!: ExpertisesGroup;
 
   @OneToMany(() => FinalProjectMembers, (member) => member.final_project, {
     onDelete: "CASCADE",

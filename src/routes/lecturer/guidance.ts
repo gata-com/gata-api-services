@@ -7,6 +7,7 @@ import { getDashboardData } from "@/controllers/lecturer/guidance/getDashboardDa
 import { dashboardActions } from "@/controllers/lecturer/guidance/dashboardActions";
 import { getDefenseSubmission } from "@/controllers/lecturer/guidance/getDefenseSubmission";
 import { approvalDefenseSubmission } from "@/controllers/lecturer/guidance/approvalDefenseSubmission";
+import { getTotalStudents } from "@/controllers/lecturer/guidance/getTotalStudents";
 
 // validation middlewares
 import {
@@ -17,6 +18,7 @@ import {
   validateGADelete,
   validateDefenseSubmission,
   validateDefenseApproval,
+  validateTotalStudents,
 } from "@/middleware/validation/lecturer";
 import { handleValidationErrors } from "@/middleware/validation/handleErrors";
 
@@ -37,6 +39,16 @@ router.post(
 );
 
 router.get(
+  "/total-mahasiswa/:userId",
+  validateTotalStudents,
+  handleValidationErrors,
+  getTotalStudents
+);
+
+/**
+ *  Ketersediaan Bimbingan Routes
+ */
+router.get(
   "/ketersediaan/:userId",
   validateGAAvailability,
   handleValidationErrors,
@@ -56,6 +68,10 @@ router.delete(
   handleValidationErrors,
   deleteAvailability
 );
+
+/**
+ * Pengajuan Sidang Routes
+ */
 
 router.get(
   "/pengajuan-sidang/:userId",

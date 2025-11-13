@@ -144,7 +144,12 @@ export const validateGuidanceDefenseCreate: ValidationChain[] = [
     .withMessage("ID Tugas Akhir harus diisi")
     .isInt()
     .withMessage("ID Tugas Akhir harus berupa angka"),
-  body("expertiseGroupId")
+  body("expertiseGroup1Id")
+    .notEmpty()
+    .withMessage("ID Kelompok Keahlian harus diisi")
+    .isInt()
+    .withMessage("ID Kelompok Keahlian harus berupa angka"),
+  body("expertiseGroup2Id")
     .notEmpty()
     .withMessage("ID Kelompok Keahlian harus diisi")
     .isInt()

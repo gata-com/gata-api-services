@@ -35,17 +35,31 @@ export default class ExpertisesGroup {
 
   @OneToMany(
     () => FinalProjects,
-    (finalProject) => finalProject.expertises_group,
+    (finalProject) => finalProject.expertises_group_1,
     {
       onDelete: "CASCADE",
     }
   )
-  final_projects!: FinalProjects[];
+  expertises_group_1!: FinalProjects[];
 
-  @OneToMany(() => DefenseSubmission, (defense) => defense.expertises_group, {
+  @OneToMany(
+    () => FinalProjects,
+    (finalProject) => finalProject.expertises_group_2,
+    {
+      onDelete: "CASCADE",
+    }
+  )
+  expertises_group_2!: FinalProjects[];
+
+  @OneToMany(() => DefenseSubmission, (defense) => defense.expertises_group_1, {
     onDelete: "CASCADE",
   })
-  defense_submission!: DefenseSubmission[];
+  defense_submission_1!: DefenseSubmission[];
+
+  @OneToMany(() => DefenseSubmission, (defense) => defense.expertises_group_2, {
+    onDelete: "CASCADE",
+  })
+  defense_submission_2!: DefenseSubmission[];
 
   // *** Methods ***
 }

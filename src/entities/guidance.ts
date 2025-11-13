@@ -69,6 +69,9 @@ export class GuidanceSession {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Column({ type: "enum", enum: ["proposal", "hasil"] })
+  defense_type!: string;
+
   // Tipe pembimbing (1 = Pembimbing 1, 2 = Pembimbing 2)
   @Column({
     type: "enum",

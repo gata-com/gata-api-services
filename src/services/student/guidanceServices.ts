@@ -231,8 +231,14 @@ export class GuidanceService {
   async createSubmissionDefense(
     data: GuidanceDefenseRequest
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
-    const { fpId, lecturerId, expertiseGroupId, tipeSidang, finalDraftLinks } =
-      data;
+    const {
+      fpId,
+      lecturerId,
+      expertiseGroup1Id,
+      expertiseGroup2Id,
+      tipeSidang,
+      finalDraftLinks,
+    } = data;
     try {
       // 1. Validasi final project exists
       const finalProject = await this.FPRepo.findById(fpId);
@@ -271,12 +277,13 @@ export class GuidanceService {
       }
 
       // 4. Update expertises_group pada final_projects
-      if (expertiseGroupId) {
+      if (expertiseGroup1Id && expertiseGroup2Id) {
         await this.FPRepo.updateFinalProject(fpId, {
-          expertises_group: { id: expertiseGroupId },
+          expertises_group_1: { id: expertiseGroup1Id },
+          expertises_group_2: { id: expertiseGroup2Id },
         } as any);
         console.log(
-          `Updated final_project ${fpId} with expertise group ${expertiseGroupId}`
+          `Updated final_project ${fpId} with expertise groups ${expertiseGroup1Id} and ${expertiseGroup2Id}`
         );
       }
 
@@ -285,7 +292,8 @@ export class GuidanceService {
       const newSubmission = await this.DSRepo.createSubmission(
         fpId,
         lecturerId,
-        expertiseGroupId,
+        expertiseGroup1Id,
+        expertiseGroup2Id,
         tipeSidang
       );
 

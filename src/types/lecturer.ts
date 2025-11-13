@@ -31,3 +31,28 @@ export interface DefenseApprovalRequest {
   status: "approved" | "rejected";
   rejection_notes?: string;
 }
+
+export interface TotalStudentsResponse {
+  id: number;
+  day_of_week: "1" | "2" | "3" | "4" | "5";
+  session_date: string; // format: YYYY-MM-DD
+  start_time: string; // format: HH:mm
+  end_time: string; // format: HH:mm
+  tipeTA: "regular" | "capstone";
+  location: string;
+  defense_type: "proposal" | "hasil";
+  topic: string;
+  lecturer_feedback?: string;
+  status: "scheduled" | "ongoing" | "completed" | "no_show" | "cancelled";
+  mahasiswa: {
+    id: number;
+    name: string;
+    nim: string;
+  }[];
+  draftLinks?: {
+    id: number;
+    name: string;
+    url: string;
+    uploaded_at?: string;
+  }[];
+}

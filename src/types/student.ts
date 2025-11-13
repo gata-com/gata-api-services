@@ -63,7 +63,8 @@ export interface GuidanceDashboardRequest {
 export interface GuidanceDefenseRequest {
   fpId: number;
   lecturerId: number;
-  expertiseGroupId: number;
+  expertiseGroup1Id: number;
+  expertiseGroup2Id: number;
   tipeSidang: "proposal" | "hasil";
   finalDraftLinks?: DraftLink[];
 }

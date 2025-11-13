@@ -124,3 +124,11 @@ export const validateDefenseApproval: ValidationChain[] = [
     .isIn(["approved", "rejected"])
     .withMessage("status harus berupa approved atau rejected"),
 ];
+
+export const validateTotalStudents: ValidationChain[] = [
+  param("userId")
+    .notEmpty()
+    .withMessage("id tidak ditemukan")
+    .isInt()
+    .withMessage("id harus berupa angka"),
+];

@@ -2,15 +2,14 @@ import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
 import { GuidanceService } from "@/services/lecturer/guidanceServices";
 
-export const getDefenseSubmission = async (
+export const getTotalStudents = async (
   req: Request,
   res: Response<ApiResponse>
 ) => {
   const { userId } = req.params;
   try {
-
     const guidanceService = new GuidanceService();
-    const result = await guidanceService.getDefenseSubmission(parseInt(userId));
+    const result = await guidanceService.getTotalStudents(parseInt(userId));
 
     if ("error" in result && result.error) {
       return res.status(400).json({

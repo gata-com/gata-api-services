@@ -63,7 +63,8 @@ export class DefenseSubmissionRepository {
   async createSubmission(
     fpId: number,
     lecturerId: number,
-    expertiseGroupId: number,
+    expertiseGroup1Id: number,
+    expertiseGroup2Id: number,
     defense_type: string
   ): Promise<any> {
     const qr = this.AppDataSource.createQueryRunner();
@@ -108,7 +109,8 @@ export class DefenseSubmissionRepository {
         guidance_sup_2_count,
         final_project: { id: fpId },
         lecturer: { id: lecturerId },
-        expertises_group: { id: expertiseGroupId },
+        expertises_group_1: { id: expertiseGroup1Id },
+        expertises_group_2: { id: expertiseGroup2Id },
       });
 
       await qr.commitTransaction();
@@ -232,8 +234,10 @@ export class DefenseSubmissionRepository {
       .leftJoinAndSelect("fp.members", "members")
       .leftJoinAndSelect("members.student", "student")
       .leftJoinAndSelect("student.user", "studentUser")
-      .leftJoinAndSelect("fp.expertises_group", "fpExpertise")
-      .leftJoinAndSelect("ds.expertises_group", "dsExpertise")
+      .leftJoinAndSelect("fp.expertises_group_1", "fpExpertise1")
+      .leftJoinAndSelect("fp.expertises_group_2", "fpExpertise2")
+      .leftJoinAndSelect("ds.expertises_group_1", "dsExpertise1")
+      .leftJoinAndSelect("ds.expertises_group_2", "dsExpertise2")
       .leftJoinAndSelect("ds.documents", "documents")
       .leftJoinAndSelect("ds.lecturer", "lecturer")
       .leftJoinAndSelect("lecturer.user", "lecturerUser")

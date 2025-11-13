@@ -6,7 +6,11 @@ import { DefenseSubmissionRepository } from "@/repositories/DefenseSubmissionRep
 
 import { ErrorValidation } from "@/types";
 import { ServicesReturn } from "@/types";
-import { AvailabilityRequest, GuidanceActionRequest } from "@/types/lecturer";
+import {
+  AvailabilityRequest,
+  GuidanceActionRequest,
+  TotalStudentsResponse,
+} from "@/types/lecturer";
 import { PengajuanSidang, StatusPengajuan } from "@/types/defense";
 import AppDataSource from "@/config/database";
 
@@ -221,6 +225,81 @@ export class GuidanceService {
     }
   }
 
+  async getTotalStudents(
+    userId: number
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
+    try {
+      // 1. Cari lecturer berdasarkan userId
+      const lc = await this.LCRepo.findByUserId(userId);
+      if (!lc) {
+        return {
+          error: {
+            path: "server",
+            msg: "Lecturer not found",
+          },
+        };
+      }
+
+      // 2. Ambil semua guidance sessions untuk dosen ini
+      const allGuidanceSessions = await this.GSRepo.findByLecturerId(lc.id);
+
+      if (!allGuidanceSessions || allGuidanceSessions.length === 0) {
+        return { error: null, data: [] };
+      }
+
+      // 3. Transform data ke format TotalStudentsResponse
+      const result: TotalStudentsResponse[] = allGuidanceSessions.map(
+        (session: any) => {
+          // Ambil mahasiswa dari final_project members
+          const mahasiswa = session.final_project.members.map(
+            (member: any) => ({
+              id: member.student.id,
+              name: member.student.user.name,
+              nim: member.student.nim,
+            })
+          );
+
+          // Transform draft links
+          const draftLinks = session.draft_links
+            ? session.draft_links.map((link: any) => ({
+                id: link.id,
+                name: link.name,
+                url: link.url,
+                uploaded_at: link.uploaded_at.toISOString(),
+              }))
+            : [];
+
+          return {
+            id: session.id,
+            day_of_week: String(session.guidance_availability.day_of_week) as
+              | "1"
+              | "2"
+              | "3"
+              | "4"
+              | "5",
+            session_date: this.formatDateToString(
+              new Date(session.session_date)
+            ),
+            start_time: session.guidance_availability.start_time,
+            end_time: session.guidance_availability.end_time,
+            tipeTA: session.final_project.type,
+            location: session.guidance_availability.location,
+            topic: session.topic,
+            defense_type: session.defense_type,
+            lecturer_feedback: session.lecturer_feedback || undefined,
+            status: session.status,
+            mahasiswa,
+            draftLinks: draftLinks.length > 0 ? draftLinks : undefined,
+          };
+        }
+      );
+
+      return { error: null, data: result };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getAvailability(
     userId: number
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
@@ -361,7 +440,8 @@ export class GuidanceService {
           const judulTA = submission.final_project.members[0]?.title || "-";
 
           // Ambil kelompok keahlian dari defense submission (bukan final project)
-          const kelompokKeahlian = submission.expertises_group?.name;
+          const kk1 = submission.expertises_group_1?.name;
+          const kk2 = submission.expertises_group_2?.name;
 
           return {
             id: submission.id,
@@ -379,7 +459,7 @@ export class GuidanceService {
             dokumenPendukung,
             catatan: submission.student_notes || undefined,
             catatanPenolakan: submission.rejection_notes || undefined,
-            kelompokKeahlian: kelompokKeahlian || undefined,
+            kelompokKeahlian: kk1 || kk2 ? { kk1, kk2 } : undefined,
             dosenPembimbing:
               dosenPembimbing.length > 0 ? dosenPembimbing : undefined,
           };

@@ -113,7 +113,10 @@ export class DefenseSubmission {
   documents!: DefenseSubmissionDocument[];
 
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
-  expertises_group!: ExpertisesGroup;
+  expertises_group_1!: ExpertisesGroup;
+
+  @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
+  expertises_group_2!: ExpertisesGroup;
 
   // *** Methods ***
 }

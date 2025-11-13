@@ -6,7 +6,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { Lecturer } from "./lecturer";
 import { FinalProjects } from "./finalProject";
 import { DefenseSubmission } from "./defenses";
 
@@ -28,11 +27,6 @@ export default class ExpertisesGroup {
   updated_at?: Date;
 
   // *** Relationships ***
-  @OneToMany(() => Lecturer, (lecturer) => lecturer.expertises_group, {
-    onDelete: "CASCADE",
-  })
-  lecturers!: Lecturer[];
-
   @OneToMany(
     () => FinalProjects,
     (finalProject) => finalProject.expertises_group_1,

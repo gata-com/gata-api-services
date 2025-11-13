@@ -8,6 +8,7 @@ import { Lecturer } from "../entities/lecturer";
 import { Student } from "../entities/student";
 import ExpertisesGroup from "../entities/expertisesGroup";
 import { LecturerExpertise } from "../entities/lecturerExpertise";
+import { lecturers } from "./seedData";
 
 const expertiseList = [
   { name: "MLTR", description: "Traditional Machine Learning (All Domain)" },
@@ -90,15 +91,15 @@ async function main() {
     console.log("Admin already exists:", adminEmail);
   }
 
-  // 3) Buat 5 lecturers (User + Lecturer + Multiple Expertises)
-  for (let i = 1; i <= 5; i++) {
-    const email = `lecturer${i}@example.com`;
+  // 3) Buat lecturers (User + Lecturer + Multiple Expertises)
+  for (const lecturer of lecturers) {
+    const email = lecturer.email;
     let user = await userRepo.findOne({ where: { email } });
     if (!user) {
       user = userRepo.create({
-        name: `Lecturer ${pad(i, 2)}`,
-        email,
-        password: "password123",
+        name: lecturer.name,
+        email: lecturer.email,
+        password: "password." + lecturer.code,
         role: "lecturer",
         is_active: true,
       } as Partial<User>);
@@ -118,52 +119,47 @@ async function main() {
       continue;
     }
 
-    // pilih random expertise untuk default (backward compatibility)
-    const eg = createdEG[Math.floor(Math.random() * createdEG.length)];
-
-    const lecturer = lecturerRepo.create({
-      nip: "100000" + i.toString(), // pastikan unik di DB Anda
-      lecturer_code: `L${pad(i, 3)}`,
+    // Buat Lecturer tanpa expertises_group (karena sudah menggunakan junction table)
+    const lc = lecturerRepo.create({
+      nip: lecturer.nip,
+      lecturer_code: lecturer.code,
       user: user,
-      expertises_group: eg, // tetap ada untuk backward compatibility
     } as Partial<Lecturer>);
 
-    await lecturerRepo.save(lecturer);
+    await lecturerRepo.save(lc);
     console.log(`Created Lecturer record for ${email}`);
 
-    // Tambahkan 4 expertise ke lecturer (atau kurang dari 4 jika tidak cukup expertise)
-    const numExpertises = Math.min(4, createdEG.length);
-    const selectedExpertises: ExpertisesGroup[] = [];
+    // Tambahkan expertises sesuai dengan data kk di seedData
+    if (lecturer.kk && lecturer.kk.length > 0) {
+      for (const kkCode of lecturer.kk) {
+        // Cari expertise berdasarkan name (kk code)
+        const expertise = await egRepo.findOne({ where: { name: kkCode } });
 
-    // Ambil expertises secara random (tanpa duplikat)
-    const availableIndices = Array.from(
-      { length: createdEG.length },
-      (_, i) => i
-    );
-    for (let j = 0; j < numExpertises; j++) {
-      const randomIdx = Math.floor(Math.random() * availableIndices.length);
-      const idx = availableIndices.splice(randomIdx, 1)[0];
-      selectedExpertises.push(createdEG[idx]);
-    }
+        if (expertise) {
+          // Check if relation already exists
+          const existingRelation = await lecturerExpertiseRepo.findOne({
+            where: {
+              lecturer: { id: lc.id },
+              expertises_group: { id: expertise.id },
+            },
+          });
 
-    // Simpan relasi lecturer-expertise
-    for (const expertise of selectedExpertises) {
-      // Check if already exists
-      const existingRelation = await lecturerExpertiseRepo.findOne({
-        where: {
-          lecturer: { id: (lecturer as any).id },
-          expertises_group: { id: expertise.id },
-        },
-      });
-
-      if (!existingRelation) {
-        const lecturerExpertise = lecturerExpertiseRepo.create({
-          lecturer: lecturer,
-          expertises_group: expertise,
-        });
-        await lecturerExpertiseRepo.save(lecturerExpertise);
-        console.log(`  ✓ Added expertise: ${expertise.name}`);
+          if (!existingRelation) {
+            const lecturerExpertise = lecturerExpertiseRepo.create({
+              lecturer: lc,
+              expertises_group: expertise,
+            });
+            await lecturerExpertiseRepo.save(lecturerExpertise);
+            console.log(`  ✓ Added expertise: ${kkCode} to ${lecturer.code}`);
+          }
+        } else {
+          console.warn(
+            `  ✗ Expertise ${kkCode} not found in database for ${lecturer.code}`
+          );
+        }
       }
+    } else {
+      console.log(`  - No expertises defined for ${lecturer.code}`);
     }
   }
 

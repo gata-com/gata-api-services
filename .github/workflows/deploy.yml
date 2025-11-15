@@ -14,14 +14,14 @@ jobs:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.1
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Rsync files to server
         run: |
-          rsync -az --delete --exclude='.git' ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.TARGET_DIR }}
+          rsync -az --delete --exclude='.git' ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_DIR }}
       - name: Remote deploy commands
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ secrets.TARGET_DIR }}
             # contoh untuk node
             yarn install

@@ -1,6 +1,7 @@
-import { Repository } from "typeorm";
+import { Repository, QueryRunner } from "typeorm";
 import AppDataSource from "../config/database";
 import User from "../entities/user";
+import { Student } from "../entities/student";
 import {
   CreateUserData,
   UpdateUserData,
@@ -11,28 +12,132 @@ import {
 import { PaginationResult, PaginationQuery } from "../types";
 
 export class UserRepository {
-  private repository: Repository<User>;
+  public repository: Repository<User>;
+  public qr: any;
+  private studentRepository: Repository<Student>;
 
-  constructor() {
-    this.repository = AppDataSource.getRepository(User);
+  constructor(private queryRunner?: QueryRunner) {
+    if (queryRunner) {
+      this.repository = queryRunner.manager.getRepository(User);
+      this.studentRepository = queryRunner.manager.getRepository(Student);
+    } else {
+      this.repository = AppDataSource.getRepository(User);
+      this.studentRepository = AppDataSource.getRepository(Student);
+    }
+
+    this.qr = AppDataSource.createQueryRunner();
   }
 
-  async create(userData: CreateUserData): Promise<User> {
-    const userToCreate = this.repository.create({
-      // nim: userData.nim,
-      // nama: userData.nama,
-      // semester: userData.semester,
-      // nomorWhatsapp: userData.nomorWhatsapp,
-      // email: userData.email,
-      // password: userData.password,
-      // role: userData.role || ("student" as UserRole),
-      // kelompokKeahlian: userData.ExpertisesGroup || undefined,
+  /**
+   * Create new user
+   * @param userData
+   * @returns
+   */
+  async create(userData: Partial<User>): Promise<User> {
+    const user = this.repository.create(userData);
+    return await this.repository.save(user);
+  }
+
+  async createUserWithStudent(
+    userData: Partial<User>,
+    studentData: Partial<Student>
+  ): Promise<any> {
+    const id = await AppDataSource.manager.transaction(async (manager) => {
+      // Create dan save user terlebih dahulu
+      const user = manager.create(User, userData);
+      const savedUser = await manager.save(user);
+
+      if (savedUser) {
+        // Create student dengan userId yang otomatis terisi
+        const student = manager.create(Student, {
+          ...studentData,
+          user: savedUser, // Foreign key otomatis terisi
+        });
+        await manager.save(student);
+      }
+
+      // Return user dengan data student
+      return savedUser.id;
     });
-    return await this.repository.save(userToCreate);
+
+    return await this.findById(id);
+  }
+
+  /**
+   * Find user
+   * @returns
+   */
+  async findAllActive(): Promise<User[]> {
+    return await this.repository.find({ where: { is_active: true } });
+  }
+
+  // Search user by email
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.repository.findOne({
+      where: { email },
+    });
   }
 
   async findById(id: number): Promise<User | null> {
-    return await this.repository.findOne({ where: { id } });
+    return await this.repository.findOne({
+      where: { id },
+    });
+  }
+  // find by query email (like %email%) if role is student
+  async findByQueryEmail(query: string): Promise<Partial<User>[]> {
+    const users = await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.student", "student")
+      .where("user.email LIKE :query", { query: `%${query}%` })
+      .andWhere("user.role = :role", { role: "student" })
+      .select(["user.id", "user.name", "user.email", "student.id"])
+      .getMany();
+
+    return users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      studentId: u.student.id,
+    }));
+  }
+
+  async findUserWithStudentById(id: number): Promise<Partial<User> | null> {
+    return await this.studentRepository
+      .createQueryBuilder("student")
+      .innerJoinAndSelect("student.user", "user")
+      .where("user.id = :id", { id })
+      .select(["student.id"])
+      .getOne();
+  }
+
+  // find all lecturers
+  async findAllWithLecturer(): Promise<User[]> {
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.lecturer", "lecturer")
+      .where("user.role = :role", { role: "lecturer" })
+      .andWhere(
+        "lecturer.current_supervised_1 < lecturer.max_supervised_1 OR lecturer.current_supervised_2 < lecturer.max_supervised_2"
+      )
+      .select([
+        "user.id",
+        "user.name",
+        "user.email",
+        "lecturer.id",
+        "lecturer.current_supervised_1",
+        "lecturer.current_supervised_2",
+        "lecturer.max_supervised_1",
+        "lecturer.max_supervised_2",
+      ])
+      .getMany();
+  }
+  // Search user by id
+  async findByIdWithStudent(id: number): Promise<User | null> {
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.student", "student")
+      .where("user.id = :id", { id })
+      .getOne();
   }
 
   async findByIdWithPassword(id: number): Promise<User | null> {
@@ -40,55 +145,37 @@ export class UserRepository {
       where: { id },
       select: [
         "id",
-        // "nim",
-        // "nama",
-        // "semester",
-        // "nomorWhatsapp",
+        "role",
+        "name",
         "email",
         "password",
-        "role",
-        "isActive",
-        "lastLogin",
-        "createdAt",
-        "updatedAt",
+        "whatsapp_number",
+        "is_active",
+        "last_login",
+        "created_at",
       ],
     });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return await this.repository.findOne({
-      where: { email: email.toLowerCase() },
+  async findByNimWithStudent(nim: string): Promise<Student | null> {
+    return await this.studentRepository.findOne({
+      where: { nim },
     });
   }
 
-  async findByEmailWithPassword(email: string): Promise<User | null> {
-    return await this.repository.findOne({
-      where: { email: email.toLowerCase() },
-      select: [
-        "id",
-        // "nim",
-        // "nama",
-        // "semester",
-        // "nomorWhatsapp",
-        "email",
-        "password",
-        "role",
-        "isActive",
-        "lastLogin",
-        "createdAt",
-        "updatedAt",
-      ],
-    });
-  }
+  async findByIdWithStudentAndFPMAndFPAndFPP(
+    id: number
+  ): Promise<User | null> { 
+    return await this.repository
+      .createQueryBuilder("user")
+      .innerJoinAndSelect("user.student", "student")
+      .innerJoinAndSelect("student.final_project_members", "fpm")
+      .innerJoinAndSelect("fpm.final_project", "fp")
+      .innerJoinAndSelect("fp.final_project_period", "fpp")
+      .where("user.id = :id", { id })
+      .getOne();
+    
 
-  // async findByNim(nim: string): Promise<User | null> {
-  //   return await this.repository.findOne({ where: { nim } });
-  // }
-
-  async findByEmailOrNim(email: string, name: string): Promise<User | null> {
-    return await this.repository.findOne({
-      where: [{ email: email.toLowerCase() }, { name }],
-    });
   }
 
   async findAllWithPagination(
@@ -154,29 +241,18 @@ export class UserRepository {
     };
   }
 
-  async update(
-    id: number,
-    updateData: UpdateUserData | Partial<User>
-  ): Promise<User | null> {
+  async update(id: number, updateData: Partial<User>): Promise<User | null> {
     await this.repository.update(id, updateData);
-
-    const updatedUser = await this.findById(id);
-    if (!updatedUser) {
-      throw new Error("User not found after update");
-    }
-    return updatedUser;
+    return await this.findById(id);
   }
 
   async updateLastLogin(id: number): Promise<void> {
-    await this.repository.update(id, { lastLogin: new Date() });
+    await this.repository.update(id, { last_login: new Date() });
   }
 
-  async softDelete(id: number): Promise<void> {
-    await this.repository.update(id, { isActive: false });
-  }
-
-  async hardDelete(id: number): Promise<void> {
-    await this.repository.delete(id);
+  async softDelete(id: number): Promise<boolean> {
+    const result = await this.repository.update(id, { is_active: false });
+    return result.affected ? result.affected > 0 : false;
   }
 
   async count(): Promise<number> {
@@ -205,8 +281,8 @@ export class UserRepository {
       .createQueryBuilder()
       .update(User)
       .set({
-        resetToken: token,
-        resetTokenExpires: expires,
+        reset_token: token,
+        reset_token_expires: expires,
       })
       .where("id = :id", { id: userId })
       .execute();
@@ -218,9 +294,9 @@ export class UserRepository {
   async findByResetToken(token: string): Promise<User | null> {
     const user = await this.repository
       .createQueryBuilder("user")
-      .addSelect(["user.resetToken", "user.resetTokenExpires"])
-      .where("user.resetToken = :token", { token })
-      .andWhere("user.resetTokenExpires > :now", { now: new Date() })
+      .addSelect(["user.reset_token", "user.reset_token_expires"])
+      .where("user.reset_token = :token", { token })
+      .andWhere("user.reset_token_expires > :now", { now: new Date() })
       .getOne();
     return user || null;
   }
@@ -234,8 +310,8 @@ export class UserRepository {
       .update(User)
       .set({
         password: hashedPassword,
-        resetToken: () => "NULL",
-        resetTokenExpires: () => "NULL",
+        reset_token: () => "NULL",
+        reset_token_expires: () => "NULL",
       })
       .where("id = :id", { id: userId })
       .execute();

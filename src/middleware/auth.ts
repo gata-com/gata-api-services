@@ -1,9 +1,8 @@
-import { Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { UserRepository } from '../repositories/userRepository';
-import { AuthRequest, ApiResponse } from '../types';
-import { JwtPayload } from '../types/auth';
-import { config } from '../config/config';
+import { Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { UserRepository } from "@/repositories/UserRepository";
+import { AuthRequest, ApiResponse } from "@/types";
+import { JwtPayload } from "@/types/auth";
 
 const userRepository = new UserRepository();
 
@@ -13,108 +12,63 @@ export const auth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.header('Authorization');
-    console.log('🔍 Auth Header:', authHeader);
-    
-    const token = authHeader?.replace('Bearer ', '');
-    console.log('🔍 Token:', token);
+    const authHeader = req.header("Authorization");
+
+    const token = authHeader?.replace("Bearer ", "");
 
     if (!token) {
-      console.log('❌ No token provided');
       res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided'
+        message: "Access denied. No token provided",
       });
       return;
     }
 
-    const decoded = jwt.verify(token, "your-very-strong-secret-here") as JwtPayload;
-    console.log('🔍 Decoded token:', decoded);
-    
-    const user = await userRepository.findById(decoded.userId);
-    console.log('🔍 User found:', user);
-    
-    if (!user || !user.isActive) {
-      console.log('❌ User not found or inactive');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+
+    const user = await userRepository.findById(parseInt(decoded.id));
+
+    if (!user || !user.is_active) {
       res.status(401).json({
-        success: false,
-        message: 'Token is invalid or user is deactivated'
+        message: "Token is invalid or user is deactivated",
       });
       return;
     }
 
     // ✅ QUICK FIX: Use type assertion
     (req.user as any) = {
-      id: decoded.userId,        // ✅ Set id
-      userId: decoded.userId,    // ✅ Keep userId untuk backward compatibility
-      email: user.email,         // ✅ Set email
-      role: user.role           // ✅ Set role
+      id: decoded.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
     };
-    
-    console.log('✅ req.user set:', req.user);
     next();
-  } catch (error) {
-    console.log('❌ Auth error:', error);
+  } catch (error: any) {
     res.status(401).json({
-      success: false,
-      message: 'Token is invalid'
+      errors: error.message,
+      message: "Token is invalid",
     });
   }
 };
 
-export const adminAuth = async (
+// Authentication for google
+export const authenticateToken = async (
   req: AuthRequest,
   res: Response<ApiResponse>,
   next: NextFunction
 ): Promise<void> => {
-  if (req.user?.role !== 'admin') {
-    res.status(403).json({
-      success: false,
-      message: 'Access denied. Admin privileges required'
-    });
-    return;
-  }
-  next();
-};
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-export const studentAuth = async (
-  req: AuthRequest,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  if (req.user?.role !== 'student') {
-    res.status(403).json({
-      success: false,
-      message: 'Access denied. Student privileges required'
-    });
-    return;
-  }
-  next();
-};
-
-export const selfOrAdminAuth = async (
-  req: AuthRequest<{ id: string }>,
-  res: Response<ApiResponse>,
-  next: NextFunction
-): Promise<void> => {
-  const targetUserId = parseInt(req.params.id, 10);
-  const currentUserId = req.user?.userId;
-  const currentUserRole = req.user?.role;
-
-  if (isNaN(targetUserId)) {
-    res.status(400).json({
-      success: false,
-      message: 'Invalid user ID'
-    });
+  if (!token) {
+    res.status(401).json({ message: "Access token required" });
     return;
   }
 
-  if (currentUserRole === 'admin' || currentUserId === targetUserId) {
+  jwt.verify(token, process.env.JWT_SECRET!, (err: any, user: any) => {
+    if (err) {
+      res.status(403).json({ message: "Invalid token" });
+    }
+    req.user = user;
     next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: 'Access denied. You can only access your own profile'
-    });
-  }
+  });
 };

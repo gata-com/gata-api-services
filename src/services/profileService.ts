@@ -1,6 +1,6 @@
 // services/profileService.ts
 import bcrypt from "bcrypt";
-import { UserRepository } from "../repositories/userRepository"; // Import repository yang sudah ada
+import { UserRepository } from "../repositories/UserRepository"; // Import repository yang sudah ada
 
 const userRepository = new UserRepository();
 
@@ -50,8 +50,8 @@ export const getProfileService = async (
       // pembimbing1: null, // implement later jika ada relasi
       // pembimbing2: null, // implement later jika ada relasi
       // judulTA: null, // implement later jika ada relasi
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
     };
   } catch (error) {
     console.error("Error in getProfileService:", error);

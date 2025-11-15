@@ -1,21 +1,21 @@
 // utils/email.ts
-import nodemailer from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
+import nodemailer from "nodemailer";
+import fs from "fs";
+import path from "path";
 
 // Debug environment variables
-console.log('=== EMAIL CONFIGURATION DEBUG ===');
-console.log('SMTP_HOST:', process.env.SMTP_HOST);
-console.log('SMTP_PORT:', process.env.SMTP_PORT);
-console.log('SMTP_USER:', process.env.SMTP_USER);
-console.log('SMTP_PASS length:', process.env.SMTP_PASS?.length);
-console.log('SMTP_PASS format:', process.env.SMTP_PASS?.replace(/./g, '*'));
-console.log('SMTP_FROM:', process.env.SMTP_FROM);
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log("=== EMAIL CONFIGURATION DEBUG ===");
+console.log("SMTP_HOST:", process.env.SMTP_HOST);
+console.log("SMTP_PORT:", process.env.SMTP_PORT);
+console.log("SMTP_USER:", process.env.SMTP_USER);
+console.log("SMTP_PASS length:", process.env.SMTP_PASS?.length);
+console.log("SMTP_PASS format:", process.env.SMTP_PASS?.replace(/./g, "*"));
+console.log("SMTP_FROM:", process.env.SMTP_FROM);
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 
 // Setup transporter untuk nodemailer - IMPROVED CONFIGURATION
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Menggunakan service predefined Gmail
+  service: "gmail", // Menggunakan service predefined Gmail
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS, // App Password
@@ -34,27 +34,29 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify transporter configuration dengan error handling yang lebih baik
-const verifyTransporter = async() => {
+const verifyTransporter = async () => {
   try {
     const isReady = await transporter.verify();
     if (isReady) {
-      console.log('✅ SMTP server is ready to send emails');
+      console.log("✅ SMTP server is ready to send emails");
       return true;
     }
   } catch (error: any) {
-    console.error('❌ SMTP configuration error:', error.message);
-    
+    console.error("❌ SMTP configuration error:", error.message);
+
     // Specific error handling
-    if (error.code === 'EAUTH') {
-      console.error('🔐 Authentication failed. Check:');
-      console.error('   - Email address is correct');
-      console.error('   - App Password is correct (16 characters)');
-      console.error('   - 2-Step Verification is enabled');
-      console.error('   - App Password was generated recently');
-    } else if (error.code === 'ECONNECTION') {
-      console.error('🌐 Connection failed. Check internet connection and SMTP settings');
+    if (error.code === "EAUTH") {
+      console.error("🔐 Authentication failed. Check:");
+      console.error("   - Email address is correct");
+      console.error("   - App Password is correct (16 characters)");
+      console.error("   - 2-Step Verification is enabled");
+      console.error("   - App Password was generated recently");
+    } else if (error.code === "ECONNECTION") {
+      console.error(
+        "🌐 Connection failed. Check internet connection and SMTP settings"
+      );
     }
-    
+
     return false;
   }
   return false; // Ensure all code paths return a value
@@ -116,70 +118,56 @@ const getDefaultResetTemplate = (): string => {
 const loadTemplate = (templateName: string): string => {
   try {
     const possiblePaths = [
-      path.join(process.cwd(), 'templates', templateName),
-      path.join(process.cwd(), 'src', 'templates', templateName),
-      path.join(__dirname, '..', 'templates', templateName),
-      path.join(__dirname, '..', '..', 'templates', templateName)
+      path.join(process.cwd(), "templates", templateName),
+      path.join(process.cwd(), "src", "templates", templateName),
+      path.join(__dirname, "..", "templates", templateName),
+      path.join(__dirname, "..", "..", "templates", templateName),
     ];
-    
-    console.log(`🔍 Looking for template: ${templateName}`);
-    
+
     for (const templatePath of possiblePaths) {
       if (fs.existsSync(templatePath)) {
-        console.log(`✅ Template found at: ${templatePath}`);
-        const content = fs.readFileSync(templatePath, 'utf8');
+        const content = fs.readFileSync(templatePath, "utf8");
         return content;
       }
     }
-    
-    console.log('⚠️  No template file found, using fallback HTML');
+
     return getDefaultResetTemplate();
-    
   } catch (error) {
-    console.error(`❌ Error loading template ${templateName}:`, error);
     return getDefaultResetTemplate();
   }
 };
 
 export const sendResetPasswordEmail = async (
-  email: string, 
-  token: string, 
+  email: string,
+  token: string,
   nama: string
 ): Promise<boolean> => {
   try {
-    console.log('=== SENDING RESET EMAIL ===');
-    console.log('📧 To:', email);
-    console.log('🔑 Token preview:', token.substring(0, 10) + '...');
-    console.log('👤 Name:', nama);
-
     // Validate required environment variables
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error('❌ Missing SMTP credentials!');
       return false;
     }
 
     // Verify transporter before sending
     const isTransporterReady = await verifyTransporter();
     if (!isTransporterReady) {
-      console.error('❌ SMTP transporter is not ready');
       return false;
     }
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    console.log('🔗 Reset URL:', resetUrl);
-    
+
     // Load and prepare HTML content
-    let htmlContent = loadTemplate('reset-password.html');
+    let htmlContent = loadTemplate("reset-password.html");
     htmlContent = htmlContent.replace(/{{nama}}/g, nama);
     htmlContent = htmlContent.replace(/{{resetUrl}}/g, resetUrl);
-    
+
     const mailOptions = {
       from: {
-        name: 'GATA System',
-        address: process.env.SMTP_FROM || process.env.SMTP_USER || ''
+        name: "GATA System",
+        address: process.env.SMTP_FROM || process.env.SMTP_USER || "",
       },
       to: email,
-      subject: '🔐 Reset Password - GATA System',
+      subject: "🔐 Reset Password - GATA System",
       html: htmlContent,
       text: `
 Halo ${nama},
@@ -194,51 +182,42 @@ Jika Anda tidak meminta reset password, abaikan email ini.
 
 Terima kasih,
 GATA System Team
-      `.trim()
+      `.trim(),
     };
-
-    console.log('📤 Attempting to send email...');
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Reset password email sent successfully!');
-    console.log('📨 Message ID:', result.messageId);
-    console.log('📋 Response:', result.response);
-    
     return true;
-    
   } catch (error: any) {
-    console.error('❌ Error sending reset password email:', error.message);
-    
     // Detailed error logging
     if (error.code) {
-      console.error('Error Code:', error.code);
+      console.error("Error Code:", error.code);
     }
     if (error.response) {
-      console.error('SMTP Response:', error.response);
+      console.error("SMTP Response:", error.response);
     }
     if (error.responseCode) {
-      console.error('Response Code:', error.responseCode);
+      console.error("Response Code:", error.responseCode);
     }
-    
+
     return false;
   }
 };
 
 export const sendWelcomeEmail = async (
-  email: string, 
+  email: string,
   nama: string
 ): Promise<boolean> => {
   try {
     // Verify transporter
     const isReady = await verifyTransporter();
     if (!isReady) {
-      console.error('❌ SMTP not ready for welcome email');
+      console.error("❌ SMTP not ready for welcome email");
       return false;
     }
 
     let htmlContent: string;
-    
+
     try {
-      htmlContent = loadTemplate('welcome.html');
+      htmlContent = loadTemplate("welcome.html");
       htmlContent = htmlContent.replace(/{{nama}}/g, nama);
       htmlContent = htmlContent.replace(/{{email}}/g, email);
     } catch {
@@ -264,27 +243,27 @@ export const sendWelcomeEmail = async (
 
     const mailOptions = {
       from: {
-        name: 'GATA System',
-        address: process.env.SMTP_FROM || process.env.SMTP_USER || ''
+        name: "GATA System",
+        address: process.env.SMTP_FROM || process.env.SMTP_USER || "",
       },
       to: email,
-      subject: '🎉 Selamat Datang di GATA System',
+      subject: "🎉 Selamat Datang di GATA System",
       html: htmlContent,
-      text: `Selamat datang, ${nama}! Akun Anda di GATA System telah berhasil dibuat dan siap digunakan.`
+      text: `Selamat datang, ${nama}! Akun Anda di GATA System telah berhasil dibuat dan siap digunakan.`,
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Welcome email sent:', result.messageId);
+    console.log("✅ Welcome email sent:", result.messageId);
     return true;
   } catch (error: any) {
-    console.error('❌ Error sending welcome email:', error.message);
+    console.error("❌ Error sending welcome email:", error.message);
     return false;
   }
 };
 
 export const sendNotificationEmail = async (
-  email: string, 
-  subject: string, 
+  email: string,
+  subject: string,
   message: string
 ): Promise<boolean> => {
   try {
@@ -293,8 +272,8 @@ export const sendNotificationEmail = async (
 
     const mailOptions = {
       from: {
-        name: 'GATA System',
-        address: process.env.SMTP_FROM || process.env.SMTP_USER || ''
+        name: "GATA System",
+        address: process.env.SMTP_FROM || process.env.SMTP_USER || "",
       },
       to: email,
       subject: `📢 ${subject}`,
@@ -309,14 +288,13 @@ export const sendNotificationEmail = async (
           </p>
         </div>
       `,
-      text: `${subject}\n\n${message}`
+      text: `${subject}\n\n${message}`,
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Notification email sent:', result.messageId);
     return true;
   } catch (error: any) {
-    console.error('❌ Error sending notification email:', error.message);
+    console.error("❌ Error sending notification email:", error.message);
     return false;
   }
 };
@@ -324,29 +302,35 @@ export const sendNotificationEmail = async (
 // Test email connection
 export const testEmailConnection = async (): Promise<boolean> => {
   try {
-    console.log('🔍 Testing email connection...');
-    
+    console.log("🔍 Testing email connection...");
+
     const startTime = Date.now();
     await transporter.verify();
     const endTime = Date.now();
-    
-    console.log(`✅ Email service is ready and verified! (${endTime - startTime}ms)`);
-    console.log('📧 SMTP User:', process.env.SMTP_USER);
-    console.log('🌐 SMTP Host: smtp.gmail.com (via service config)');
-    
+
+    console.log(
+      `✅ Email service is ready and verified! (${endTime - startTime}ms)`
+    );
+    console.log("📧 SMTP User:", process.env.SMTP_USER);
+    console.log("🌐 SMTP Host: smtp.gmail.com (via service config)");
+
     return true;
   } catch (error: any) {
     console.error("❌ Email service error:", error.message);
-    
+
     // Provide specific troubleshooting steps
-    if (error.code === 'EAUTH') {
-      console.error('\n🔧 Troubleshooting steps:');
-      console.error('1. Check if 2-Step Verification is enabled in Google Account');
-      console.error('2. Verify App Password is correct (16 characters, no spaces)');
-      console.error('3. Try generating a new App Password');
-      console.error('4. Make sure email address is correct');
+    if (error.code === "EAUTH") {
+      console.error("\n🔧 Troubleshooting steps:");
+      console.error(
+        "1. Check if 2-Step Verification is enabled in Google Account"
+      );
+      console.error(
+        "2. Verify App Password is correct (16 characters, no spaces)"
+      );
+      console.error("3. Try generating a new App Password");
+      console.error("4. Make sure email address is correct");
     }
-    
+
     return false;
   }
 };

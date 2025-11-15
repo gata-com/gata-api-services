@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "GATA API - Final Project",
+    "_postman_id": "gata-api-final-project",
+    "description": "Collection untuk testing API Final Project dengan multiple file upload",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"your-email@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Final Project",
+      "item": [
+        {
+          "name": "Create Final Project - Single Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "type",
+                  "value": "Skripsi",
+                  "type": "text",
+                  "description": "Tipe tugas akhir"
+                },
+                {
+                  "key": "status",
+                  "value": "Pending",
+                  "type": "text",
+                  "description": "Status tugas akhir"
+                },
+                {
+                  "key": "source_topic",
+                  "value": "Dosen",
+                  "type": "text",
+                  "description": "Sumber topik"
+                },
+                {
+                  "key": "supervisor1Id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID Pembimbing 1"
+                },
+                {
+                  "key": "supervisor2Id",
+                  "value": "2",
+                  "type": "text",
+                  "description": "ID Pembimbing 2"
+                },
+                {
+                  "key": "finalProjectPeriodId",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID Periode Tugas Akhir"
+                },
+                {
+                  "key": "members",
+                  "value": "[{\"email\":\"mahasiswa1@example.com\",\"title\":\"Sistem Informasi Manajemen Tugas Akhir\",\"resume\":\"Penelitian ini membahas tentang pembuatan sistem informasi...\",\"student\":{\"id\":1,\"name\":\"Mahasiswa 1\"}}]",
+                  "type": "text",
+                  "description": "Data members dalam format JSON array"
+                },
+                {
+                  "key": "draft_path_0",
+                  "type": "file",
+                  "src": "",
+                  "description": "File draft untuk member pertama (index 0)"
+                },
+                {
+                  "key": "dispen_path_0",
+                  "type": "file",
+                  "src": "",
+                  "description": "File dispensasi untuk member pertama (index 0)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mahasiswa/tugas-akhir/daftar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mahasiswa", "tugas-akhir", "daftar"]
+            }
+          }
+        },
+        {
+          "name": "Create Final Project - Multiple Members",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "type",
+                  "value": "Skripsi",
+                  "type": "text",
+                  "description": "Tipe tugas akhir"
+                },
+                {
+                  "key": "status",
+                  "value": "Pending",
+                  "type": "text",
+                  "description": "Status tugas akhir"
+                },
+                {
+                  "key": "source_topic",
+                  "value": "Dosen",
+                  "type": "text",
+                  "description": "Sumber topik"
+                },
+                {
+                  "key": "supervisor1Id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID Pembimbing 1"
+                },
+                {
+                  "key": "supervisor2Id",
+                  "value": "2",
+                  "type": "text",
+                  "description": "ID Pembimbing 2"
+                },
+                {
+                  "key": "finalProjectPeriodId",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID Periode Tugas Akhir"
+                },
+                {
+                  "key": "members",
+                  "value": "[{\"email\":\"mahasiswa1@example.com\",\"title\":\"Sistem Informasi Manajemen Tugas Akhir - Bagian 1\",\"resume\":\"Penelitian bagian 1...\",\"student\":{\"id\":1}},{\"email\":\"mahasiswa2@example.com\",\"title\":\"Sistem Informasi Manajemen Tugas Akhir - Bagian 2\",\"resume\":\"Penelitian bagian 2...\",\"student\":{\"id\":2}},{\"email\":\"mahasiswa3@example.com\",\"title\":\"Sistem Informasi Manajemen Tugas Akhir - Bagian 3\",\"resume\":\"Penelitian bagian 3...\",\"student\":{\"id\":3}}]",
+                  "type": "text",
+                  "description": "Data 3 members dalam format JSON array"
+                },
+                {
+                  "key": "draft_path_0",
+                  "type": "file",
+                  "src": "",
+                  "description": "File draft untuk member 1 (index 0)"
+                },
+                {
+                  "key": "dispen_path_0",
+                  "type": "file",
+                  "src": "",
+                  "description": "File dispensasi untuk member 1 (index 0)"
+                },
+                {
+                  "key": "draft_path_1",
+                  "type": "file",
+                  "src": "",
+                  "description": "File draft untuk member 2 (index 1)"
+                },
+                {
+                  "key": "dispen_path_1",
+                  "type": "file",
+                  "src": "",
+                  "description": "File dispensasi untuk member 2 (index 1)"
+                },
+                {
+                  "key": "draft_path_2",
+                  "type": "file",
+                  "src": "",
+                  "description": "File draft untuk member 3 (index 2)"
+                },
+                {
+                  "key": "dispen_path_2",
+                  "type": "file",
+                  "src": "",
+                  "description": "File dispensasi untuk member 3 (index 2)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mahasiswa/tugas-akhir/daftar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mahasiswa", "tugas-akhir", "daftar"]
+            }
+          }
+        },
+        {
+          "name": "Get Student by Query",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mahasiswa/tugas-akhir?query=mahasiswa@example.com",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mahasiswa", "tugas-akhir"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "mahasiswa@example.com"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Lecturers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mahasiswa/tugas-akhir/dosen",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mahasiswa", "tugas-akhir", "dosen"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

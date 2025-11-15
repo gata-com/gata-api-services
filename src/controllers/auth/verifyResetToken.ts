@@ -1,41 +1,35 @@
 import { Request, Response } from "express";
-import db from "../../config/database";
+import { ApiResponse } from "@/types";
+import { AuthService } from "@/services/auth/authServices";
+import { VerifyTokenRequest } from "@/types/auth";
 
-export const verifyResetToken = async (req: Request, res: Response): Promise<Response> => {
+export const verifyResetToken = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
   try {
     const { token } = req.params;
 
-    // Validasi token parameter exists
-    if (!token) {
-      return res.status(400).json({ 
-        message: "Token tidak ditemukan",
-        valid: false 
+    const authService = new AuthService();
+    const result = await authService.verifyResetToken({ token });
+
+    if ("error" in result && result.error) {
+      return res.status(400).json({
+        message: "Error Validation",
+        errors: result.error,
       });
     }
 
-    const [rows] = await db.query(
-      "SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > NOW()",
-      [token]
-    );
-    const users = rows as any[];
-
-    if (users.length === 0) {
-      return res.status(400).json({ 
-        message: "Token tidak valid atau kadaluarsa",
-        valid: false 
-      });
-    }
-
-    return res.status(200).json({ 
-      message: "Token valid", 
-      valid: true 
+    return res.status(200).json({
+      message: "Token valid",
     });
   } catch (error) {
-    console.error("Error in verifyResetToken:", error);
-    return res.status(500).json({ 
-      message: "Terjadi kesalahan", 
-      valid: false,
-      error 
+    return res.status(500).json({
+      message: "Terjadi kesalahan",
+      errors: {
+        path: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
     });
   }
 };

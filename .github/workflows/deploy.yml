@@ -7,30 +7,60 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # contoh: 33369
+      TARGET_DIR: ${{ secrets.TARGET_DIR }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Start ssh-agent and add key
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          
-      - name: Add VPS to known_hosts
+
+      - name: Ensure ~/.ssh exists
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
 
-      - name: Rsync files to server
+      - name: Add VPS to known_hosts (with custom port)
         run: |
-          rsync -az --delete --exclude='.git' ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_DIR }}
+          # ssh-keyscan supports -p for custom port
+          ssh-keyscan -p "${{ env.SERVER_PORT }}" -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Rsync files to server (over custom port)
+        run: |
+          # Use -e "ssh -p PORT" so rsync uses correct port
+          rsync -az --delete --exclude='.git' -e "ssh -p ${{ env.SERVER_PORT }}" ./ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.TARGET_DIR }}
+
       - name: Remote deploy commands
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd ${{ secrets.TARGET_DIR }}
-            # contoh untuk node
-            yarn install
+          # Use ssh with -p as well
+          ssh -o StrictHostKeyChecking=no -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
+            set -eux
+
+            cd ${{ env.TARGET_DIR }}
+
+            # Jika perlu, buat node/yarn environment (contoh menggunakan nvm)
+            # source ~/.nvm/nvm.sh || true
+            # nvm use || nvm install 18
+
+            # Install build deps & build
+            yarn install --frozen-lockfile
             yarn build
-            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js
+
+            # Restart / start app with pm2
+            # Gunakan reload jika sudah ada, fallback ke start
+            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
             pm2 save
+
+            # Pastikan file & folder dimiliki oleh user deploy jika sebelumnya root men-deploy
+            # chown -R $(whoami):$(whoami) ${{ env.TARGET_DIR }} || true
+
+            exit 0
           EOF

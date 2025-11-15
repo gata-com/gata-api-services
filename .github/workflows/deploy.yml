@@ -49,7 +49,7 @@ jobs:
 
             # Install build deps & build
             npm install
-            npm build
+            npm run build
 
             # Restart / start app with pm2
             # Gunakan reload jika sudah ada, fallback ke start

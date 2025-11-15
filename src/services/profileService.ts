@@ -1,6 +1,5 @@
 // services/profileService.ts
-import bcrypt from "bcrypt";
-import { UserRepository } from "../repositories/UserRepository"; // Import repository yang sudah ada
+import { UserRepository } from "@/repositories/UserRepository"; // Import repository yang sudah ada
 
 const userRepository = new UserRepository();
 

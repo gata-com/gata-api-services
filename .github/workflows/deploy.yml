@@ -55,9 +55,4 @@ jobs:
             # Gunakan reload jika sudah ada, fallback ke start
             pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
             pm2 save
-
-            # Pastikan file & folder dimiliki oleh user deploy jika sebelumnya root men-deploy
-            # chown -R $(whoami):$(whoami) ${{ env.TARGET_DIR }} || true
-
-            exit 0
           EOF

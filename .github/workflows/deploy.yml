@@ -33,6 +33,30 @@ jobs:
           ssh-keyscan -p "${{ env.SERVER_PORT }}" -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
+
+
+
+
+          # potongan: gunakan hanya untuk debug sementara, jangan commit forever karena prints
+      - name: Debug network to server
+        run: |
+          echo "Server host: ${{ env.SERVER_HOST }}, port: ${{ env.SERVER_PORT }}"
+          # cek connectability dari runner
+          ssh -vvv -o ConnectTimeout=10 -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} exit || true
+          # coba netcat jika tersedia
+          which nc || true
+          nc -vz -w 5 ${{ env.SERVER_HOST }} ${{ env.SERVER_PORT }} || true
+        shell: bash
+      
+      - name: Rsync files to server (over custom port, verbose)
+        run: |
+          rsync -az --delete --exclude='.git' -e "ssh -p ${{ env.SERVER_PORT }} -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -vvv" ./ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.TARGET_DIR }}
+      
+
+
+
+      
+
       - name: Rsync files to server (over custom port)
         run: |
           # Use -e "ssh -p PORT" so rsync uses correct port

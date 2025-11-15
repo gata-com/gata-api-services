@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { UserRepository } from "../repositories/userRepository";
+import { UserRepository } from "../repositories/UserRepository";
 import { CreateUserData, UpdateUserData, UserQueryParams } from "../types/user";
 import { PaginationQuery, PaginationResult } from "../types";
 import User from "../entities/user";
@@ -22,29 +22,29 @@ export class UserService {
     return await this.userRepository.findById(id);
   }
 
-  async createUser(userData: CreateUserData): Promise<User> {
-    // Check if user already exists
-    const existingUser = await this.userRepository.findByEmailOrNim(
-      userData.email,
-      userData.name
-    );
-    if (existingUser) {
-      throw new Error("User with this email or NIM already exists");
-    }
+  // async createUser(userData: CreateUserData): Promise<User> {
+  //   // Check if user already exists
+  //   const existingUser = await this.userRepository.findByEmailOrNim(
+  //     userData.email,
+  //     userData.name
+  //   );
+  //   if (existingUser) {
+  //     throw new Error("User with this email or NIM already exists");
+  //   }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+  //   // Hash password
+  //   const saltRounds = 12;
+  //   const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
-    // Create user with hashed password
-    const userToCreate = {
-      ...userData,
-      password: hashedPassword,
-      email: userData.email.toLowerCase(),
-    };
+  //   // Create user with hashed password
+  //   const userToCreate = {
+  //     ...userData,
+  //     password: hashedPassword,
+  //     email: userData.email.toLowerCase(),
+  //   };
 
-    return await this.userRepository.create(userToCreate);
-  }
+  //   return await this.userRepository.create(userToCreate);
+  // }
 
   async updateUser(
     id: number,
@@ -191,7 +191,7 @@ export class UserService {
       }
 
       // Cek apakah token expired
-      if (!user.resetTokenExpires || new Date() > user.resetTokenExpires) {
+      if (!user.reset_token_expires || new Date() > user.reset_token_expires) {
         throw new Error("Reset token has expired");
       }
 

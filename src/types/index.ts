@@ -3,10 +3,20 @@ import { UserRole } from "./user";
 
 // Base API response structure
 export interface ApiResponse<T = unknown> {
-  success: boolean;
   message: string;
   data?: T;
-  errors?: ApiErrorDetail[];
+  errors?: ErrorValidation | ErrorValidation[];
+  pagination?: PaginationMeta;
+}
+
+export interface ErrorValidation {
+  path: string;
+  msg: string;
+}
+
+export interface ServicesReturn {
+  error: null;
+  data: any;
   pagination?: PaginationMeta;
 }
 
@@ -32,12 +42,8 @@ export interface ApiErrorDetail {
 }
 
 // Extended Express Request with user context
-export interface AuthRequest<P = {}, ResBody = {}, ReqBody = {}, ReqQuery = {}>
-  extends Request<P, ResBody, ReqBody, ReqQuery> {
-  user?: {
-    userId: number;
-    role: UserRole;
-  };
+export interface AuthRequest extends Request {
+  user?: any;
 }
 
 // Pagination request parameters
@@ -80,7 +86,7 @@ export interface ErrorResponse extends Omit<ApiResponse<null>, "errors"> {
 
 // Validation error specifics
 export interface ValidationErrorDetail extends ApiErrorDetail {
-  code: 'VALIDATION_ERROR';
+  code: "VALIDATION_ERROR";
   field: string;
   value?: unknown;
   constraints?: Record<string, string>;
@@ -115,4 +121,4 @@ export interface PaginatedRequestQuery extends PaginationQuery {
 }
 
 // Export user types only (remove auth types if they're duplicated)
-export * from './user';
+export * from "./user";

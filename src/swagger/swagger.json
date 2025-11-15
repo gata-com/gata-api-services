@@ -6,7 +6,38 @@
 		"parameters": {},
 		"requestBodies": {},
 		"responses": {},
-		"schemas": {},
+		"schemas": {
+			"RegisterRequest": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"nim": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					},
+					"semester": {
+						"type": "string"
+					},
+					"whatsapp_number": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"name",
+					"nim",
+					"email",
+					"password"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
 		"securitySchemes": {}
 	},
 	"info": {
@@ -21,7 +52,7 @@
 				"operationId": "Login",
 				"responses": {
 					"200": {
-						"description": "Login berhasil",
+						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {}
@@ -49,6 +80,33 @@
 									"email"
 								],
 								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/register": {
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterRequest"
 							}
 						}
 					}

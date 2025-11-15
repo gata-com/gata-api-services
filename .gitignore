@@ -1,2 +1,11 @@
 node_modules
 .env
+client_secret.apps.googleusercontent.com.json
+.DS_Store
+src/config/data-source.ts
+uploads/*
+!uploads/.gitkeep
+src/storages/*
+src/migrations/*
+.idea
+.vscode

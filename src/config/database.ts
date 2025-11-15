@@ -5,11 +5,6 @@ import * as fs from "fs";
 
 // Create data source configuration based on database type
 const createDataSourceConfig = (): DataSourceOptions => {
-  console.log("=== DATABASE CONFIG DEBUG ===");
-  console.log("🔍 DB_TYPE from env:", process.env.DB_TYPE);
-  console.log("🔍 config.database.type:", config.database.type);
-  console.log("🔍 Database name:", config.database.type === "mysql");
-
   const baseConfig = {
     synchronize: false,
     logging: config.database.logging,
@@ -19,7 +14,6 @@ const createDataSourceConfig = (): DataSourceOptions => {
     migrationsRun: true,
   };
 
-  console.log("✅ Creating MySQL configuration");
   const mysqlConfig: DataSourceOptions = {
     type: "mysql",
     host: config.database.host,
@@ -29,10 +23,6 @@ const createDataSourceConfig = (): DataSourceOptions => {
     database: config.database.name,
     ...baseConfig,
     // MySQL specific options - OPTIMIZED
-    charset: "utf8mb4",
-    timezone: "+07:00", // WIB timezone untuk Indonesia
-    connectTimeout: 60000,
-    acquireTimeout: 60000,
     extra: {
       connectionLimit: 20,
       queueLimit: 0,
@@ -41,63 +31,32 @@ const createDataSourceConfig = (): DataSourceOptions => {
       // Improve performance
       dateStrings: false,
       typeCast: true,
-      // Handle disconnections
-      reconnect: true,
       // Timeout settings
-      timeout: 60000,
+      connectTimeout: 60000,
     },
     // Enable connection pooling
-    cache: {
-      duration: 30000, // 30 seconds
-    },
+    // cache: {
+    //   duration: 30000, // 30 seconds
+    // },
   };
-  console.log("📋 MySQL config created for database:", config.database.name);
   return mysqlConfig;
 };
 
-console.log("🚀 Creating AppDataSource...");
 const AppDataSource = new DataSource(createDataSourceConfig());
-console.log("✅ AppDataSource created");
 
 // PENTING: Hapus export const dan hanya gunakan export default
 // export const AppDataSource = new DataSource(createDataSourceConfig()); // HAPUS INI
 
 export const initializeDatabase = async (): Promise<void> => {
   try {
-    console.log("🔄 Starting database initialization...");
-    console.log("🔍 AppDataSource isInitialized:", AppDataSource.isInitialized);
-    console.log("🔍 AppDataSource options type:", AppDataSource.options.type);
-
-    if (config.database.type === "mysql") {
-      console.log(
-        `🏠 Connecting to MySQL: ${config.database.host}:${config.database.port}/${config.database.name}`
-      );
-    }
-
     if (!AppDataSource.isInitialized) {
-      console.log("📡 Initializing database connection...");
       await AppDataSource.initialize();
-      console.log(
-        `✅ ${config.database.type.toUpperCase()} database connected successfully`
-      );
-      console.log(
-        `🏠 Connected to: ${config.database.host}:${config.database.port}/${config.database.name}`
-      );
-
-      // For MySQL, check if we need to create tables
-      if (config.database.type === "mysql" && config.database.synchronize) {
-        console.log("🔄 MySQL synchronize enabled - checking schema...");
-      }
 
       // Run pending migrations if any
       try {
         const pendingMigrations = await AppDataSource.showMigrations();
         if (pendingMigrations) {
-          console.log("📝 Running pending migrations...");
           await AppDataSource.runMigrations();
-          console.log("✅ Migrations completed");
-        } else {
-          console.log("ℹ️ No pending migrations");
         }
       } catch (migrationError) {
         console.warn(
@@ -164,9 +123,6 @@ export const backupDatabase = async (backupPath?: string): Promise<string> => {
     fs.mkdirSync(backupDir, { recursive: true });
   }
 
-  console.log(
-    `💡 For MySQL backup, use: mysqldump -u ${config.database.username} -p ${config.database.name} > ${backup}`
-  );
   return backup;
 };
 

@@ -1,12 +1,14 @@
 import "reflect-metadata";
 import express, { Application, Request, Response } from "express";
+import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { errorHandler } from "./middleware/errorHandler";
 import { config } from "./config/config";
 import { ApiResponse, ErrorResponse } from "./types";
+import session from "express-session";
+import passport from "./config/google";
 
 // swagger UI
 import swaggerUi from "swagger-ui-express";
@@ -17,8 +19,10 @@ import AppDataSource from "./config/database";
 
 // Route imports
 import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
-import mahasiswaRoutes from "./routes/mahasiswa/profile";
+// import userRoutes from "./routes/users";
+import mahasiswaRoutes from "./routes/student";
+import dosenRoutes from "./routes/lecturer";
+import adminRoutes from "./routes/admin";
 
 // Load environment variables
 dotenv.config();
@@ -47,12 +51,8 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? ["https://yourdomain.com"]
-        : [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://127.0.0.1:3000",
-          ],
+        ? [process.env.FRONTEND_URL || "https://your-production-domain.com"]
+        : [process.env.FRONTEND_URL || "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
@@ -80,27 +80,56 @@ app.use(
   })
 );
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Trust proxy (for real IP detection)
 app.set("trust proxy", 1);
 
+// Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ======================
+// Setup Path absolute storages
+// ======================
+
+const finalProjectsPath = path.join(
+  process.cwd(),
+  "src",
+  "storages",
+  "final-projects"
+);
+
+app.use("/final-projects", express.static(finalProjectsPath));
 // ======================
 // Routes
 // ======================
 
 // Swagger UI Setup
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, {
-    explorer: true,
-    customSiteTitle: "API Documentation",
-  })
-);
+if (process.env.NODE_ENV !== "production") {
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, {
+      explorer: true,
+      customSiteTitle: "GATA API Docs",
+    })
+  );
+}
 
 // Root endpoint with enhanced info
 app.get("/", (req: Request, res: Response) => {
   const response: ApiResponse = {
-    success: true,
     message: "GATA Server",
     data: {
       version: "1.0.0",
@@ -125,8 +154,10 @@ app.get("/", (req: Request, res: Response) => {
 
 // API routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
+// app.use("/api/users", userRoutes);
 app.use("/api/mahasiswa", mahasiswaRoutes);
+app.use("/api/dosen", dosenRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Enhanced health check endpoint
 app.get("/api/health", async (req: Request, res: Response) => {
@@ -158,7 +189,6 @@ app.get("/api/health", async (req: Request, res: Response) => {
     }
 
     const response: ApiResponse = {
-      success: true,
       message: "Server health check",
       data: {
         status: "OK",
@@ -235,7 +265,6 @@ app.get("/api/db-status", async (req: Request, res: Response) => {
     }
 
     const response: ApiResponse = {
-      success: true,
       message: "Database status check",
       data: {
         type: AppDataSource.options.type,
@@ -295,8 +324,5 @@ app.all("*", (req: Request, res: Response) => {
   };
   res.status(404).json(response);
 });
-
-// Global error handling middleware
-app.use(errorHandler);
 
 export default app;

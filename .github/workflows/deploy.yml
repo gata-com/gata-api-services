@@ -47,13 +47,9 @@ jobs:
 
             cd ${{ env.TARGET_DIR }}
 
-            # Jika perlu, buat node/yarn environment (contoh menggunakan nvm)
-            # source ~/.nvm/nvm.sh || true
-            # nvm use || nvm install 18
-
             # Install build deps & build
-            yarn install --frozen-lockfile
-            yarn build
+            npm install
+            npm build
 
             # Restart / start app with pm2
             # Gunakan reload jika sudah ada, fallback ke start

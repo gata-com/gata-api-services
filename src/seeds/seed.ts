@@ -1,6 +1,6 @@
 // scripts/seed.ts
 import "reflect-metadata";
-import AppDataSource from "../config/data-source";
+import AppDataSource from "@/config/database";
 
 // sesuaikan path import entity sesuai struktur proyek Anda
 import User from "../entities/user";

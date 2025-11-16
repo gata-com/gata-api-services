@@ -48,14 +48,24 @@ jobs:
             npm cache clean --force
             
             echo "📦 Installing dependencies..."
-            NODE_ENV=development npm install
+            NODE_ENV=production npm install
             
             echo "🔨 Building application..."
             npm run build
             
-            echo "🚀 Restarting PM2..."
-            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+            echo "🚀 Deploying with PM2..."
+            
+            # Check if app is already running
+            if pm2 list | grep -q "gata-api-services"; then
+              echo "App is running, reloading..."
+              pm2 reload gata-api-services
+            else
+              echo "App not running, starting..."
+              pm2 start ecosystem.config.js
+            fi
+            
             pm2 save
+            pm2 logs gata-api-services --lines 20
             
             echo "✅ Deployment completed successfully!"
           ENDSSH

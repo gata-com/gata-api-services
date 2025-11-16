@@ -47,10 +47,10 @@ jobs:
 
             cd ${{ env.TARGET_DIR }}
 
-             # pastikan devDependencies termasuk (agar typescript & config path alias tersedia)
-             NODE_ENV=development npm ci --include=dev
+            NODE_ENV=development npm ci --include=dev
 
-             npm run build
+            # Register tsconfig-paths before running build
+            node -r tsconfig-paths/register ./node_modules/.bin/tsc
 
             # Restart / start app with pm2
             # Gunakan reload jika sudah ada, fallback ke start

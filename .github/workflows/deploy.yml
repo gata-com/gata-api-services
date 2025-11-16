@@ -43,16 +43,8 @@ jobs:
             
             cd ${{ secrets.TARGET_DIR }}
             
-<<<<<<< HEAD
-            echo "🧹 Cleaning up old build..."
-            rm -rf dist
-            
-            echo "📦 Installing dependencies..."
-            npm install --no-audit
-=======
             echo "📦 Installing dependencies..."
             npm install
->>>>>>> 5e497b40a2205b271195a0da815e120591749980
             
             echo "🔨 Building application..."
             npm run build
@@ -72,29 +64,10 @@ jobs:
             
             echo "🚀 Deploying with PM2..."
             
-<<<<<<< HEAD
-            # Check if app is already running
-            if pm2 list | grep -q "gata-api-services"; then
-              echo "App is running, reloading..."
-              pm2 reload gata-api-services --update-env
-            else
-              echo "App not running, starting..."
-              pm2 start ecosystem.config.js
-            fi
-            
-            pm2 save
-            
-            echo "📊 Checking PM2 status..."
-            pm2 list
-            
-            echo "📝 Recent logs:"
-            pm2 logs gata-api-services --lines 30 --nostream
-=======
             pm2 start ecosystem.config.js
 
             
             pm2 save
->>>>>>> 5e497b40a2205b271195a0da815e120591749980
             
             echo "✅ Deployment completed successfully!"
           ENDSSH

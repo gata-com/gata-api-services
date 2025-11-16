@@ -47,9 +47,10 @@ jobs:
 
             cd ${{ env.TARGET_DIR }}
 
-            # Install build deps & build
-            npm install
-            npm run build
+             # pastikan devDependencies termasuk (agar typescript & config path alias tersedia)
+             NODE_ENV=development npm ci --include=dev
+
+             npm run build
 
             # Restart / start app with pm2
             # Gunakan reload jika sudah ada, fallback ke start

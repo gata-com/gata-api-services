@@ -1,0 +1,122 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class MigrationDB1763272220863 implements MigrationInterface {
+    name = 'MigrationDB1763272220863'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TABLE \`lecturer_expertise\` (\`id\` int NOT NULL AUTO_INCREMENT, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`lecturer_id\` int NULL, \`expertise_id\` int NULL, UNIQUE INDEX \`IDX_18f9354e6df5770364538a668b\` (\`lecturer_id\`, \`expertise_id\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`guidance_availability\` (\`id\` int NOT NULL AUTO_INCREMENT, \`day_of_week\` enum ('1', '2', '3', '4', '5') NOT NULL COMMENT 'Day of the week: 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday', \`start_time\` time NOT NULL, \`end_time\` time NOT NULL, \`location\` varchar(255) NOT NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`lecturerId\` int NULL, INDEX \`IDX_74382b0da1b998f900ced58159\` (\`day_of_week\`), INDEX \`IDX_bb08af4944c488c7f6bc4e7d36\` (\`lecturerId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`guidance_sessions\` (\`id\` int NOT NULL AUTO_INCREMENT, \`defense_type\` enum ('proposal', 'hasil') NOT NULL, \`supervisor_type\` enum ('1', '2') NOT NULL COMMENT 'Supervisor type: 1=Pembimbing 1, 2=Pembimbing 2', \`topic\` text NOT NULL COMMENT 'Topic of the guidance session', \`lecturer_feedback\` text NULL, \`status\` enum ('scheduled', 'ongoing', 'completed', 'no_show', 'cancelled') NOT NULL DEFAULT 'scheduled', \`session_date\` date NOT NULL COMMENT 'Specific date of the guidance session', \`cancelled_at\` datetime NULL, \`completed_at\` datetime NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`guidanceAvailabilityId\` int NULL, \`lecturerId\` int NULL, \`finalProjectId\` int NULL, INDEX \`IDX_3c86363d63b8d7ff63f2a77dea\` (\`supervisor_type\`), INDEX \`IDX_8015f70ed0596dcd54eaff0bd5\` (\`status\`), INDEX \`IDX_9bc8435e5b7580f40523e2cad5\` (\`session_date\`), INDEX \`IDX_d42ba3267cdbc7263b5feaff39\` (\`lecturerId\`), INDEX \`IDX_0545e4e57aa769bec7ec88d829\` (\`finalProjectId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`guidance_draft_links\` (\`id\` int NOT NULL AUTO_INCREMENT, \`name\` varchar(255) NOT NULL, \`url\` text NOT NULL, \`uploaded_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`guidanceSessionId\` int NULL, INDEX \`IDX_09d745cbc6fca61c61474eb197\` (\`guidanceSessionId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`lecturer\` (\`id\` int NOT NULL AUTO_INCREMENT, \`nip\` varchar(15) NOT NULL, \`lecturer_code\` varchar(10) NULL, \`current_supervised_1\` int NOT NULL DEFAULT '0', \`current_supervised_2\` int NOT NULL DEFAULT '0', \`max_supervised_1\` int NOT NULL DEFAULT '15', \`max_supervised_2\` int NOT NULL DEFAULT '15', \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`userId\` int NULL, INDEX \`IDX_5cf60020bf61d6548d4457a875\` (\`lecturer_code\`), INDEX \`IDX_nip_index\` (\`nip\`), UNIQUE INDEX \`IDX_e53a53e6ec33a88ddfaf18de7a\` (\`nip\`), UNIQUE INDEX \`REL_44f207a37dc2c573af96accd92\` (\`userId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`defense_submissions\` (\`id\` int NOT NULL AUTO_INCREMENT, \`defense_type\` enum ('proposal', 'hasil') NOT NULL COMMENT 'Type of defense: proposal, hasil (result)', \`status\` enum ('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending', \`guidance_sup_1_count\` int NOT NULL DEFAULT '0', \`guidance_sup_2_count\` int NULL DEFAULT '0', \`min_guidance_sup_1_proposal\` int NOT NULL DEFAULT '4', \`min_guidance_sup_2_proposal\` int NULL DEFAULT '2', \`min_guidance_hasil\` int NOT NULL DEFAULT '2', \`student_notes\` text NULL, \`rejection_notes\` text NULL, \`processed_at\` datetime NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`finalProjectId\` int NULL, \`lecturerId\` int NULL, \`expertisesGroup1Id\` int NULL, \`expertisesGroup2Id\` int NULL, INDEX \`IDX_062248dd288019e57fa34bf5bb\` (\`created_at\`), INDEX \`IDX_ff8370c2c6e8f7215855219da4\` (\`status\`), INDEX \`IDX_4cc2da1587994cc091982a35e7\` (\`defense_type\`), INDEX \`IDX_030a8960f94263730e59bd3dba\` (\`lecturerId\`), INDEX \`IDX_7475d0a9eb980a86a4e9b7d9b9\` (\`finalProjectId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`defense_submission_documents\` (\`id\` int NOT NULL AUTO_INCREMENT, \`name\` varchar(255) NOT NULL, \`url\` text NOT NULL, \`uploaded_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`defenseSubmissionId\` int NULL, INDEX \`IDX_6ce9957fd4d7d585f77f9c5eee\` (\`defenseSubmissionId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`expertises_group\` (\`id\` int NOT NULL AUTO_INCREMENT, \`name\` varchar(255) NOT NULL, \`description\` text NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), UNIQUE INDEX \`IDX_71d9172a5c380380d622708fdf\` (\`name\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`final_project_periods\` (\`id\` int NOT NULL AUTO_INCREMENT, \`start_date\` varchar(255) NOT NULL, \`end_date\` varchar(255) NOT NULL, \`approval_end_date\` varchar(255) NOT NULL, \`description\` text NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), INDEX \`IDX_7aab21b5a9f3e6935900ac8483\` (\`approval_end_date\`), INDEX \`IDX_090b697b8d760b06c953816bbf\` (\`end_date\`), INDEX \`IDX_3d0a27be66bb50c6dccb0e4c9b\` (\`start_date\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`final_projects\` (\`id\` int NOT NULL AUTO_INCREMENT, \`type\` enum ('regular', 'capstone') NOT NULL, \`status\` enum ('baru', 'dispensasi') NOT NULL, \`source_topic\` enum ('dosen', 'perusahaan', 'mandiri') NOT NULL, \`description\` text NULL, \`max_members\` int NULL DEFAULT '3', \`supervisor_1_status\` enum ('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending', \`supervisor_2_status\` enum ('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending', \`is_only_sup_1\` tinyint NULL DEFAULT 0, \`admin_status\` enum ('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending', \`supervisor_1_note\` text NULL, \`supervisor_2_note\` text NULL, \`admin_note\` text NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`expertisesGroup1Id\` int NULL, \`expertisesGroup2Id\` int NULL, \`finalProjectPeriodId\` int NULL, \`supervisor1Id\` int NULL, \`supervisor2Id\` int NULL, INDEX \`IDX_a9ad68c3934f1643dd20df3afe\` (\`admin_status\`), INDEX \`IDX_4019f707a765e3e4942e7799a7\` (\`supervisor_2_status\`), INDEX \`IDX_c294f751e1d07f982a0e69e81b\` (\`supervisor_1_status\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`final_project_members\` (\`id\` int NOT NULL AUTO_INCREMENT, \`title\` text NOT NULL, \`resume\` text NOT NULL, \`draft_path\` varchar(255) NOT NULL, \`draft_filename\` varchar(255) NOT NULL, \`draft_size\` varchar(255) NOT NULL, \`dispen_path\` varchar(255) NULL, \`dispen_filename\` varchar(255) NULL, \`dispen_size\` varchar(255) NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`finalProjectId\` int NULL, \`studentId\` int NULL, INDEX \`IDX_e0191fba728c74cdbb8452f93a\` (\`studentId\`), INDEX \`IDX_0c2e21de68c277a5b190fa3c74\` (\`finalProjectId\`), UNIQUE INDEX \`REL_e0191fba728c74cdbb8452f93a\` (\`studentId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`student\` (\`id\` int NOT NULL AUTO_INCREMENT, \`nim\` varchar(9) NULL, \`semester\` int NULL DEFAULT '7', \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`userId\` int NULL, INDEX \`IDX_71c81e5dd6ef31fef7deaa7f6c\` (\`semester\`), UNIQUE INDEX \`IDX_76ba8fbe0d367c1c3768a23155\` (\`nim\`), UNIQUE INDEX \`REL_b35463776b4a11a3df3c30d920\` (\`userId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`announcements\` (\`id\` int NOT NULL AUTO_INCREMENT, \`title\` varchar(255) NOT NULL, \`content\` text NOT NULL, \`is_published\` tinyint NOT NULL DEFAULT 0, \`priority\` enum ('low', 'high') NOT NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`userId\` int NULL, INDEX \`IDX_39c45ab3da8f07a7c2efc3f794\` (\`is_published\`, \`created_at\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`users\` (\`id\` int NOT NULL AUTO_INCREMENT, \`googleId\` varchar(255) NULL, \`role\` enum ('student', 'admin', 'lecturer') NULL DEFAULT 'student', \`name\` varchar(255) NOT NULL, \`email\` varchar(255) NOT NULL, \`password\` varchar(255) NOT NULL, \`whatsapp_number\` varchar(20) NULL, \`reset_token\` varchar(255) NULL, \`reset_token_expires\` datetime NULL, \`is_active\` tinyint NULL DEFAULT 1, \`last_login\` datetime NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), INDEX \`IDX_97672ac88f789774dd47f7c8be\` (\`email\`), INDEX \`IDX_dec0bae70633e911fe6a5983c1\` (\`reset_token\`), INDEX \`IDX_ace513fa30d485cfd25c11a9e4\` (\`role\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`notifications\` (\`id\` int NOT NULL AUTO_INCREMENT, \`title\` varchar(255) NOT NULL, \`message\` text NOT NULL, \`is_read\` tinyint NOT NULL DEFAULT 0, \`type\` enum ('info', 'warning', 'error', 'success') NOT NULL DEFAULT 'info', \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` ADD CONSTRAINT \`FK_6827f408cf4878d95eb6aa71fda\` FOREIGN KEY (\`lecturer_id\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` ADD CONSTRAINT \`FK_73a5e7f156f4e157f54c834753f\` FOREIGN KEY (\`expertise_id\`) REFERENCES \`expertises_group\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`guidance_availability\` ADD CONSTRAINT \`FK_bb08af4944c488c7f6bc4e7d36f\` FOREIGN KEY (\`lecturerId\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`guidance_sessions\` ADD CONSTRAINT \`FK_720fc6bc55e5d91015f26717851\` FOREIGN KEY (\`guidanceAvailabilityId\`) REFERENCES \`guidance_availability\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`guidance_sessions\` ADD CONSTRAINT \`FK_d42ba3267cdbc7263b5feaff399\` FOREIGN KEY (\`lecturerId\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`guidance_sessions\` ADD CONSTRAINT \`FK_0545e4e57aa769bec7ec88d829d\` FOREIGN KEY (\`finalProjectId\`) REFERENCES \`final_projects\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`guidance_draft_links\` ADD CONSTRAINT \`FK_09d745cbc6fca61c61474eb1971\` FOREIGN KEY (\`guidanceSessionId\`) REFERENCES \`guidance_sessions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`lecturer\` ADD CONSTRAINT \`FK_44f207a37dc2c573af96accd92f\` FOREIGN KEY (\`userId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` ADD CONSTRAINT \`FK_7475d0a9eb980a86a4e9b7d9b91\` FOREIGN KEY (\`finalProjectId\`) REFERENCES \`final_projects\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` ADD CONSTRAINT \`FK_030a8960f94263730e59bd3dba6\` FOREIGN KEY (\`lecturerId\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` ADD CONSTRAINT \`FK_e18d139a312dd570fd3eb553980\` FOREIGN KEY (\`expertisesGroup1Id\`) REFERENCES \`expertises_group\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` ADD CONSTRAINT \`FK_8b139b2a3795c8f6a81bcc63161\` FOREIGN KEY (\`expertisesGroup2Id\`) REFERENCES \`expertises_group\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`defense_submission_documents\` ADD CONSTRAINT \`FK_6ce9957fd4d7d585f77f9c5eeef\` FOREIGN KEY (\`defenseSubmissionId\`) REFERENCES \`defense_submissions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` ADD CONSTRAINT \`FK_a27a036ae2ad9cbeee0887b62b9\` FOREIGN KEY (\`expertisesGroup1Id\`) REFERENCES \`expertises_group\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` ADD CONSTRAINT \`FK_9bf928fbf6fda644e1ceb22225c\` FOREIGN KEY (\`expertisesGroup2Id\`) REFERENCES \`expertises_group\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` ADD CONSTRAINT \`FK_6076478253c03f77d07e572813b\` FOREIGN KEY (\`finalProjectPeriodId\`) REFERENCES \`final_project_periods\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` ADD CONSTRAINT \`FK_91c8dcae370057405f4f79842ae\` FOREIGN KEY (\`supervisor1Id\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` ADD CONSTRAINT \`FK_2e92fc40578e98d621d5c00ce01\` FOREIGN KEY (\`supervisor2Id\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_project_members\` ADD CONSTRAINT \`FK_0c2e21de68c277a5b190fa3c744\` FOREIGN KEY (\`finalProjectId\`) REFERENCES \`final_projects\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`final_project_members\` ADD CONSTRAINT \`FK_e0191fba728c74cdbb8452f93af\` FOREIGN KEY (\`studentId\`) REFERENCES \`student\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`student\` ADD CONSTRAINT \`FK_b35463776b4a11a3df3c30d920a\` FOREIGN KEY (\`userId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`announcements\` ADD CONSTRAINT \`FK_1968b95a7c6d64a81b1b3b5aad4\` FOREIGN KEY (\`userId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE \`announcements\` DROP FOREIGN KEY \`FK_1968b95a7c6d64a81b1b3b5aad4\``);
+        await queryRunner.query(`ALTER TABLE \`student\` DROP FOREIGN KEY \`FK_b35463776b4a11a3df3c30d920a\``);
+        await queryRunner.query(`ALTER TABLE \`final_project_members\` DROP FOREIGN KEY \`FK_e0191fba728c74cdbb8452f93af\``);
+        await queryRunner.query(`ALTER TABLE \`final_project_members\` DROP FOREIGN KEY \`FK_0c2e21de68c277a5b190fa3c744\``);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` DROP FOREIGN KEY \`FK_2e92fc40578e98d621d5c00ce01\``);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` DROP FOREIGN KEY \`FK_91c8dcae370057405f4f79842ae\``);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` DROP FOREIGN KEY \`FK_6076478253c03f77d07e572813b\``);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` DROP FOREIGN KEY \`FK_9bf928fbf6fda644e1ceb22225c\``);
+        await queryRunner.query(`ALTER TABLE \`final_projects\` DROP FOREIGN KEY \`FK_a27a036ae2ad9cbeee0887b62b9\``);
+        await queryRunner.query(`ALTER TABLE \`defense_submission_documents\` DROP FOREIGN KEY \`FK_6ce9957fd4d7d585f77f9c5eeef\``);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` DROP FOREIGN KEY \`FK_8b139b2a3795c8f6a81bcc63161\``);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` DROP FOREIGN KEY \`FK_e18d139a312dd570fd3eb553980\``);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` DROP FOREIGN KEY \`FK_030a8960f94263730e59bd3dba6\``);
+        await queryRunner.query(`ALTER TABLE \`defense_submissions\` DROP FOREIGN KEY \`FK_7475d0a9eb980a86a4e9b7d9b91\``);
+        await queryRunner.query(`ALTER TABLE \`lecturer\` DROP FOREIGN KEY \`FK_44f207a37dc2c573af96accd92f\``);
+        await queryRunner.query(`ALTER TABLE \`guidance_draft_links\` DROP FOREIGN KEY \`FK_09d745cbc6fca61c61474eb1971\``);
+        await queryRunner.query(`ALTER TABLE \`guidance_sessions\` DROP FOREIGN KEY \`FK_0545e4e57aa769bec7ec88d829d\``);
+        await queryRunner.query(`ALTER TABLE \`guidance_sessions\` DROP FOREIGN KEY \`FK_d42ba3267cdbc7263b5feaff399\``);
+        await queryRunner.query(`ALTER TABLE \`guidance_sessions\` DROP FOREIGN KEY \`FK_720fc6bc55e5d91015f26717851\``);
+        await queryRunner.query(`ALTER TABLE \`guidance_availability\` DROP FOREIGN KEY \`FK_bb08af4944c488c7f6bc4e7d36f\``);
+        await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` DROP FOREIGN KEY \`FK_73a5e7f156f4e157f54c834753f\``);
+        await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` DROP FOREIGN KEY \`FK_6827f408cf4878d95eb6aa71fda\``);
+        await queryRunner.query(`DROP TABLE \`notifications\``);
+        await queryRunner.query(`DROP INDEX \`IDX_ace513fa30d485cfd25c11a9e4\` ON \`users\``);
+        await queryRunner.query(`DROP INDEX \`IDX_dec0bae70633e911fe6a5983c1\` ON \`users\``);
+        await queryRunner.query(`DROP INDEX \`IDX_97672ac88f789774dd47f7c8be\` ON \`users\``);
+        await queryRunner.query(`DROP TABLE \`users\``);
+        await queryRunner.query(`DROP INDEX \`IDX_39c45ab3da8f07a7c2efc3f794\` ON \`announcements\``);
+        await queryRunner.query(`DROP TABLE \`announcements\``);
+        await queryRunner.query(`DROP INDEX \`REL_b35463776b4a11a3df3c30d920\` ON \`student\``);
+        await queryRunner.query(`DROP INDEX \`IDX_76ba8fbe0d367c1c3768a23155\` ON \`student\``);
+        await queryRunner.query(`DROP INDEX \`IDX_71c81e5dd6ef31fef7deaa7f6c\` ON \`student\``);
+        await queryRunner.query(`DROP TABLE \`student\``);
+        await queryRunner.query(`DROP INDEX \`REL_e0191fba728c74cdbb8452f93a\` ON \`final_project_members\``);
+        await queryRunner.query(`DROP INDEX \`IDX_0c2e21de68c277a5b190fa3c74\` ON \`final_project_members\``);
+        await queryRunner.query(`DROP INDEX \`IDX_e0191fba728c74cdbb8452f93a\` ON \`final_project_members\``);
+        await queryRunner.query(`DROP TABLE \`final_project_members\``);
+        await queryRunner.query(`DROP INDEX \`IDX_c294f751e1d07f982a0e69e81b\` ON \`final_projects\``);
+        await queryRunner.query(`DROP INDEX \`IDX_4019f707a765e3e4942e7799a7\` ON \`final_projects\``);
+        await queryRunner.query(`DROP INDEX \`IDX_a9ad68c3934f1643dd20df3afe\` ON \`final_projects\``);
+        await queryRunner.query(`DROP TABLE \`final_projects\``);
+        await queryRunner.query(`DROP INDEX \`IDX_3d0a27be66bb50c6dccb0e4c9b\` ON \`final_project_periods\``);
+        await queryRunner.query(`DROP INDEX \`IDX_090b697b8d760b06c953816bbf\` ON \`final_project_periods\``);
+        await queryRunner.query(`DROP INDEX \`IDX_7aab21b5a9f3e6935900ac8483\` ON \`final_project_periods\``);
+        await queryRunner.query(`DROP TABLE \`final_project_periods\``);
+        await queryRunner.query(`DROP INDEX \`IDX_71d9172a5c380380d622708fdf\` ON \`expertises_group\``);
+        await queryRunner.query(`DROP TABLE \`expertises_group\``);
+        await queryRunner.query(`DROP INDEX \`IDX_6ce9957fd4d7d585f77f9c5eee\` ON \`defense_submission_documents\``);
+        await queryRunner.query(`DROP TABLE \`defense_submission_documents\``);
+        await queryRunner.query(`DROP INDEX \`IDX_7475d0a9eb980a86a4e9b7d9b9\` ON \`defense_submissions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_030a8960f94263730e59bd3dba\` ON \`defense_submissions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_4cc2da1587994cc091982a35e7\` ON \`defense_submissions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_ff8370c2c6e8f7215855219da4\` ON \`defense_submissions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_062248dd288019e57fa34bf5bb\` ON \`defense_submissions\``);
+        await queryRunner.query(`DROP TABLE \`defense_submissions\``);
+        await queryRunner.query(`DROP INDEX \`REL_44f207a37dc2c573af96accd92\` ON \`lecturer\``);
+        await queryRunner.query(`DROP INDEX \`IDX_e53a53e6ec33a88ddfaf18de7a\` ON \`lecturer\``);
+        await queryRunner.query(`DROP INDEX \`IDX_nip_index\` ON \`lecturer\``);
+        await queryRunner.query(`DROP INDEX \`IDX_5cf60020bf61d6548d4457a875\` ON \`lecturer\``);
+        await queryRunner.query(`DROP TABLE \`lecturer\``);
+        await queryRunner.query(`DROP INDEX \`IDX_09d745cbc6fca61c61474eb197\` ON \`guidance_draft_links\``);
+        await queryRunner.query(`DROP TABLE \`guidance_draft_links\``);
+        await queryRunner.query(`DROP INDEX \`IDX_0545e4e57aa769bec7ec88d829\` ON \`guidance_sessions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_d42ba3267cdbc7263b5feaff39\` ON \`guidance_sessions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_9bc8435e5b7580f40523e2cad5\` ON \`guidance_sessions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_8015f70ed0596dcd54eaff0bd5\` ON \`guidance_sessions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_3c86363d63b8d7ff63f2a77dea\` ON \`guidance_sessions\``);
+        await queryRunner.query(`DROP TABLE \`guidance_sessions\``);
+        await queryRunner.query(`DROP INDEX \`IDX_bb08af4944c488c7f6bc4e7d36\` ON \`guidance_availability\``);
+        await queryRunner.query(`DROP INDEX \`IDX_74382b0da1b998f900ced58159\` ON \`guidance_availability\``);
+        await queryRunner.query(`DROP TABLE \`guidance_availability\``);
+        await queryRunner.query(`DROP INDEX \`IDX_18f9354e6df5770364538a668b\` ON \`lecturer_expertise\``);
+        await queryRunner.query(`DROP TABLE \`lecturer_expertise\``);
+    }
+
+}

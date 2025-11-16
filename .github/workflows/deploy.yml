@@ -43,28 +43,46 @@ jobs:
             
             cd ${{ secrets.TARGET_DIR }}
             
-            echo "🧹 Cleaning up..."
-            rm -rf node_modules package-lock.json
+            echo "🧹 Cleaning up old build..."
+            rm -rf dist
             
             echo "📦 Installing dependencies..."
-            npm ci --production --no-audit --prefer-offline || npm install --production --no-audit
+            npm install --no-audit
             
             echo "🔨 Building application..."
             npm run build
+            
+            echo "🔍 Verifying build..."
+            if [ ! -d "dist" ]; then
+              echo "❌ Build failed: dist folder not found"
+              exit 1
+            fi
+            
+            if [ ! -f "dist/server.js" ]; then
+              echo "❌ Build failed: server.js not found in dist"
+              exit 1
+            fi
+            
+            echo "✅ Build successful!"
             
             echo "🚀 Deploying with PM2..."
             
             # Check if app is already running
             if pm2 list | grep -q "gata-api-services"; then
               echo "App is running, reloading..."
-              pm2 reload gata-api-services
+              pm2 reload gata-api-services --update-env
             else
               echo "App not running, starting..."
               pm2 start ecosystem.config.js
             fi
             
             pm2 save
-            pm2 logs gata-api-services --lines 20
+            
+            echo "📊 Checking PM2 status..."
+            pm2 list
+            
+            echo "📝 Recent logs:"
+            pm2 logs gata-api-services --lines 30 --nostream
             
             echo "✅ Deployment completed successfully!"
           ENDSSH

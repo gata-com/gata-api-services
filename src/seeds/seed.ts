@@ -1,13 +1,13 @@
 // scripts/seed.ts
 import "reflect-metadata";
-import AppDataSource from "@/config/data-source";
+import AppDataSource from "../config/data-source";
 
 // sesuaikan path import entity sesuai struktur proyek Anda
-import User from "@/entities/user";
-import { Lecturer } from "@/entities/lecturer";
-import { Student } from "@/entities/student";
-import ExpertisesGroup from "@/entities/expertisesGroup";
-import { LecturerExpertise } from "@/entities/lecturerExpertise";
+import User from "../entities/user";
+import { Lecturer } from "../entities/lecturer";
+import { Student } from "../entities/student";
+import ExpertisesGroup from "../entities/expertisesGroup";
+import { LecturerExpertise } from "../entities/lecturerExpertise";
 import { lecturers } from "./seedData";
 
 const expertiseList = [

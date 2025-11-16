@@ -43,28 +43,18 @@ jobs:
             
             cd ${{ secrets.TARGET_DIR }}
             
-            echo "🧹 Cleaning up..."
-            rm -rf node_modules package-lock.json
-            
             echo "📦 Installing dependencies..."
-            npm ci --production --no-audit --prefer-offline || npm install --production --no-audit
+            npm install
             
             echo "🔨 Building application..."
             npm run build
             
             echo "🚀 Deploying with PM2..."
             
-            # Check if app is already running
-            if pm2 list | grep -q "gata-api-services"; then
-              echo "App is running, reloading..."
-              pm2 reload gata-api-services
-            else
-              echo "App not running, starting..."
-              pm2 start ecosystem.config.js
-            fi
+            pm2 start ecosystem.config.js
+
             
             pm2 save
-            pm2 logs gata-api-services --lines 20
             
             echo "✅ Deployment completed successfully!"
           ENDSSH

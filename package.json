@@ -9,9 +9,8 @@
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "prod": "npm run build && npm start",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migrate:fresh": "ts-node ./src/scripts/migration-fresh.ts",
-    "seed": "ts-node ./src/seeds/seed.ts"
-
+    "migrate:fresh": "ts-node -r tsconfig-paths/register ./src/scripts/migration-fresh.ts",
+    "seed": "ts-node -r tsconfig-paths/register ./src/seeds/seed.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^10.0.0",

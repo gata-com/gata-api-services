@@ -9,3 +9,4 @@ src/storages/*
 src/migrations/*
 .idea
 .vscode
+dist

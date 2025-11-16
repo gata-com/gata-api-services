@@ -43,10 +43,12 @@ jobs:
             
             cd ${{ secrets.TARGET_DIR }}
             
-            echo "📦 Installing dependencies..."
-            rm -rf node_modules
+            echo "🧹 Cleaning up..."
+            rm -rf node_modules package-lock.json
             npm cache clean --force
-            NODE_ENV=development npm ci --include=dev
+            
+            echo "📦 Installing dependencies..."
+            NODE_ENV=development npm install
             
             echo "🔨 Building application..."
             npm run build

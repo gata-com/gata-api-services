@@ -47,7 +47,9 @@ jobs:
 
             cd ${{ env.TARGET_DIR }}
 
+            # Clean up before install
             rm -rf node_modules
+            npm cache clean --force
             
             NODE_ENV=development npm ci --include=dev
 

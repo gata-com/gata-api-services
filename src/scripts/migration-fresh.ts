@@ -1,11 +1,19 @@
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 const migrationsDir = path.resolve(__dirname, "../migrations");
 
+// Detect OS and set NODE_ENV accordingly
+const isWindows = os.platform() === "win32";
+const nodeEnvCmd = isWindows
+  ? "set NODE_ENV=production && "
+  : "NODE_ENV=production ";
+
 try {
   console.log("Starting migration fresh process...");
+  console.log(`Platform: ${os.platform()}`);
 
   // 1. Hapus semua file migration lama
   if (fs.existsSync(migrationsDir)) {
@@ -18,40 +26,55 @@ try {
 
   // 2. Drop schema
   console.log("Dropping database schema...");
-  execSync(
-    // set NODE_ENV=production to disable synchronize in data-source.ts
-    "set NODE_ENV=production && npx typeorm-ts-node-commonjs schema:drop -d ./src/config/data-source.ts",
-    {
-      stdio: "inherit",
+  try {
+    execSync(
+      `${nodeEnvCmd}npx typeorm-ts-node-commonjs schema:drop -d ./src/config/data-source.ts`,
+      {
+        stdio: "inherit",
+        shell: isWindows ? undefined : "/bin/bash",
+      }
+    );
+    console.log("Database schema dropped successfully.");
+  } catch (error: any) {
+    if (
+      error.message.includes("ECONNREFUSED") ||
+      error.message.includes("connect")
+    ) {
+      console.warn("⚠️ Warning: Could not connect to database for schema drop");
+      console.warn("   Make sure MySQL is running and credentials are correct");
+    } else {
+      throw error;
     }
-  );
-  console.log("Database schema dropped successfully.");
+  }
 
   // 3. Generate migration baru
   console.log("Generating new migration...");
   execSync(
-    "set NODE_ENV=production && npx typeorm-ts-node-commonjs migration:generate -d ./src/config/data-source.ts ./src/migrations/MigrationDB",
-    { stdio: "inherit" }
+    `${nodeEnvCmd}npx typeorm-ts-node-commonjs migration:generate -d ./src/config/data-source.ts ./src/migrations/MigrationDB`,
+    {
+      stdio: "inherit",
+      shell: isWindows ? undefined : "/bin/bash",
+    }
   );
   console.log("New migration generated successfully.");
 
   // 4. Run migrations explicitly (before seeding)
   console.log("Running migrations...");
   execSync(
-    "set NODE_ENV=production && npx typeorm-ts-node-commonjs migration:run -d ./src/config/data-source.ts",
-    { stdio: "inherit" }
+    `${nodeEnvCmd}npx typeorm-ts-node-commonjs migration:run -d ./src/config/data-source.ts`,
+    {
+      stdio: "inherit",
+      shell: isWindows ? undefined : "/bin/bash",
+    }
   );
   console.log("Migrations executed successfully.");
 
-  console.log("Migration fresh process completed.");
+  console.log("✅ Migration fresh process completed.");
 
-  // 5. jalanakan seeder
-  // console.log("Running seeders...");
-  // execSync("set NODE_ENV=production && ts-node src/seeds/RunSeeder.ts", {
-  //   stdio: "inherit",
-  // });
-  // console.log("Seeders executed successfully.");
 } catch (error) {
-  console.error("An error occurred during the migration fresh process:", error);
+  console.error(
+    "❌ An error occurred during the migration fresh process:",
+    error
+  );
   process.exit(1);
 }

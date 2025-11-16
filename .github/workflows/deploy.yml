@@ -47,13 +47,12 @@ jobs:
 
             cd ${{ env.TARGET_DIR }}
 
+            rm -rf node_modules
+            
             NODE_ENV=development npm ci --include=dev
 
-            # Register tsconfig-paths before running build
             npm run build
-
-            # Restart / start app with pm2
-            # Gunakan reload jika sudah ada, fallback ke start
+            
             pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
             pm2 save
           EOF

@@ -2,16 +2,11 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # contoh: 33369
-      TARGET_DIR: ${{ secrets.TARGET_DIR }}
 
     steps:
       - name: Checkout
@@ -29,32 +24,36 @@ jobs:
 
       - name: Add VPS to known_hosts (with custom port)
         run: |
-          # ssh-keyscan supports -p for custom port
-          ssh-keyscan -p "${{ env.SERVER_PORT }}" -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.SERVER_PORT }}" -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-      
 
       - name: Rsync files to server (over custom port)
         run: |
-          # Use -e "ssh -p PORT" so rsync uses correct port
-          rsync -az --delete --exclude='.git' -e "ssh -p ${{ env.SERVER_PORT }}" ./ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.TARGET_DIR }}
+          rsync -az --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            -e "ssh -p ${{ secrets.SERVER_PORT }}" \
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.TARGET_DIR }}
 
       - name: Remote deploy commands
         run: |
-          # Use ssh with -p as well
-          ssh -o StrictHostKeyChecking=no -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
-            set -eux
-
-            cd ${{ env.TARGET_DIR }}
-
-            # Clean up before install
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+            set -e
+            
+            cd ${{ secrets.TARGET_DIR }}
+            
+            echo "📦 Installing dependencies..."
             rm -rf node_modules
             npm cache clean --force
-            
             NODE_ENV=development npm ci --include=dev
-
+            
+            echo "🔨 Building application..."
             npm run build
             
+            echo "🚀 Restarting PM2..."
             pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
             pm2 save
-          EOF
+            
+            echo "✅ Deployment completed successfully!"
+          ENDSSH

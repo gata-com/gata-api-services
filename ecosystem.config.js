@@ -2,11 +2,7 @@ module.exports = {
   apps: [
     {
       name: "gata-api-services",
-<<<<<<< HEAD
-      script: "./start.js",
-=======
       script: "ts-node -r tsconfig-paths/register src/server.ts",
->>>>>>> 5e497b40a2205b271195a0da815e120591749980
       cwd: "/var/www/gata-api-services",
       instances: 1,
       exec_mode: "fork",

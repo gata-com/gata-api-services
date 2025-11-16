@@ -13,7 +13,9 @@ const distDir = path.join(appDir, "dist");
 
 // Check if dist folder exists
 if (!fs.existsSync(distDir)) {
-  console.error("Error: dist folder not found. Please run 'npm run build' first.");
+  console.error(
+    "Error: dist folder not found. Please run 'npm run build' first."
+  );
   process.exit(1);
 }
 

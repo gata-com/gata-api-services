@@ -6,6 +6,7 @@
 
 const path = require("path");
 const fs = require("fs");
+const tsConfigPaths = require("tsconfig-paths");
 
 console.log("🚀 Starting GATA API Services...");
 console.log("📂 Working directory:", __dirname);
@@ -34,10 +35,8 @@ if (!fs.existsSync(serverPath)) {
 
 console.log("✅ Build files found");
 
-// Register path alias resolution using tsconfig-paths
+// Register path alias resolution BEFORE loading any modules
 try {
-  const tsConfigPaths = require("tsconfig-paths");
-
   // Load tsconfig.json
   const tsConfigPath = path.join(appDir, "tsconfig.json");
   let pathMappings = {
@@ -77,7 +76,8 @@ try {
   console.log("✅ Path aliases registered");
 } catch (err) {
   console.error("❌ Error registering path aliases:", err.message);
-  console.log("⚠️  Continuing without path aliases...");
+  console.error("⚠️  Exiting - path aliases are required for this application");
+  process.exit(1);
 }
 
 // Load and run the server

@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "gata-api-services",
-      script: "dist/server.js",
+      script: "start.js",
       cwd: "/var/www/gata-api-services",
       instances: 1,
       exec_mode: "fork",

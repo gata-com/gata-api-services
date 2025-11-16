@@ -50,7 +50,7 @@ jobs:
             NODE_ENV=development npm ci --include=dev
 
             # Register tsconfig-paths before running build
-            node -r tsconfig-paths/register ./node_modules/.bin/tsc
+            npm run build
 
             # Restart / start app with pm2
             # Gunakan reload jika sudah ada, fallback ke start

@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { RegisterRequest } from "@/types/auth";
-import { AuthService } from "@/services/auth/authServices";
+import { AuthService } from "@/services/auth/AuthServices";
 
 // Register Student
 export const register = async (req: Request, res: Response<ApiResponse>) => {

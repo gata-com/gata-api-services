@@ -33,17 +33,12 @@
       "@/middleware/*": ["./middleware/*"],
       "@/entities/*": ["./entities/*"],
       "@/repositories/*": ["./repositories/*"],
+      "@/services/*": ["./services/*"],
       "@/routes/*": ["./routes/*"],
       "@/config/*": ["./config/*"],
       "@/utils/*": ["./utils/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
-  
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

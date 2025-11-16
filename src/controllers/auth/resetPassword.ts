@@ -1,8 +1,7 @@
 // controllers/auth/resetPassword.ts
 import { Request, Response } from "express";
 import { ApiResponse } from "@/types";
-import { ResetPasswordRequest } from "@/types/auth";
-import { AuthService } from "@/services/auth/authServices";
+import { AuthService } from "@/services/auth/AuthServices";
 
 export const resetPassword = async (
   req: Request,

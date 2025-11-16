@@ -45,10 +45,9 @@ jobs:
             
             echo "🧹 Cleaning up..."
             rm -rf node_modules package-lock.json
-            npm cache clean --force
             
             echo "📦 Installing dependencies..."
-            NODE_ENV=production npm install
+            npm ci --production --no-audit --prefer-offline || npm install --production --no-audit
             
             echo "🔨 Building application..."
             npm run build

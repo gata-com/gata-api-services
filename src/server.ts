@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import "tsconfig-paths/register";
 import app from "./app";
 import AppDataSource, {
   initializeDatabase,

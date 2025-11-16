@@ -74,7 +74,7 @@ router.get(
   "/mahasiswa/dashboard",
   authenticateToken,
   requireStudent,
-  (req, res) => {
+  (req: any, res: any) => {
     res.json({ message: "Mahasiswa dashboard" });
   }
 );
@@ -83,7 +83,7 @@ router.get(
   "/dosen/dashboard",
   authenticateToken,
   requireLecturer,
-  (req, res) => {
+  (req: any, res: any) => {
     res.json({ message: "Dosen dashboard" });
   }
 );

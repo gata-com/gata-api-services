@@ -25,10 +25,13 @@ export const login = async (
     // For production, consider setting 'secure: true' and 'sameSite' appropriately
     res.cookie("token", result.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure:
+        process.env.NODE_ENV === "production" &&
+        process.env.USE_HTTPS === "true",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
 
     // result is now guaranteed to have token and user

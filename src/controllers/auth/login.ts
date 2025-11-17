@@ -23,7 +23,7 @@ export const login = async (
 
     // cookie for middleware authentication
     // For production, consider setting 'secure: true' and 'sameSite' appropriately
-    res.cookie("token", result.token, {
+    const cookieOptions: any = {
       httpOnly: true,
       secure:
         process.env.NODE_ENV === "production" &&
@@ -31,8 +31,14 @@ export const login = async (
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      domain: process.env.COOKIE_DOMAIN || undefined,
-    });
+    };
+
+    // Only add domain if explicitly set
+    if (process.env.COOKIE_DOMAIN) {
+      cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+
+    res.cookie("token", result.token, cookieOptions);
 
     // result is now guaranteed to have token and user
     return res.status(200).json({

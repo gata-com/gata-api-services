@@ -27,15 +27,29 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
 
     const token = generateToken(user);
 
-    // Save token in the cookie (more secure)
-    res.cookie("token", token, {
+    // cookie for middleware authentication
+    const isProduction = process.env.NODE_ENV === "production";
+    const useHttps = process.env.USE_HTTPS === "true";
+
+    const cookieOptions: any = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction && useHttps, // Must be true for sameSite: "none"
+      sameSite: isProduction && useHttps ? "none" : "lax", // "none" requires secure: true
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    };
 
+    // Add domain if set (use parent domain like .gata.web.id for cross-subdomain)
+    // Leave empty to default to current domain only
+    if (process.env.COOKIE_DOMAIN) {
+      let domain = process.env.COOKIE_DOMAIN.replace(
+        /^https?:\/\//,
+        ""
+      ).replace(/\/$/, "");
+      cookieOptions.domain = domain;
+    }
+
+    res.cookie("token", token, cookieOptions);
     // Redirect ke frontend dengan token
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
   } catch (error) {

@@ -32,7 +32,7 @@ export const validateRegister: ValidationChain[] = [
     .isInt({ min: 1, max: 14 })
     .withMessage("Semester hanya boleh antara 1-14"),
 
-  body("whatsappNumber")
+  body("whatsapp_number")
     .trim()
     .matches(/^(\+62|62|0)8[1-9][0-9]{6,9}$/)
     .withMessage("Format nomor WhatsApp tidak valid"),

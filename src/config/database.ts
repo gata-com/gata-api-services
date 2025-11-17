@@ -11,7 +11,7 @@ const createDataSourceConfig = (): DataSourceOptions => {
     entities: [__dirname + "/../entities/*.{ts,js}"],
     migrations: [__dirname + "/../migrations/*.{ts,js}"],
     subscribers: [__dirname + "/../subscribers/*.{ts,js}"],
-    migrationsRun: true,
+    migrationsRun: false,
   };
 
   const mysqlConfig: DataSourceOptions = {

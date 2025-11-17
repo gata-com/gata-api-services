@@ -62,7 +62,7 @@ const startServer = async () => {
         process.exit(1);
       }, 30000); // 30 seconds timeout
 
-      server.close(async (err) => {
+      server.close(async (err: any) => {
         if (err) {
           console.error("❌ Error closing HTTP server:", err);
         } else {

@@ -7,7 +7,7 @@ const storage = multer.memoryStorage();
 // Konfigurasi multer
 const upload = multer({
   storage: storage,
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     // Hanya izinkan file PDF
     if (file.mimetype === "application/pdf") {
       cb(null, true);

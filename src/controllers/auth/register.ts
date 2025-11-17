@@ -16,14 +16,28 @@ export const register = async (req: Request, res: Response<ApiResponse>) => {
     }
 
     // cookie for middleware authentication
-    // For production, consider setting 'secure: true' and 'sameSite' appropriately
-    res.cookie("token", result.token, {
+    const isProduction = process.env.NODE_ENV === "production";
+    const useHttps = process.env.USE_HTTPS === "true";
+
+    const cookieOptions: any = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction && useHttps, // Must be true for sameSite: "none"
+      sameSite: isProduction && useHttps ? "none" : "lax", // "none" requires secure: true
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    };
+
+    // Add domain if set (use parent domain like .gata.web.id for cross-subdomain)
+    // Leave empty to default to current domain only
+    if (process.env.COOKIE_DOMAIN) {
+      let domain = process.env.COOKIE_DOMAIN.replace(
+        /^https?:\/\//,
+        ""
+      ).replace(/\/$/, "");
+      cookieOptions.domain = domain;
+    }
+
+    res.cookie("token", result.token, cookieOptions);
 
     return res.status(201).json({
       message: "Registrasi student berhasil",

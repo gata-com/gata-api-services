@@ -35,7 +35,12 @@ export const login = async (
 
     // Only add domain if explicitly set
     if (process.env.COOKIE_DOMAIN) {
-      cookieOptions.domain = process.env.COOKIE_DOMAIN;
+      // Remove protocol (http://, https://) and trailing slash from domain
+      let domain = process.env.COOKIE_DOMAIN.replace(
+        /^https?:\/\//,
+        ""
+      ).replace(/\/$/, "");
+      cookieOptions.domain = domain;
     }
 
     console.log("Setting cookie with options:", cookieOptions);

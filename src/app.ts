@@ -153,14 +153,13 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // API routes
-app.use("/api/auth", authRoutes);
-// app.use("/api/users", userRoutes);
-app.use("/api/mahasiswa", mahasiswaRoutes);
-app.use("/api/dosen", dosenRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/auth", authRoutes);
+app.use("/mahasiswa", mahasiswaRoutes);
+app.use("/dosen", dosenRoutes);
+app.use("/admin", adminRoutes);
 
 // Enhanced health check endpoint
-app.get("/api/health", async (req: Request, res: Response) => {
+app.get("/health", async (req: Request, res: Response) => {
   try {
     const dbType = AppDataSource.options.type;
     let dbInfo: string;
@@ -231,7 +230,7 @@ app.get("/api/health", async (req: Request, res: Response) => {
 });
 
 // Database status endpoint (detailed)
-app.get("/api/db-status", async (req: Request, res: Response) => {
+app.get("/db-status", async (req: Request, res: Response) => {
   try {
     if (!AppDataSource.isInitialized) {
       const errorResponse: ErrorResponse = {

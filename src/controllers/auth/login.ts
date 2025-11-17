@@ -38,6 +38,8 @@ export const login = async (
       cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
 
+    console.log("Setting cookie with options:", cookieOptions);
+
     res.cookie("token", result.token, cookieOptions);
 
     // result is now guaranteed to have token and user

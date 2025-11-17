@@ -22,20 +22,20 @@ export const login = async (
     }
 
     // cookie for middleware authentication
-    // For production, consider setting 'secure: true' and 'sameSite' appropriately
+    const isProduction = process.env.NODE_ENV === "production";
+    const useHttps = process.env.USE_HTTPS === "true";
+
     const cookieOptions: any = {
       httpOnly: true,
-      secure:
-        process.env.NODE_ENV === "production" &&
-        process.env.USE_HTTPS === "true",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: isProduction && useHttps, // Must be true for sameSite: "none"
+      sameSite: isProduction && useHttps ? "none" : "lax", // "none" requires secure: true
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
-    // Only add domain if explicitly set
+    // Add domain if set (use parent domain like .gata.web.id for cross-subdomain)
+    // Leave empty to default to current domain only
     if (process.env.COOKIE_DOMAIN) {
-      // Remove protocol (http://, https://) and trailing slash from domain
       let domain = process.env.COOKIE_DOMAIN.replace(
         /^https?:\/\//,
         ""

@@ -14,6 +14,9 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migrate:fresh": "ts-node -r tsconfig-paths/register ./src/scripts/migration-fresh.ts",
     "seed": "ts-node -r tsconfig-paths/register ./src/seeds/seed.ts",
+    "seed:defense": "ts-node -r tsconfig-paths/register ./src/scripts/seed-defense-dummy.ts",
+    "seed:rubrik": "ts-node -r tsconfig-paths/register ./src/seeds/seedRubrik.ts",
+    "seed:rentang-nilai": "ts-node -r tsconfig-paths/register ./src/seeds/seedRentangNilai.ts",
     "postinstall": "echo '✅ Dependencies installed successfully'"
   },
   "dependencies": {

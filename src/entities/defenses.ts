@@ -92,6 +92,22 @@ export class DefenseSubmission {
   })
   processed_at?: Date;
 
+  // Kode capstone (5 huruf uppercase, unik)
+  @Column({
+    type: "varchar",
+    length: 5,
+    nullable: true,
+    unique: true,
+  })
+  capstone_code?: string;
+
+  // Jadwal sidang
+  @Column({
+    type: "datetime",
+    nullable: true,
+  })
+  defense_date?: Date;
+
   @CreateDateColumn()
   created_at!: Date;
 
@@ -106,6 +122,14 @@ export class DefenseSubmission {
   // Dosen yang memproses (pembimbing 1 atau 2)
   @ManyToOne(() => Lecturer, { onDelete: "CASCADE" })
   lecturer!: Lecturer;
+
+  // Penguji 1 (untuk sidang proposal dan hasil)
+  @ManyToOne(() => Lecturer, { nullable: true, onDelete: "SET NULL" })
+  examiner_1?: Lecturer;
+
+  // Penguji 2 (untuk sidang proposal dan hasil)
+  @ManyToOne(() => Lecturer, { nullable: true, onDelete: "SET NULL" })
+  examiner_2?: Lecturer;
 
   @OneToMany(() => DefenseSubmissionDocument, (doc) => doc.defense_submission, {
     cascade: true,

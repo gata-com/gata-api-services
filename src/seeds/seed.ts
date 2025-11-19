@@ -9,6 +9,18 @@ import { Student } from "../entities/student";
 import ExpertisesGroup from "../entities/expertisesGroup";
 import { LecturerExpertise } from "../entities/lecturerExpertise";
 import { lecturers } from "./seedData";
+import { seedRentangNilai } from "./seedRentangNilai";
+import { seedDefaultRubrik } from "./seedRubrik";
+
+// Import entity penilaian agar TypeORM mengenali metadata
+import { Rubrik } from "../entities/rubrik";
+import { RubrikGroup } from "../entities/rubrikGroup";
+import { Pertanyaan } from "../entities/pertanyaan";
+import { OpsiJawaban } from "../entities/opsiJawaban";
+import { RentangNilai } from "../entities/rentangNilai";
+import { Penilaian } from "../entities/penilaian";
+import { JawabanPenilaian } from "../entities/jawabanPenilaian";
+import { BeritaAcaraPenilaian } from "../entities/beritaAcaraPenilaian";
 
 const expertiseList = [
   { name: "MLTR", description: "Traditional Machine Learning (All Domain)" },
@@ -205,7 +217,12 @@ async function main() {
     console.log(`Created Student record for ${email} with NIM ${nim}`);
   }
 
-  console.log("Seeding complete.");
+  // 5) Seed rentang nilai dan rubrik penilaian
+  console.log("\n=== Seeding Penilaian Data ===");
+  await seedRentangNilai();
+  await seedDefaultRubrik();
+
+  console.log("\n✅ Seeding complete.");
   await AppDataSource.destroy();
 }
 

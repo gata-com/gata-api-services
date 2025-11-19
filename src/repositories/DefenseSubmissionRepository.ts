@@ -245,4 +245,63 @@ export class DefenseSubmissionRepository {
       .orderBy("ds.created_at", "DESC")
       .getMany();
   }
+
+  /**
+   * Get all approved defense submissions for CSV export
+   * @param defense_type - Type of defense (proposal, hasil) - optional
+   * @returns Array of defense submissions with all relations needed for CSV
+   */
+  async findForCsvExport(defense_type?: string): Promise<any> {
+    const query = this.repository
+      .createQueryBuilder("ds")
+      .leftJoinAndSelect("ds.final_project", "fp")
+      .leftJoinAndSelect("fp.members", "members")
+      .leftJoinAndSelect("members.student", "student")
+      .leftJoinAndSelect("student.user", "studentUser")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor1")
+      .leftJoinAndSelect("supervisor1.user", "supervisor1User")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor2")
+      .leftJoinAndSelect("supervisor2.user", "supervisor2User")
+      .leftJoinAndSelect("ds.examiner_1", "examiner1")
+      .leftJoinAndSelect("examiner1.user", "examiner1User")
+      .leftJoinAndSelect("ds.examiner_2", "examiner2")
+      .leftJoinAndSelect("examiner2.user", "examiner2User")
+      .leftJoinAndSelect("ds.expertises_group_1", "expertise1")
+      .leftJoinAndSelect("ds.expertises_group_2", "expertise2")
+      .where("ds.status = :status", { status: "approved" });
+
+    if (defense_type) {
+      query.andWhere("ds.defense_type = :defense_type", { defense_type });
+    }
+
+    return query.orderBy("ds.created_at", "ASC").getMany();
+  }
+
+  /**
+   * Update defense submission with examiners and defense date
+   * @param id - Defense submission ID
+   * @param data - Data to update (examiner_1, examiner_2, defense_date, capstone_code)
+   * @returns UpdateResult
+   */
+  async updateDefenseSchedule(id: number, data: any): Promise<any> {
+    const updateData: any = {};
+
+    if (data.examiner_1_id) {
+      updateData.examiner_1 = { id: data.examiner_1_id };
+    }
+
+    if (data.examiner_2_id) {
+      updateData.examiner_2 = { id: data.examiner_2_id };
+    }
+
+    if (data.defense_date) {
+      updateData.defense_date = data.defense_date;
+    }
+
+    if (data.capstone_code) {
+      updateData.capstone_code = data.capstone_code;
+    }
+
+    return this.repository.update(id, updateData);
+  }
 }

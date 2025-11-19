@@ -3,12 +3,70 @@ import { config } from "./config";
 import * as path from "path";
 import * as fs from "fs";
 
+// Import all entities explicitly
+import User from "../entities/user";
+import { Lecturer } from "../entities/lecturer";
+import { Student } from "../entities/student";
+import ExpertisesGroup from "../entities/expertisesGroup";
+import { LecturerExpertise } from "../entities/lecturerExpertise";
+import {
+  FinalProjectPeriods,
+  FinalProjects,
+  FinalProjectMembers,
+} from "../entities/finalProject";
+import {
+  DefenseSubmission,
+  DefenseSubmissionDocument,
+} from "../entities/defenses";
+import { DefenseSchedule } from "../entities/defenseSchedule";
+import {
+  GuidanceAvailability,
+  GuidanceSession,
+  GuidanceDraftLink,
+} from "../entities/guidance";
+import Notifications from "../entities/notification";
+import Announcements from "../entities/announcement";
+// Import penilaian entities
+import { Rubrik } from "../entities/rubrik";
+import { RubrikGroup } from "../entities/rubrikGroup";
+import { Pertanyaan } from "../entities/pertanyaan";
+import { OpsiJawaban } from "../entities/opsiJawaban";
+import { RentangNilai } from "../entities/rentangNilai";
+import { Penilaian } from "../entities/penilaian";
+import { JawabanPenilaian } from "../entities/jawabanPenilaian";
+import { BeritaAcaraPenilaian } from "../entities/beritaAcaraPenilaian";
+
 // Create data source configuration based on database type
 const createDataSourceConfig = (): DataSourceOptions => {
   const baseConfig = {
     synchronize: false,
     logging: config.database.logging,
-    entities: [__dirname + "/../entities/*.{ts,js}"],
+    entities: [
+      User,
+      Lecturer,
+      Student,
+      ExpertisesGroup,
+      LecturerExpertise,
+      FinalProjectPeriods,
+      FinalProjects,
+      FinalProjectMembers,
+      DefenseSubmission,
+      DefenseSubmissionDocument,
+      DefenseSchedule,
+      GuidanceAvailability,
+      GuidanceSession,
+      GuidanceDraftLink,
+      Notifications,
+      Announcements,
+      Rubrik,
+      RubrikGroup,
+      Pertanyaan,
+      OpsiJawaban,
+      RentangNilai,
+      Penilaian,
+      JawabanPenilaian,
+      BeritaAcaraPenilaian,
+    ],
     migrations: [__dirname + "/../migrations/*.{ts,js}"],
     subscribers: [__dirname + "/../subscribers/*.{ts,js}"],
     migrationsRun: false,

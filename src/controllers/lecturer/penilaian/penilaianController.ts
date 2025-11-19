@@ -37,7 +37,10 @@ export const submitPenilaian = async (
     if (!jawaban || !Array.isArray(jawaban) || jawaban.length === 0) {
       return res.status(400).json({
         message: "Jawaban tidak boleh kosong",
-        errors: { path: "jawaban", msg: "Jawaban is required and must be an array" },
+        errors: {
+          path: "jawaban",
+          msg: "Jawaban is required and must be an array",
+        },
       });
     }
 

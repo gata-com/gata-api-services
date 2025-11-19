@@ -63,10 +63,7 @@ export const validateUpdateRubrik = [
     .trim()
     .isLength({ max: 1000 })
     .withMessage("Deskripsi maksimal 1000 karakter"),
-  body("isActive")
-    .optional()
-    .isBoolean()
-    .withMessage("isActive harus boolean"),
+  body("isActive").optional().isBoolean().withMessage("isActive harus boolean"),
   handleValidationErrors,
 ];
 

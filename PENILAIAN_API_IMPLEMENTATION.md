@@ -9,6 +9,7 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
 ## 📦 Files Created
 
 ### Entities (8 files)
+
 - ✅ `src/entities/rubrik.ts` - Master rubrik template
 - ✅ `src/entities/rubrikGroup.ts` - Group container untuk pertanyaan
 - ✅ `src/entities/pertanyaan.ts` - Individual questions dengan bobot
@@ -19,6 +20,7 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
 - ✅ `src/entities/beritaAcaraPenilaian.ts` - BAP document record
 
 ### Repositories (7 files)
+
 - ✅ `src/repositories/RubrikRepository.ts` - CRUD + duplicate + setDefault
 - ✅ `src/repositories/RubrikGroupRepository.ts` - CRUD + reorder
 - ✅ `src/repositories/PertanyaanRepository.ts` - CRUD + duplicate + reorder
@@ -28,12 +30,14 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
 - ✅ `src/repositories/BeritaAcaraPenilaianRepository.ts` - CRUD
 
 ### Services (4 files)
+
 - ✅ `src/services/admin/rubrikService.ts` - Orchestrates rubrik management
 - ✅ `src/services/admin/penilaianService.ts` - Assessment logic + calculations
 - ✅ `src/services/admin/rentangNilaiService.ts` - Grade range CRUD
 - ✅ `src/services/admin/bapService.ts` - BAP PDF/HTML generation
 
 ### Controllers (4 files)
+
 - ✅ `src/controllers/admin/penilaian/rubrikController.ts` - 20 functions
 - ✅ `src/controllers/admin/penilaian/rentangNilaiController.ts` - 5 functions
 - ✅ `src/controllers/admin/penilaian/penilaianViewController.ts` - 4 functions
@@ -41,17 +45,21 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
 - ✅ `src/controllers/lecturer/penilaian/penilaianController.ts` - 5 functions
 
 ### Routes (2 files)
+
 - ✅ `src/routes/admin/penilaian.ts` - 27 endpoints
 - ✅ `src/routes/lecturer/penilaian.ts` - 7 endpoints
 
 ### Validation (2 files)
+
 - ✅ `src/middleware/validation/admin/penilaian.ts` - 8 validators
 - ✅ `src/middleware/validation/lecturer/penilaian.ts` - 2 validators
 
 ### Migration (1 file)
+
 - ✅ `src/migrations/1763505657013-CreatePenilaianTables.ts` - Creates 8 tables
 
 ### Seeds (2 files)
+
 - ✅ `src/seeds/seedRentangNilai.ts` - Default grade ranges (A-E)
 - ✅ `src/seeds/seedRubrik.ts` - Default rubrik for SID & SEM
 
@@ -60,7 +68,9 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
 ## 🎯 Features Implemented
 
 ### Admin Features
+
 1. **Rubrik Management**
+
    - CRUD operations for rubriks
    - Duplicate entire rubrik with structure
    - Set default rubrik per type (SID/SEM)
@@ -68,6 +78,7 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
    - Reorder groups and pertanyaans
 
 2. **Grade Range Management**
+
    - CRUD rentang nilai
    - Bulk update grade ranges
    - Automatic grade conversion
@@ -78,7 +89,9 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
    - Download & preview BAP
 
 ### Lecturer Features
+
 1. **Jadwal Management**
+
    - View assigned jadwal (as pembimbing or penguji)
    - View jadwal detail with full relations
 
@@ -94,31 +107,37 @@ Implementation sistem penilaian berbasis rubrik untuk sidang dan seminar tugas a
 ## 📐 Calculation Formulas
 
 ### 1. Nilai per Group
+
 ```typescript
 nilaiGroup = Σ(nilai × bobot) / Σ(bobot)
 ```
 
 ### 2. Nilai Akhir Dosen
+
 ```typescript
 nilaiAkhirDosen = Σ(nilaiGroup × bobotGroup) / Σ(bobotGroup) × 20
 ```
 
 ### 3. Rata-rata Pembimbing
+
 ```typescript
-rata2Pembimbing = (nilaiPembimbing1 + nilaiPembimbing2) / 2
+rata2Pembimbing = (nilaiPembimbing1 + nilaiPembimbing2) / 2;
 ```
 
 ### 4. Rata-rata Penguji
+
 ```typescript
-rata2Penguji = (nilaiPenguji1 + nilaiPenguji2) / 2
+rata2Penguji = (nilaiPenguji1 + nilaiPenguji2) / 2;
 ```
 
 ### 5. Nilai Akhir Final
+
 ```typescript
-nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
+nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2;
 ```
 
 ### 6. Konversi ke Nilai Huruf
+
 ```typescript
 // Lookup from rentang_nilais where score >= minScore
 // Default: A(80+), AB(75+), B(70+), BC(65+), C(60+), D(50+), E(0+)
@@ -131,6 +150,7 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 ### Admin Routes (`/admin/penilaian`)
 
 #### Rubrik Management (7 endpoints)
+
 - `GET /rubrik` - Get all rubriks (filter by type)
 - `GET /rubrik/:id` - Get rubrik detail with full structure
 - `POST /rubrik` - Create rubrik
@@ -140,12 +160,14 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 - `POST /rubrik/:id/set-default` - Set as default for type
 
 #### Group Management (4 endpoints)
+
 - `POST /rubrik/:rubrikId/group` - Create group
 - `PUT /group/:id` - Update group
 - `DELETE /group/:id` - Delete group
 - `PUT /rubrik/:rubrikId/group/reorder` - Reorder groups
 
 #### Pertanyaan Management (5 endpoints)
+
 - `POST /group/:groupId/pertanyaan` - Create pertanyaan
 - `PUT /pertanyaan/:id` - Update pertanyaan
 - `DELETE /pertanyaan/:id` - Delete pertanyaan
@@ -153,12 +175,14 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 - `PUT /group/:groupId/pertanyaan/reorder` - Reorder pertanyaans
 
 #### Opsi Jawaban Management (4 endpoints)
+
 - `POST /pertanyaan/:pertanyaanId/opsi` - Create opsi
 - `PUT /opsi/:id` - Update opsi
 - `DELETE /opsi/:id` - Delete opsi
 - `DELETE /pertanyaan/:pertanyaanId/opsi/bulk` - Bulk delete opsi
 
 #### Rentang Nilai Management (5 endpoints)
+
 - `GET /rentang-nilai` - Get all grade ranges
 - `POST /rentang-nilai` - Create grade range
 - `PUT /rentang-nilai/:id` - Update grade range
@@ -166,6 +190,7 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 - `PUT /rentang-nilai/bulk` - Bulk update grade ranges
 
 #### View & BAP (4 endpoints)
+
 - `GET /view-dosen` - View all penilaians (admin view)
 - `POST /jadwal/:jadwalId/generate-bap` - Generate BAP PDF
 - `GET /jadwal/:jadwalId/bap` - Download BAP
@@ -174,10 +199,12 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 ### Lecturer Routes (`/dosen/penilaian`)
 
 #### Jadwal (2 endpoints)
+
 - `GET /jadwal` - Get assigned jadwal
 - `GET /jadwal/:jadwalId` - Get jadwal detail
 
 #### Penilaian (5 endpoints)
+
 - `POST /jadwal/:jadwalId/nilai` - Submit/update penilaian
 - `GET /jadwal/:jadwalId/nilai` - Get own penilaian
 - `GET /jadwal/:jadwalId/rekap` - Get rekap nilai (all lecturers)
@@ -189,6 +216,7 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 ## 🗄️ Database Schema
 
 ### Tables Created (8 tables)
+
 1. `rubriks` - Master template rubrik (id UUID, nama, type enum, isDefault, isActive)
 2. `rubrik_groups` - Groups within rubrik (id UUID, rubrikId FK, bobotTotal)
 3. `pertanyaans` - Questions in groups (id UUID, groupId FK, bobot, urutan)
@@ -199,6 +227,7 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 8. `berita_acara_penilaians` - BAP documents (id UUID, jadwalId FK, fileName, fileUrl, nilaiAkhir, nilaiHuruf)
 
 ### Foreign Keys & Cascade
+
 - All dependent tables CASCADE on delete
 - Indexes on: rubrik type, jadwal penilaian, grade lookup
 
@@ -207,6 +236,7 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 ## 🧪 Testing Checklist
 
 ### Manual Testing Required
+
 - [ ] Run migration: `npm run typeorm migration:run`
 - [ ] Run seed: `npm run seed`
 - [ ] Test rubrik CRUD endpoints
@@ -222,6 +252,7 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 - [ ] Test all access control (admin vs lecturer)
 
 ### Expected Results
+
 - Rubrik structure properly nested
 - Calculations match formulas
 - Grade conversion accurate
@@ -234,20 +265,26 @@ nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2
 ## 🔄 Integration Steps
 
 ### 1. Run Migration
+
 ```bash
 npm run typeorm migration:run
 ```
 
 ### 2. Run Seed
+
 ```bash
 npm run seed
 ```
+
 This will create:
+
 - 7 default grade ranges (A, AB, B, BC, C, D, E)
 - 2 default rubriks (SID with 3 groups/7 questions, SEM with 2 groups/7 questions)
 
 ### 3. Test Endpoints
+
 Use Postman collection or test manually:
+
 1. Login as admin → test rubrik management
 2. Login as lecturer → test penilaian submission
 3. Test finalisasi flow
@@ -258,10 +295,12 @@ Use Postman collection or test manually:
 ## 🐛 Known Issues
 
 ### TypeScript Cache Issues (Non-blocking)
+
 - Import errors for validation middleware (files exist, just cache issue)
 - Restart TypeScript server if needed: `Cmd+Shift+P > TypeScript: Restart TS Server`
 
 ### TODO: PDF Generation
+
 - Current BAP generation uses HTML preview
 - PDF generation placeholder (`bapService.generateBap`) needs library like `puppeteer` or `pdfkit`
 - Recommendation: Use `puppeteer` to convert HTML to PDF
@@ -271,18 +310,22 @@ Use Postman collection or test manually:
 ## 📝 Next Steps (Optional Enhancements)
 
 1. **PDF Generation**
+
    - Install puppeteer: `npm install puppeteer`
    - Implement actual PDF generation from HTML
 
 2. **File Storage**
+
    - Store BAP files to cloud storage (AWS S3, Google Cloud Storage)
    - Update fileUrl to cloud URL
 
 3. **Notifications**
+
    - Email notification when nilai finalized
    - Email BAP to student
 
 4. **Analytics Dashboard**
+
    - Statistical analysis of grades
    - Average scores per rubrik
    - Lecturer assessment comparison

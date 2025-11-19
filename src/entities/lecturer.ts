@@ -22,7 +22,7 @@ export class Lecturer {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ length: 15, unique: true })
+  @Column({ length: 50, unique: true })
   nip!: string;
 
   @Column({ length: 10, nullable: true })

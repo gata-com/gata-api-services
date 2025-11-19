@@ -16,35 +16,35 @@ export const getJadwalSidang = async (
     // @ts-ignore - user added by auth middleware
     const lecturerId = req.user?.lecturer?.id;
 
-    if (!lecturerId) {
-      return res.status(403).json({
-        message: "Forbidden",
-        errors: { path: "user", msg: "Lecturer ID not found" },
-      });
-    }
+    // if (!lecturerId) {
+    //   return res.status(403).json({
+    //     message: "Forbidden",
+    //     errors: { path: "user", msg: "Lecturer ID not found" },
+    //   });
+    // }
 
     // Get jadwal where lecturer is pembimbing or penguji
     const jadwals = await scheduleRepo.findAll();
 
     // Filter jadwal untuk dosen ini
-    const filteredJadwals = jadwals.filter((jadwal) => {
-      const submission = jadwal.defense_submission;
-      const finalProject = submission.final_project;
+    // const filteredJadwals = jadwals.filter((jadwal) => {
+    //   const submission = jadwal.defense_submission;
+    //   const finalProject = submission.final_project;
 
-      const isPembimbing =
-        finalProject.supervisor_1?.id === lecturerId ||
-        finalProject.supervisor_2?.id === lecturerId;
+    //   const isPembimbing =
+    //     finalProject.supervisor_1?.id === lecturerId ||
+    //     finalProject.supervisor_2?.id === lecturerId;
 
-      const isPenguji =
-        submission.examiner_1?.id === lecturerId ||
-        submission.examiner_2?.id === lecturerId;
+    //   const isPenguji =
+    //     submission.examiner_1?.id === lecturerId ||
+    //     submission.examiner_2?.id === lecturerId;
 
-      return isPembimbing || isPenguji;
-    });
+    //   return isPembimbing || isPenguji;
+    // });
 
     return res.status(200).json({
       message: "Jadwal sidang retrieved successfully",
-      data: filteredJadwals,
+      data: jadwals,
     });
   } catch (error) {
     console.error("Error getting jadwal sidang:", error);

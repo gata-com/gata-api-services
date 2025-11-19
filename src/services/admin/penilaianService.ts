@@ -4,6 +4,9 @@ import { RentangNilaiRepository } from "@/repositories/RentangNilaiRepository";
 import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleRepository";
 import { Penilaian } from "@/entities/penilaian";
 import { JawabanPenilaian } from "@/entities/jawabanPenilaian";
+import { LecturerRepository } from "@/repositories/LecturerRepository";
+import { DefenseSubmissionRepository } from "@/repositories/DefenseSubmissionRepository";
+import { Jadwal, JadwalKomentar } from "@/types/lecturer";
 
 interface JawabanInput {
   pertanyaanId: string;
@@ -37,12 +40,16 @@ export class PenilaianService {
   private rubrikRepo: RubrikRepository;
   private rentangRepo: RentangNilaiRepository;
   private scheduleRepo: DefenseScheduleRepository;
+  private lecturerRepo: LecturerRepository;
+  private defenseSubmissionRepo: DefenseSubmissionRepository;
 
   constructor() {
     this.penilaianRepo = new PenilaianRepository();
     this.rubrikRepo = new RubrikRepository();
     this.rentangRepo = new RentangNilaiRepository();
     this.scheduleRepo = new DefenseScheduleRepository();
+    this.lecturerRepo = new LecturerRepository();
+    this.defenseSubmissionRepo = new DefenseSubmissionRepository();
   }
 
   /**
@@ -349,5 +356,168 @@ export class PenilaianService {
    */
   async getAllPenilaians(): Promise<Penilaian[]> {
     return await this.penilaianRepo.findAll();
+  }
+
+  /**
+   * Get jadwal sidang per lecturer
+   * @param lecturerId - ID pembimbing/penguji
+   * @returns Array of jadwal dengan status kehadiran
+   */
+  async getJadwalByLecturer(lecturerId: number): Promise<Jadwal[]> {
+    try {
+      // Get all defense submissions where lecturer is supervisor or examiner
+      const submissions = await this.defenseSubmissionRepo.findByLecturerId(
+        lecturerId
+      );
+
+      const jadwalList: Jadwal[] = [];
+      const now = new Date();
+
+      for (const submission of submissions) {
+        // Get schedule for this submission
+        const schedule = await this.scheduleRepo.findByDefenseSubmissionId(
+          submission.id
+        );
+
+        if (!schedule) {
+          continue;
+        }
+
+        // Get student data from final project members
+        const member = submission.final_project.members?.[0];
+        const student = member?.student;
+        const user = student?.user;
+
+        // Get supervisors and examiners
+        const supervisor1 = submission.final_project.supervisor_1;
+        const supervisor2 = submission.final_project.supervisor_2;
+        const examiner1 = submission.examiner_1;
+        const examiner2 = submission.examiner_2;
+
+        // Determine status kehadiran
+        const scheduledDate = new Date(schedule.scheduled_date);
+        const startTime = schedule.start_time;
+        const scheduleDatetime = new Date(
+          `${schedule.scheduled_date}T${startTime}`
+        );
+
+        // Create date for comparison (same day, midnight)
+        const scheduledDateOnly = new Date(
+          scheduledDate.getFullYear(),
+          scheduledDate.getMonth(),
+          scheduledDate.getDate()
+        );
+        const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        let statusKehadiran: "HARI INI" | "LEWAT" | "MENDATANG";
+        if (scheduledDateOnly.getTime() === nowDateOnly.getTime()) {
+          statusKehadiran = "HARI INI";
+        } else if (scheduleDatetime < now) {
+          statusKehadiran = "LEWAT";
+        } else {
+          statusKehadiran = "MENDATANG";
+        }
+
+        // Get penilaian for this lecturer
+        const penilaian = await this.penilaianRepo.findByJadwalAndLecturer(
+          schedule.id,
+          lecturerId
+        );
+
+        // Determine status penilaian
+        let statusPenilaian: "belum_dinilai" | "sudah_dinilai" | "terkunci";
+        if (!penilaian) {
+          statusPenilaian = "belum_dinilai";
+        } else if (penilaian.isFinalized) {
+          statusPenilaian = "terkunci";
+        } else {
+          statusPenilaian = "sudah_dinilai";
+        }
+
+        // Build nilai pertanyaan map if penilaian exists
+        const nilaiPertanyaan: { [pertanyaanId: string]: number } = {};
+        if (penilaian?.jawabans) {
+          for (const jawaban of penilaian.jawabans) {
+            nilaiPertanyaan[jawaban.pertanyaanId] = jawaban.nilai;
+          }
+        }
+
+        // Get rekap nilai if status kehadiran is LEWAT
+        let rekap = undefined;
+        if (statusKehadiran === "LEWAT") {
+          try {
+            rekap = await this.getRekapNilai(schedule.id);
+          } catch (error) {
+            // Rekap might not be available yet
+          }
+        }
+
+        // Get komentars
+        const komentarDosens = await this.getKomentarDosen(schedule.id);
+        const komenta: JadwalKomentar[] = komentarDosens.map((k) => ({
+          kode: k.lecturerId.toString(),
+          nama: k.lecturerNama,
+          komentar: k.catatan,
+          tanggal: new Date().toISOString(),
+        }));
+
+        // Get semua penilaian untuk dosenNilai
+        const semuaPenilaian = await this.penilaianRepo.findByJadwalId(
+          schedule.id
+        );
+
+        const dosenNilai = semuaPenilaian.map((p) => ({
+          lecturerId: p.lecturerId,
+          lecturerNama: p.lecturer?.user?.name || "-",
+          role: [
+            supervisor1?.id,
+            supervisor2?.id,
+          ].includes(p.lecturerId)
+            ? ("Pembimbing" as const)
+            : ("Penguji" as const),
+          nilaiAkhir: Number(p.nilaiAkhir || 0),
+          perGroup: [], // Could be populated from rubrik groups if needed
+        }));
+
+        const jadwal: Jadwal = {
+          id: schedule.id.toString(),
+          nama: user?.name || "-",
+          nim: student?.nim || "-",
+          jenisSidang:
+            submission.defense_type === "proposal" ? "PROPOSAL" : "HASIL",
+          statusKehadiran,
+          tanggal: schedule.scheduled_date,
+          waktu: schedule.start_time,
+          judul: submission.final_project.title || "-",
+          lokasi: schedule.room || "Prodi",
+          capstone: submission.capstone_code || "-",
+          pembimbing1: supervisor1?.user?.name || "-",
+          pembimbing2: supervisor2?.user?.name || "-",
+          penguji1: examiner1?.user?.name || "-",
+          penguji2: examiner2?.user?.name || "-",
+          statusPenilaian,
+          nilaiPertanyaan,
+          catatanMahasiswa: submission.student_notes,
+          rekap,
+          dosenNilai: dosenNilai.length > 0 ? dosenNilai : undefined,
+          catatan: penilaian?.catatan,
+          komentar: komenta.length > 0 ? komenta : undefined,
+        };
+
+        jadwalList.push(jadwal);
+      }
+
+      // Sort by tanggal
+      jadwalList.sort((a, b) => {
+        const dateA = new Date(`${a.tanggal}T${a.waktu}`);
+        const dateB = new Date(`${b.tanggal}T${b.waktu}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      return jadwalList;
+    } catch (error) {
+      console.error("Error getting jadwal by lecturer:", error);
+      throw error;
+    }
   }
 }

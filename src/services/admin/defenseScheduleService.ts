@@ -217,4 +217,40 @@ export class DefenseScheduleImportService {
   async getScheduleByDefenseSubmission(defenseSubmissionId: number) {
     return this.scheduleRepo.findByDefenseSubmissionId(defenseSubmissionId);
   }
+
+  /**
+   * Get all schedules in formatted response
+   * @returns Array of schedules in the required format
+   */
+  async getAllSchedules() {
+    const schedules = await this.scheduleRepo.findAll();
+
+    return schedules.map((schedule) => {
+      // Get student data from final project members
+      const member = schedule.defense_submission.final_project.members[0];
+      const student = member?.student;
+      const user = student?.user;
+
+      // Get supervisor and examiner names
+      const supervisor1 = schedule.defense_submission.lecturer;
+      const examiner1 = schedule.defense_submission.examiner_1;
+      const examiner2 = schedule.defense_submission.examiner_2;
+
+      return {
+        nim: student?.nim || "-",
+        name: user?.name || "-",
+        capstone_code: schedule.defense_submission.capstone_code || "-",
+        type: schedule.defense_submission.defense_type || "-",
+        date: schedule.scheduled_date || "-",
+        startTime: schedule.start_time || "-",
+        endTime: schedule.end_time || "-",
+        spv_1: supervisor1?.user?.name || "-",
+        spv_2: "-", // Currently no spv_2 in DefenseSubmission entity
+        examiner_1: examiner1?.user?.name || "-",
+        examiner_2: examiner2?.user?.name || "-",
+        status: schedule.status || "-",
+        location: schedule.room || "Prodi",
+      };
+    });
+  }
 }

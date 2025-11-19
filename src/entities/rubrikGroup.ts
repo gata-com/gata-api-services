@@ -28,6 +28,9 @@ export class RubrikGroup {
   @Column({ type: "int" })
   urutan!: number;
 
+  @Column({ type: "boolean", default: false })
+  isDefault!: boolean;
+
   @ManyToOne(() => Rubrik, (rubrik) => rubrik.groups, { onDelete: "CASCADE" })
   @JoinColumn({ name: "rubrikId" })
   rubrik!: Rubrik;

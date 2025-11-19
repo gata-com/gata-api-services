@@ -1,8 +1,58 @@
 import { Request, Response } from "express";
 import { PenilaianService } from "@/services/admin/penilaianService";
+import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { ApiResponse } from "@/types";
+import { Jadwal } from "@/types/lecturer";
 
 const penilaianService = new PenilaianService();
+const lecturerRepo = new LecturerRepository();
+
+/**
+ * Get jadwal sidang per dosen (pembimbing atau penguji)
+ * GET /lecturer/penilaian/jadwal/:userId
+ */
+export const getPenilaian = async (
+  req: Request,
+  res: Response<ApiResponse<Jadwal[]>>
+): Promise<Response> => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        message: "Invalid user ID",
+        errors: { path: "userId", msg: "User ID must be a number" },
+      });
+    }
+
+    // Get lecturer by userId
+    const lecturer = await lecturerRepo.findByUserId(userId);
+
+    if (!lecturer) {
+      return res.status(404).json({
+        message: "Dosen tidak ditemukan",
+        errors: { path: "lecturer", msg: "Lecturer not found for this user" },
+      });
+    }
+
+    // Get jadwal untuk dosen ini
+    const jadwals = await penilaianService.getJadwalByLecturer(lecturer.id);
+
+    return res.status(200).json({
+      message: "Jadwal berhasil diambil",
+      data: jadwals,
+    });
+  } catch (error) {
+    console.error("Error getting penilaian:", error);
+    return res.status(500).json({
+      message: "Terjadi kesalahan",
+      errors: {
+        path: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
+    });
+  }
+};
 
 /**
  * Submit/Update penilaian

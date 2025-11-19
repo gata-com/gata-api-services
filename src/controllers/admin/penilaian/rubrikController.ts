@@ -261,6 +261,68 @@ export const updateGroup = async (
   }
 };
 
+export const setDefaultGroup = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
+  try {
+    const { groupId } = req.params;
+    const group = await rubrikService.setDefaultGroup(groupId);
+
+    if (!group) {
+      return res.status(404).json({
+        message: "Group tidak ditemukan",
+        errors: { path: "groupId", msg: "Group not found" },
+      });
+    }
+
+    return res.status(200).json({
+      message: "Group berhasil diset sebagai default",
+      data: group,
+    });
+  } catch (error) {
+    console.error("Error setting default group:", error);
+    return res.status(500).json({
+      message: "Terjadi kesalahan",
+      errors: {
+        path: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
+    });
+  }
+};
+
+export const unsetDefaultGroup = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
+  try {
+    const { groupId } = req.params;
+    const group = await rubrikService.unsetDefaultGroup(groupId);
+
+    if (!group) {
+      return res.status(404).json({
+        message: "Group tidak ditemukan",
+        errors: { path: "groupId", msg: "Group not found" },
+      });
+    }
+
+    return res.status(200).json({
+      message: "Group default berhasil dihapus",
+      data: group,
+    });
+  } catch (error) {
+    console.error("Error unsetting default group:", error);
+    return res.status(500).json({
+      message: "Terjadi kesalahan",
+      errors: {
+        path: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
+    });
+  }
+};
+
 export const deleteGroup = async (
   req: Request,
   res: Response<ApiResponse>

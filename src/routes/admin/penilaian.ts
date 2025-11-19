@@ -11,6 +11,8 @@ import {
   updateGroup,
   deleteGroup,
   reorderGroups,
+  setDefaultGroup,
+  unsetDefaultGroup,
   createPertanyaan,
   updatePertanyaan,
   deletePertanyaan,
@@ -85,6 +87,12 @@ router.put("/group/:id", validateUpdateGroup, updateGroup);
 
 // DELETE /admin/penilaian/group/:id - Delete group
 router.delete("/group/:id", deleteGroup);
+
+// POST /admin/penilaian/group/:groupId/set-default - Set group as default
+router.post("/group/:groupId/set-default", setDefaultGroup);
+
+// POST /admin/penilaian/group/:groupId/unset-default - Unset group as default
+router.post("/group/:groupId/unset-default", unsetDefaultGroup);
 
 // PUT /admin/penilaian/rubrik/:rubrikId/group/reorder - Reorder groups
 router.put("/rubrik/:rubrikId/group/reorder", reorderGroups);

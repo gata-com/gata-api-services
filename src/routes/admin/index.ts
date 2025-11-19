@@ -9,6 +9,7 @@ import {
   assignExaminers,
   importScheduleCSV,
 } from "@/controllers/admin/defense/exportDefenseCsv";
+import { getSchedule } from "@/controllers/admin/defense/getSchedule";
 
 const router = Router();
 
@@ -59,5 +60,7 @@ router.post(
   csvUpload.single("schedule_file"),
   importScheduleCSV
 );
+
+router.get("/jadwal-sidang", getSchedule);
 
 export default router;

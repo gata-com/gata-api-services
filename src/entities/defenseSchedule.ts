@@ -44,7 +44,7 @@ export class DefenseSchedule {
   original_idx?: number;
 
   // Room/location (opsional)
-  @Column({ type: "varchar", length: 255, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true, default: "Prodi" })
   room?: string;
 
   // Notes (opsional)

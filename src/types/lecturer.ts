@@ -56,3 +56,59 @@ export interface TotalStudentsResponse {
     uploaded_at?: string;
   }[];
 }
+
+export interface DosenNilai {
+  lecturerId: number;
+  lecturerNama: string;
+  role: "Pembimbing" | "Penguji";
+  nilaiAkhir: number;
+  perGroup: Array<{
+    groupId: string;
+    groupNama: string;
+    nilaiGroup: number;
+    bobotGroup: number;
+  }>;
+}
+
+export interface JadwalKomentar {
+  kode: string;
+  nama: string;
+  komentar: string;
+  tanggal: string;
+}
+
+export interface JadwalRekap {
+  rata2Pembimbing: number;
+  rata2Penguji: number;
+  nilaiAkhir: number;
+  nilaiHuruf: string;
+  finalisasiOleh?: string;
+}
+
+export interface Jadwal {
+  id: string;
+  nama: string;
+  nim: string;
+  jenisSidang: "PROPOSAL" | "HASIL";
+  statusKehadiran: "HARI INI" | "LEWAT" | "MENDATANG";
+  tanggal: string;
+  waktu: string;
+  judul: string;
+  lokasi: string;
+  capstone: string;
+  pembimbing1: string;
+  pembimbing2: string;
+  penguji1: string;
+  penguji2: string;
+  laporanTA?: string;
+  slidePresentasi?: string;
+  statusPenilaian: "belum_dinilai" | "sudah_dinilai" | "terkunci";
+  nilaiPertanyaan?: {
+    [pertanyaanId: string]: number;
+  };
+  catatanMahasiswa?: string;
+  rekap?: JadwalRekap;
+  dosenNilai?: DosenNilai[];
+  catatan?: string;
+  komentar?: JadwalKomentar[];
+}

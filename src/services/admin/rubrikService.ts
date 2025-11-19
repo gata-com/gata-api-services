@@ -81,6 +81,18 @@ export class RubrikService {
     await this.groupRepo.reorder(rubrikId, groupIds);
   }
 
+  async setDefaultGroup(groupId: string): Promise<RubrikGroup | null> {
+    return await this.groupRepo.setDefault(groupId);
+  }
+
+  async unsetDefaultGroup(groupId: string): Promise<RubrikGroup | null> {
+    return await this.groupRepo.unsetDefault(groupId);
+  }
+
+  async getDefaultGroupByRubrik(rubrikId: string): Promise<RubrikGroup | null> {
+    return await this.groupRepo.getDefaultByRubrik(rubrikId);
+  }
+
   // Pertanyaan Management
   async createPertanyaan(data: {
     groupId: string;

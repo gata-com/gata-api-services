@@ -42,4 +42,32 @@ export class RubrikGroupRepository {
       await this.repository.update(groupIds[i], { urutan: i + 1 });
     }
   }
+
+  async getDefaultByRubrik(rubrikId: string): Promise<RubrikGroup | null> {
+    return await this.repository.findOne({
+      where: {
+        rubrikId,
+        isDefault: true,
+      },
+    });
+  }
+
+  async setDefault(groupId: string): Promise<RubrikGroup | null> {
+    // First, find the group to get its rubrikId
+    const group = await this.findById(groupId);
+    if (!group) return null;
+
+    // Remove default from all other groups in the same rubrik
+    await this.repository.update(
+      { rubrikId: group.rubrikId, isDefault: true },
+      { isDefault: false }
+    );
+
+    // Set this group as default
+    return await this.update(groupId, { isDefault: true });
+  }
+
+  async unsetDefault(groupId: string): Promise<RubrikGroup | null> {
+    return await this.update(groupId, { isDefault: false });
+  }
 }

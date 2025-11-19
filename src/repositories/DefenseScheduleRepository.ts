@@ -94,6 +94,8 @@ export class DefenseScheduleRepository {
       .leftJoinAndSelect("fp.members", "members")
       .leftJoinAndSelect("members.student", "student")
       .leftJoinAndSelect("student.user", "user")
+      .leftJoinAndSelect("def.lecturer", "lecturer")
+      .leftJoinAndSelect("lecturer.user", "lecturerUser")
       .leftJoinAndSelect("def.examiner_1", "examiner1")
       .leftJoinAndSelect("examiner1.user", "examiner1User")
       .leftJoinAndSelect("def.examiner_2", "examiner2")

@@ -4,6 +4,7 @@ import {
   getJadwalDetail,
 } from "@/controllers/lecturer/penilaian/jadwalController";
 import {
+  getPenilaian,
   submitPenilaian,
   getPenilaianDosen,
   getRekapNilai,
@@ -21,7 +22,7 @@ const router = Router();
 
 // Apply auth and role middleware to all routes
 router.use(auth);
-router.use(requireLecturer);
+// router.use(requireLecturer);
 
 // ========== JADWAL ROUTES ==========
 // GET /dosen/penilaian/jadwal - Get jadwal sidang
@@ -31,6 +32,9 @@ router.get("/jadwal", getJadwalSidang);
 router.get("/jadwal/:jadwalId", getJadwalDetail);
 
 // ========== PENILAIAN ROUTES ==========
+
+router.get("/data-sidang/:userId", getPenilaian);
+
 // POST /dosen/penilaian/jadwal/:jadwalId/nilai - Submit penilaian
 router.post(
   "/jadwal/:jadwalId/nilai",

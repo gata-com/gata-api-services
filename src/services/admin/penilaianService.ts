@@ -407,7 +407,11 @@ export class PenilaianService {
           scheduledDate.getMonth(),
           scheduledDate.getDate()
         );
-        const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const nowDateOnly = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
 
         let statusKehadiran: "HARI INI" | "LEWAT" | "MENDATANG";
         if (scheduledDateOnly.getTime() === nowDateOnly.getTime()) {
@@ -469,10 +473,7 @@ export class PenilaianService {
         const dosenNilai = semuaPenilaian.map((p) => ({
           lecturerId: p.lecturerId,
           lecturerNama: p.lecturer?.user?.name || "-",
-          role: [
-            supervisor1?.id,
-            supervisor2?.id,
-          ].includes(p.lecturerId)
+          role: [supervisor1?.id, supervisor2?.id].includes(p.lecturerId)
             ? ("Pembimbing" as const)
             : ("Penguji" as const),
           nilaiAkhir: Number(p.nilaiAkhir || 0),

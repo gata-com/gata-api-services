@@ -118,8 +118,7 @@ export const validateUpdateGroup = [
 export const validateCreatePertanyaan = [
   body("text")
     .trim()
-    .notEmpty()
-    .withMessage("Text pertanyaan wajib diisi")
+    .optional()
     .isLength({ max: 1000 })
     .withMessage("Text pertanyaan maksimal 1000 karakter"),
   body("bobot")
@@ -163,8 +162,7 @@ export const validateUpdatePertanyaan = [
 export const validateCreateOpsi = [
   body("text")
     .trim()
-    .notEmpty()
-    .withMessage("Text opsi wajib diisi")
+    .optional()
     .isLength({ max: 255 })
     .withMessage("Text opsi maksimal 255 karakter"),
   body("nilai")
@@ -203,7 +201,7 @@ export const validateUpdateOpsi = [
 ];
 
 /**
- * Validate rentang nilai
+ * Validate rentang nilai for create
  */
 export const validateRentangNilai = [
   body("grade")
@@ -220,6 +218,28 @@ export const validateRentangNilai = [
   body("urutan")
     .notEmpty()
     .withMessage("Urutan wajib diisi")
+    .isInt({ min: 1 })
+    .withMessage("Urutan harus integer positif"),
+  handleValidationErrors,
+];
+
+/**
+ * Validate rentang nilai for update (optional fields)
+ */
+export const validateUpdateRentangNilai = [
+  body("grade")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Grade tidak boleh kosong")
+    .isLength({ max: 5 })
+    .withMessage("Grade maksimal 5 karakter"),
+  body("minScore")
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage("Min score harus antara 0-100"),
+  body("urutan")
+    .optional()
     .isInt({ min: 1 })
     .withMessage("Urutan harus integer positif"),
   handleValidationErrors,

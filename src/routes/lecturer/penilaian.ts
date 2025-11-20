@@ -12,7 +12,6 @@ import {
   finalisasiNilai,
 } from "@/controllers/lecturer/penilaian/penilaianController";
 import { auth } from "@/middleware/auth";
-import { requireLecturer } from "@/middleware/role";
 import {
   validateSubmitPenilaian,
   validateFinalisasi,
@@ -32,7 +31,6 @@ router.get("/jadwal", getJadwalSidang);
 router.get("/jadwal/:jadwalId", getJadwalDetail);
 
 // ========== PENILAIAN ROUTES ==========
-
 router.get("/data-sidang/:userId", getPenilaian);
 
 // POST /dosen/penilaian/jadwal/:jadwalId/nilai - Submit penilaian

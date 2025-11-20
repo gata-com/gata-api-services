@@ -85,6 +85,40 @@ export interface JadwalRekap {
   finalisasiOleh?: string;
 }
 
+export interface OpsiJawabanResponse {
+  id: string;
+  text: string;
+  nilai: number;
+  urutan: number;
+}
+
+export interface PertanyaanResponse {
+  id: string;
+  text: string;
+  bobot: number;
+  urutan: number;
+  opsiJawabans: OpsiJawabanResponse[];
+}
+
+export interface RubrikGroupResponse {
+  id: string;
+  nama: string;
+  bobotTotal: number;
+  urutan: number;
+  isDefault: boolean;
+  pertanyaans: PertanyaanResponse[];
+}
+
+export interface RubrikResponse {
+  id: string;
+  nama: string;
+  deskripsi?: string;
+  type: "SID" | "SEM";
+  isDefault: boolean;
+  isActive: boolean;
+  groups: RubrikGroupResponse[];
+}
+
 export interface Jadwal {
   id: string;
   nama: string;
@@ -111,4 +145,5 @@ export interface Jadwal {
   dosenNilai?: DosenNilai[];
   catatan?: string;
   komentar?: JadwalKomentar[];
+  rubrik?: RubrikResponse;
 }

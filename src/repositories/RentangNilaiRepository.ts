@@ -17,7 +17,29 @@ export class RentangNilaiRepository {
   }
 
   async findById(id: string): Promise<RentangNilai | null> {
-    return await this.repository.findOne({ where: { id } });
+    return await this.repository.findOne({ where: { id, isActive: true } });
+  }
+
+  async findByGrade(grade: string): Promise<RentangNilai | null> {
+    return await this.repository.findOne({
+      where: { grade, isActive: true },
+    });
+  }
+
+  async findByGradeExcludingId(
+    grade: string,
+    excludeId: string
+  ): Promise<RentangNilai | null> {
+    return await this.repository
+      .findOne({
+        where: { grade, isActive: true },
+      })
+      .then((result) => {
+        if (result && result.id !== excludeId) {
+          return result;
+        }
+        return null;
+      });
   }
 
   async create(data: Partial<RentangNilai>): Promise<RentangNilai> {
@@ -33,8 +55,18 @@ export class RentangNilaiRepository {
     return await this.findById(id);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<boolean> {
+    const rentang = await this.findById(id);
+    if (!rentang) {
+      return false;
+    }
     await this.repository.update(id, { isActive: false });
+    return true;
+  }
+
+  async hardDelete(id: string): Promise<boolean> {
+    const result = await this.repository.delete(id);
+    return result.affected ? result.affected > 0 : false;
   }
 
   async bulkUpdate(updates: Array<{ id: string }>): Promise<void> {

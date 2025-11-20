@@ -48,6 +48,7 @@ import {
   validateCreateOpsi,
   validateUpdateOpsi,
   validateRentangNilai,
+  validateUpdateRentangNilai,
 } from "@/middleware/validation/admin/penilaian";
 
 const router = Router();
@@ -141,14 +142,14 @@ router.get("/rentang-nilai", getAllRentangNilai);
 // POST /admin/penilaian/rentang-nilai - Create rentang nilai
 router.post("/rentang-nilai", validateRentangNilai, createRentangNilai);
 
-// PUT /admin/penilaian/rentang-nilai/:id - Update rentang nilai
+// PUT /admin/penilaian/rentang-nilai/bulk - Bulk update rentang nilai
+router.put("/rentang-nilai/bulk", bulkUpdateRentangNilai);
+
+// PUT /admin/penilaian/rentang-nilai/:id - Update rentang nilai (id hanya angka)
 router.put("/rentang-nilai/:id", validateRentangNilai, updateRentangNilai);
 
-// DELETE /admin/penilaian/rentang-nilai/:id - Delete rentang nilai
+// DELETE /admin/penilaian/rentang-nilai/:id - Delete rentang nilai (id hanya angka)
 router.delete("/rentang-nilai/:id", deleteRentangNilai);
-
-// PUT /admin/penilaian/rentang-nilai/bulk - Bulk update rentang nilai
-router.post("/rentang-nilai/bulk", bulkUpdateRentangNilai);
 
 // ========== PENILAIAN VIEW ROUTES ==========
 // GET /admin/penilaian/view-dosen - View all penilaians

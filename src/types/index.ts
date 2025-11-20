@@ -3,9 +3,11 @@ import { UserRole } from "./user";
 
 // Base API response structure
 export interface ApiResponse<T = unknown> {
+  success?: boolean;
   message: string;
   data?: T;
   errors?: ErrorValidation | ErrorValidation[];
+  error?: string;
   pagination?: PaginationMeta;
 }
 

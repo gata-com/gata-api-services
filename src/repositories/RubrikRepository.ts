@@ -67,15 +67,17 @@ export class RubrikRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.repository.update(id, { isActive: false });
+    await this.repository.delete(id);
   }
 
   async setDefault(id: string, type: "SID" | "SEM"): Promise<void> {
     // Unset all default for this type
-    await this.repository.update(
+    const res = await this.repository.update(
       { type, isDefault: true },
       { isDefault: false }
     );
+
+    console.log(`Unset ${res.affected} default rubrik(s) of type ${type}`);
 
     // Set new default
     await this.repository.update(id, { isDefault: true });

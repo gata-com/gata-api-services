@@ -361,7 +361,7 @@ export class PenilaianService {
   /**
    * Get jadwal sidang per lecturer
    * @param lecturerId - ID pembimbing/penguji
-   * @returns Array of jadwal dengan status kehadiran
+   * @returns Array of jadwal dengan status kehadiran dan rubrik aktif
    */
   async getJadwalByLecturer(lecturerId: number): Promise<Jadwal[]> {
     try {
@@ -421,6 +421,46 @@ export class PenilaianService {
         } else {
           statusKehadiran = "MENDATANG";
         }
+
+        // Determine rubrik type based on jenisSidang
+        const jenisSidang =
+          submission.defense_type === "proposal" ? "PROPOSAL" : "HASIL";
+        const rubrikType =
+          submission.defense_type === "proposal" ? "SEM" : "SID";
+
+        // Get active default rubrik for this sidang type
+        const rubrik = await this.rubrikRepo.findDefaultByType(rubrikType);
+
+        // Format rubrik response
+        const rubrikResponse = rubrik
+          ? {
+              id: rubrik.id,
+              nama: rubrik.nama,
+              deskripsi: rubrik.deskripsi,
+              type: rubrik.type,
+              isDefault: rubrik.isDefault,
+              isActive: rubrik.isActive,
+              groups: (rubrik.groups || []).map((group) => ({
+                id: group.id,
+                nama: group.nama,
+                bobotTotal: Number(group.bobotTotal),
+                urutan: group.urutan,
+                isDefault: group.isDefault,
+                pertanyaans: (group.pertanyaans || []).map((pertanyaan) => ({
+                  id: pertanyaan.id,
+                  text: pertanyaan.text,
+                  bobot: Number(pertanyaan.bobot),
+                  urutan: pertanyaan.urutan,
+                  opsiJawabans: (pertanyaan.opsiJawabans || []).map((opsi) => ({
+                    id: opsi.id,
+                    text: opsi.text,
+                    nilai: Number(opsi.nilai),
+                    urutan: opsi.urutan,
+                  })),
+                })),
+              })),
+            }
+          : undefined;
 
         // Get penilaian for this lecturer
         const penilaian = await this.penilaianRepo.findByJadwalAndLecturer(
@@ -484,8 +524,7 @@ export class PenilaianService {
           id: schedule.id.toString(),
           nama: user?.name || "-",
           nim: student?.nim || "-",
-          jenisSidang:
-            submission.defense_type === "proposal" ? "PROPOSAL" : "HASIL",
+          jenisSidang,
           statusKehadiran,
           tanggal: schedule.scheduled_date,
           waktu: schedule.start_time,
@@ -503,6 +542,7 @@ export class PenilaianService {
           dosenNilai: dosenNilai.length > 0 ? dosenNilai : undefined,
           catatan: penilaian?.catatan,
           komentar: komenta.length > 0 ? komenta : undefined,
+          rubrik: rubrikResponse,
         };
 
         jadwalList.push(jadwal);

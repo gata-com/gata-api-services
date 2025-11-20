@@ -235,13 +235,13 @@ export const updateGroup = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { groupId } = req.params;
-    const group = await rubrikService.updateGroup(groupId, req.body);
+    const { id } = req.params;
+    const group = await rubrikService.updateGroup(id, req.body);
 
     if (!group) {
       return res.status(404).json({
         message: "Group tidak ditemukan",
-        errors: { path: "groupId", msg: "Group not found" },
+        errors: { path: "id", msg: "Group not found" },
       });
     }
 
@@ -328,8 +328,8 @@ export const deleteGroup = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { groupId } = req.params;
-    await rubrikService.deleteGroup(groupId);
+    const { id } = req.params;
+    await rubrikService.deleteGroup(id);
 
     return res.status(200).json({
       message: "Group berhasil dihapus",
@@ -352,9 +352,9 @@ export const reorderGroups = async (
 ): Promise<Response> => {
   try {
     const { rubrikId } = req.params;
-    const { groupIds } = req.body;
+    const { items } = req.body;
 
-    await rubrikService.reorderGroups(rubrikId, groupIds);
+    await rubrikService.reorderGroups(rubrikId, items);
 
     return res.status(200).json({
       message: "Groups berhasil direorder",
@@ -440,8 +440,8 @@ export const deletePertanyaan = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { pertanyaanId } = req.params;
-    await rubrikService.deletePertanyaan(pertanyaanId);
+    const { id } = req.params;
+    await rubrikService.deletePertanyaan(id);
 
     return res.status(200).json({
       message: "Pertanyaan berhasil dihapus",
@@ -463,8 +463,8 @@ export const duplicatePertanyaan = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { pertanyaanId } = req.params;
-    const pertanyaan = await rubrikService.duplicatePertanyaan(pertanyaanId);
+    const { id } = req.params;
+    const pertanyaan = await rubrikService.duplicatePertanyaan(id);
 
     return res.status(201).json({
       message: "Pertanyaan berhasil diduplikasi",
@@ -488,9 +488,9 @@ export const reorderPertanyaans = async (
 ): Promise<Response> => {
   try {
     const { groupId } = req.params;
-    const { pertanyaanIds } = req.body;
+    const { items } = req.body;
 
-    await rubrikService.reorderPertanyaans(groupId, pertanyaanIds);
+    await rubrikService.reorderPertanyaans(groupId, items);
 
     return res.status(200).json({
       message: "Pertanyaans berhasil direorder",
@@ -545,13 +545,13 @@ export const updateOpsiJawaban = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { opsiId } = req.params;
-    const opsi = await rubrikService.updateOpsiJawaban(opsiId, req.body);
+    const { id } = req.params;
+    const opsi = await rubrikService.updateOpsiJawaban(id, req.body);
 
     if (!opsi) {
       return res.status(404).json({
         message: "Opsi jawaban tidak ditemukan",
-        errors: { path: "opsiId", msg: "Opsi jawaban not found" },
+        errors: { path: "id", msg: "Opsi jawaban not found" },
       });
     }
 
@@ -576,8 +576,8 @@ export const deleteOpsiJawaban = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { opsiId } = req.params;
-    await rubrikService.deleteOpsiJawaban(opsiId);
+    const { id } = req.params;
+    await rubrikService.deleteOpsiJawaban(id);
 
     return res.status(200).json({
       message: "Opsi jawaban berhasil dihapus",
@@ -599,9 +599,9 @@ export const bulkDeleteOpsiJawaban = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { ids } = req.body;
+    const { opsiIds } = req.body;
 
-    await rubrikService.bulkDeleteOpsiJawaban(ids);
+    await rubrikService.bulkDeleteOpsiJawaban(opsiIds);
 
     return res.status(200).json({
       message: "Opsi jawaban berhasil dihapus",

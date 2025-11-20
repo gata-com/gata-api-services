@@ -61,6 +61,7 @@ router.post(
   importScheduleCSV
 );
 
+// jadwal sidang route
 router.get("/jadwal-sidang", getSchedule);
 
 export default router;

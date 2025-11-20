@@ -9,19 +9,6 @@ import { Student } from "../entities/student";
 import ExpertisesGroup from "../entities/expertisesGroup";
 import { LecturerExpertise } from "../entities/lecturerExpertise";
 import { lecturers } from "./seedData";
-import { seedRentangNilai } from "./seedRentangNilai";
-import { seedDefaultRubrik } from "./seedRubrik";
-
-// Import entity penilaian agar TypeORM mengenali metadata
-import { Rubrik } from "../entities/rubrik";
-import { RubrikGroup } from "../entities/rubrikGroup";
-import { Pertanyaan } from "../entities/pertanyaan";
-import { OpsiJawaban } from "../entities/opsiJawaban";
-import { RentangNilai } from "../entities/rentangNilai";
-import { Penilaian } from "../entities/penilaian";
-import { JawabanPenilaian } from "../entities/jawabanPenilaian";
-import { BeritaAcaraPenilaian } from "../entities/beritaAcaraPenilaian";
-
 const expertiseList = [
   { name: "MLTR", description: "Traditional Machine Learning (All Domain)" },
   { name: "DLCV", description: "Deep Learning – Citra" },
@@ -216,11 +203,6 @@ async function main() {
     await studentRepo.save(student);
     console.log(`Created Student record for ${email} with NIM ${nim}`);
   }
-
-  // 5) Seed rentang nilai dan rubrik penilaian
-  console.log("\n=== Seeding Penilaian Data ===");
-  await seedRentangNilai();
-  await seedDefaultRubrik();
 
   console.log("\n✅ Seeding complete.");
   await AppDataSource.destroy();

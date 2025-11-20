@@ -16,17 +16,16 @@ export const getAllRentangNilai = async (
     const rentangNilais = await rentangNilaiService.getAllRentangNilai();
 
     return res.status(200).json({
-      message: "Rentang nilai retrieved successfully",
+      success: true,
+      message: "Rentang nilai berhasil diambil",
       data: rentangNilais,
     });
   } catch (error) {
     console.error("Error getting rentang nilai:", error);
     return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: "INTERNAL_SERVER_ERROR",
     });
   }
 };
@@ -48,18 +47,30 @@ export const createRentangNilai = async (
       urutan,
     });
 
+    // Calculate maxScore for response
+    const allRentang = await rentangNilaiService.getAllRentangNilai();
+    const withMaxScore = allRentang.find((r: any) => r.id === rentangNilai.id);
+
     return res.status(201).json({
+      success: true,
       message: "Rentang nilai berhasil dibuat",
-      data: rentangNilai,
+      data: withMaxScore || rentangNilai,
     });
   } catch (error) {
     console.error("Error creating rentang nilai:", error);
+
+    if (error instanceof Error && error.message === "DUPLICATE_GRADE") {
+      return res.status(409).json({
+        success: false,
+        message: "Grade sudah ada",
+        error: "CONFLICT",
+      });
+    }
+
     return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: "INTERNAL_SERVER_ERROR",
     });
   }
 };
@@ -81,23 +92,45 @@ export const updateRentangNilai = async (
 
     if (!rentangNilai) {
       return res.status(404).json({
-        message: "Rentang nilai tidak ditemukan",
-        errors: { path: "id", msg: "Rentang nilai not found" },
+        success: false,
+        message: "Rentang nilai dengan ID tersebut tidak ditemukan",
+        error: "NOT_FOUND",
       });
     }
 
+    // Calculate maxScore for response
+    const allRentang = await rentangNilaiService.getAllRentangNilai();
+    const withMaxScore = allRentang.find((r: any) => r.id === rentangNilai.id);
+
     return res.status(200).json({
+      success: true,
       message: "Rentang nilai berhasil diupdate",
-      data: rentangNilai,
+      data: withMaxScore || rentangNilai,
     });
   } catch (error) {
     console.error("Error updating rentang nilai:", error);
+
+    if (error instanceof Error) {
+      if (error.message === "NOT_FOUND") {
+        return res.status(404).json({
+          success: false,
+          message: "Rentang nilai dengan ID tersebut tidak ditemukan",
+          error: "NOT_FOUND",
+        });
+      }
+      if (error.message === "DUPLICATE_GRADE") {
+        return res.status(409).json({
+          success: false,
+          message: "Grade sudah ada",
+          error: "CONFLICT",
+        });
+      }
+    }
+
     return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: "INTERNAL_SERVER_ERROR",
     });
   }
 };
@@ -112,26 +145,33 @@ export const deleteRentangNilai = async (
 ): Promise<Response> => {
   try {
     const { id } = req.params;
-    await rentangNilaiService.deleteRentangNilai(id);
+    const deleted = await rentangNilaiService.deleteRentangNilai(id);
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Rentang nilai dengan ID tersebut tidak ditemukan",
+        error: "NOT_FOUND",
+      });
+    }
 
     return res.status(200).json({
+      success: true,
       message: "Rentang nilai berhasil dihapus",
     });
   } catch (error) {
     console.error("Error deleting rentang nilai:", error);
     return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: "INTERNAL_SERVER_ERROR",
     });
   }
 };
 
 /**
- * Bulk update rentang nilai
- * PUT /admin/penilaian/rentang-nilai/bulk
+ * Bulk upsert rentang nilai (create or update)
+ * POST /admin/penilaian/rentang-nilai/bulk
  */
 export const bulkUpdateRentangNilai = async (
   req: Request,
@@ -140,21 +180,41 @@ export const bulkUpdateRentangNilai = async (
   try {
     const { rentangNilai } = req.body;
 
-    const updates = rentangNilai;
+    if (!rentangNilai || !Array.isArray(rentangNilai)) {
+      return res.status(400).json({
+        success: false,
+        message: "rentangNilai harus berupa array",
+        error: "VALIDATION_ERROR",
+      });
+    }
 
-    await rentangNilaiService.bulkUpdateRentangNilai(updates);
+    const updatedItems = await rentangNilaiService.bulkUpsertRentangNilai(
+      rentangNilai
+    );
 
     return res.status(200).json({
-      message: "Rentang nilai berhasil diupdate",
+      success: true,
+      message: "Rentang nilai berhasil disimpan",
+      data: {
+        updated: updatedItems.length,
+        items: updatedItems,
+      },
     });
   } catch (error) {
     console.error("Error bulk updating rentang nilai:", error);
+
+    if (error instanceof Error && error.message === "DUPLICATE_GRADE") {
+      return res.status(409).json({
+        success: false,
+        message: "Grade sudah ada",
+        error: "CONFLICT",
+      });
+    }
+
     return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: "INTERNAL_SERVER_ERROR",
     });
   }
 };

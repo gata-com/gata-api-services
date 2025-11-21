@@ -83,7 +83,7 @@ export interface ErrorResponse extends Omit<ApiResponse<null>, "errors"> {
   path: string;
   timestamp: string;
   suggestions?: string[];
-  error?: ApiErrorDetail;
+  errors?: ApiErrorDetail;
 }
 
 // Validation error specifics

@@ -220,7 +220,7 @@ app.get("/health", async (req: Request, res: Response) => {
       statusCode: 500,
       path: req.path,
       timestamp: new Date().toISOString(),
-      error: {
+      errors: {
         code: "HEALTH_CHECK_ERROR",
         message: error instanceof Error ? error.message : "Unknown error",
       },
@@ -239,7 +239,7 @@ app.get("/db-status", async (req: Request, res: Response) => {
         statusCode: 503,
         path: req.path,
         timestamp: new Date().toISOString(),
-        error: {
+        errors: {
           code: "DATABASE_NOT_INITIALIZED",
           message: "Database connection not established",
         },
@@ -287,7 +287,7 @@ app.get("/db-status", async (req: Request, res: Response) => {
       statusCode: 500,
       path: req.path,
       timestamp: new Date().toISOString(),
-      error: {
+      errors: {
         code: "DATABASE_STATUS_ERROR",
         message: error instanceof Error ? error.message : "Unknown error",
       },
@@ -316,7 +316,7 @@ app.all("*", (req: Request, res: Response) => {
       "/api/auth/reset-password",
       "/api/health",
     ],
-    error: {
+    errors: {
       code: "ROUTE_NOT_FOUND",
       message: `${req.method} ${req.originalUrl} not found`,
     },

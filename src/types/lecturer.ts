@@ -59,9 +59,10 @@ export interface TotalStudentsResponse {
 
 export interface DosenNilai {
   lecturerId: number;
-  lecturerNama: string;
-  role: "Pembimbing" | "Penguji";
-  nilaiAkhir: number;
+  kode: string;
+  nama: string;
+  nilai: number;
+  tanggal: string;
   perGroup: Array<{
     groupId: string;
     groupNama: string;
@@ -134,13 +135,14 @@ export interface Jadwal {
   pembimbing2: string;
   penguji1: string;
   penguji2: string;
-  laporanTA?: string;
-  slidePresentasi?: string;
+  laporanTA: string;
+  slidePresentasi: string;
   statusPenilaian: "belum_dinilai" | "sudah_dinilai" | "terkunci";
   nilaiPertanyaan?: {
     [pertanyaanId: string]: number;
   };
   catatanMahasiswa?: string;
+  isSupervisor1: boolean; // Penanda apakah dosen adalah pembimbing 1 (untuk finalisasi & lihat all)
   rekap?: JadwalRekap;
   dosenNilai?: DosenNilai[];
   catatan?: string;

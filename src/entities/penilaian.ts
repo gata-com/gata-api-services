@@ -12,6 +12,7 @@ import { DefenseSchedule } from "./defenseSchedule";
 import { Lecturer } from "./lecturer";
 import { Rubrik } from "./rubrik";
 import { JawabanPenilaian } from "./jawabanPenilaian";
+import { Student } from "./student";
 
 @Entity("penilaians")
 export class Penilaian {
@@ -23,6 +24,9 @@ export class Penilaian {
 
   @Column({ type: "int" })
   lecturerId!: number;
+
+  @Column({ type: "int", nullable: true })
+  studentId?: number;
 
   @Column({ type: "uuid" })
   rubrikId!: string;
@@ -36,6 +40,15 @@ export class Penilaian {
   @Column({ type: "boolean", default: false })
   isFinalized!: boolean;
 
+  @Column({ type: "int", nullable: true })
+  finalizedById?: number;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  finalizedByName?: string;
+
+  @Column({ type: "datetime", nullable: true })
+  finalizedAt?: Date;
+
   @ManyToOne(() => DefenseSchedule, { onDelete: "CASCADE" })
   @JoinColumn({ name: "jadwalId" })
   jadwal!: DefenseSchedule;
@@ -43,6 +56,10 @@ export class Penilaian {
   @ManyToOne(() => Lecturer, { onDelete: "CASCADE" })
   @JoinColumn({ name: "lecturerId" })
   lecturer!: Lecturer;
+
+  @ManyToOne(() => Student, { onDelete: "CASCADE", nullable: true })
+  @JoinColumn({ name: "studentId" })
+  student?: Student;
 
   @ManyToOne(() => Rubrik)
   @JoinColumn({ name: "rubrikId" })

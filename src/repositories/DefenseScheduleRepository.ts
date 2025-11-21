@@ -130,20 +130,23 @@ export class DefenseScheduleRepository {
   async findByDefenseSubmissionId(
     defenseSubmissionId: number
   ): Promise<DefenseSchedule | null> {
-    return this.repository.findOne({
-      where: { defense_submission: { id: defenseSubmissionId } },
-      relations: [
-        "defense_submission",
-        "defense_submission.final_project",
-        "defense_submission.final_project.members",
-        "defense_submission.final_project.members.student",
-        "defense_submission.final_project.members.student.user",
-        "defense_submission.examiner_1",
-        "defense_submission.examiner_1.user",
-        "defense_submission.examiner_2",
-        "defense_submission.examiner_2.user",
-      ],
-    });
+    return this.repository
+      .createQueryBuilder("ds")
+      .leftJoinAndSelect("ds.defense_submission", "def")
+      .leftJoinAndSelect("def.final_project", "fp")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("supervisor_1.user", "supervisor_1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("supervisor_2.user", "supervisor_2_user")
+      .leftJoinAndSelect("def.examiner_1", "examiner_1")
+      .leftJoinAndSelect("examiner_1.user", "examiner_1_user")
+      .leftJoinAndSelect("def.examiner_2", "examiner_2")
+      .leftJoinAndSelect("examiner_2.user", "examiner_2_user")
+      .leftJoinAndSelect("fp.members", "members")
+      .leftJoinAndSelect("members.student", "student")
+      .leftJoinAndSelect("student.user", "student_user")
+      .where("def.id = :defenseSubmissionId", { defenseSubmissionId })
+      .getOne();
   }
 
   /**

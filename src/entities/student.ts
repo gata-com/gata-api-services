@@ -12,6 +12,7 @@ import {
 } from "typeorm";
 import User from "./user";
 import { FinalProjectMembers } from "./finalProject";
+import { DefenseSubmissionDocument } from "./defenses";
 
 // Student
 @Entity("student")
@@ -41,6 +42,11 @@ export class Student {
     onDelete: "CASCADE",
   })
   final_project_members!: FinalProjectMembers;
+
+  @OneToMany(() => DefenseSubmissionDocument, (ds) => ds.student, {
+    onDelete: "CASCADE",
+  })
+  defense_submission_documents!: DefenseSubmissionDocument[];
 
   // *** Methods ***
 }

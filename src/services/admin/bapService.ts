@@ -26,6 +26,11 @@ export class BapService {
     // Get rekap nilai
     const rekap = await this.penilaianService.getRekapNilai(jadwalId);
 
+    // Jika tidak ada penilaian, tidak bisa generate BAP
+    if (!rekap) {
+      throw new Error("Belum ada penilaian untuk membuat BAP");
+    }
+
     // Get jadwal details
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
     if (!jadwal) {
@@ -104,6 +109,24 @@ export class BapService {
    */
   async generateBapHtml(jadwalId: number): Promise<string> {
     const rekap = await this.penilaianService.getRekapNilai(jadwalId);
+
+    // Jika tidak ada penilaian, return placeholder
+    if (!rekap) {
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Berita Acara Penilaian</title>
+</head>
+<body>
+  <h2>Berita Acara Penilaian</h2>
+  <p>Belum ada penilaian untuk jadwal ini.</p>
+</body>
+</html>
+      `;
+    }
+
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
 
     if (!jadwal) {

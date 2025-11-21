@@ -26,12 +26,18 @@ export class DefenseSubmissionRepository {
   /**
    * Create Defense Submission Documents
    * @param defenseSubmissionId - Defense Submission ID
-   * @param documents - Array of documents { name, url }
+   * @param documents - Array of documents { name, url, type, email, studentId? }
    * @returns Promise
    */
   async createDocuments(
     defenseSubmissionId: number,
-    documents: Array<{ name: string; url: string }>
+    documents: Array<{
+      name: string;
+      url: string;
+      type: "draft" | "ppt";
+      email: string;
+      studentId?: number;
+    }>
   ): Promise<any> {
     if (!documents || documents.length === 0) {
       return null;
@@ -44,7 +50,10 @@ export class DefenseSubmissionRepository {
       const newDoc = docRepo.create({
         name: doc.name,
         url: doc.url,
+        type: doc.type,
+        email: doc.email,
         defense_submission: { id: defenseSubmissionId },
+        ...(doc.studentId && { student: { id: doc.studentId } }),
       });
       const saved = await docRepo.save(newDoc);
       savedDocs.push(saved);
@@ -156,6 +165,10 @@ export class DefenseSubmissionRepository {
     return this.repository
       .createQueryBuilder("ds")
       .leftJoinAndSelect("ds.final_project", "fp")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("ds.examiner_1", "examiner_1")
+      .leftJoinAndSelect("ds.examiner_2", "examiner_2")
       .leftJoinAndSelect("ds.lecturer", "lecturer")
       .leftJoinAndSelect("lecturer.user", "lecturerUser")
       .leftJoinAndSelect("ds.documents", "documents")
@@ -227,6 +240,11 @@ export class DefenseSubmissionRepository {
    * @param lecturerId - Lecturer ID
    * @returns Array of DefenseSubmission with relations
    */
+  /**
+   * Find defense submissions where lecturer is supervisor atau examiner
+   * @param lecturerId - ID lecturer (bisa sebagai pembimbing 1, pembimbing 2, penguji 1, atau penguji 2)
+   * @returns Array of defense submissions yang lecturer-nya terlibat
+   */
   async findByLecturerId(lecturerId: number): Promise<any> {
     return this.repository
       .createQueryBuilder("ds")
@@ -234,14 +252,26 @@ export class DefenseSubmissionRepository {
       .leftJoinAndSelect("fp.members", "members")
       .leftJoinAndSelect("members.student", "student")
       .leftJoinAndSelect("student.user", "studentUser")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("supervisor_1.user", "supervisor_1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("supervisor_2.user", "supervisor_2_user")
+      .leftJoinAndSelect("ds.examiner_1", "examiner_1")
+      .leftJoinAndSelect("examiner_1.user", "examiner_1_user")
+      .leftJoinAndSelect("ds.examiner_2", "examiner_2")
+      .leftJoinAndSelect("examiner_2.user", "examiner_2_user")
       .leftJoinAndSelect("fp.expertises_group_1", "fpExpertise1")
       .leftJoinAndSelect("fp.expertises_group_2", "fpExpertise2")
       .leftJoinAndSelect("ds.expertises_group_1", "dsExpertise1")
       .leftJoinAndSelect("ds.expertises_group_2", "dsExpertise2")
       .leftJoinAndSelect("ds.documents", "documents")
+      .leftJoinAndSelect("documents.student", "docStudent")
       .leftJoinAndSelect("ds.lecturer", "lecturer")
       .leftJoinAndSelect("lecturer.user", "lecturerUser")
-      .where("ds.lecturerId = :lecturerId", { lecturerId })
+      .where(
+        "(fp.supervisor1Id = :lecturerId OR fp.supervisor2Id = :lecturerId OR ds.examiner1Id = :lecturerId OR ds.examiner2Id = :lecturerId)",
+        { lecturerId }
+      )
       .orderBy("ds.created_at", "DESC")
       .getMany();
   }

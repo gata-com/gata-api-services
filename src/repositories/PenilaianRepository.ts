@@ -26,6 +26,7 @@ export class PenilaianRepository {
     return await this.repository
       .createQueryBuilder("penilaian")
       .leftJoinAndSelect("penilaian.lecturer", "lecturer")
+      .leftJoinAndSelect("lecturer.user", "lecturer_user")
       .leftJoinAndSelect("penilaian.rubrik", "rubrik")
       .leftJoinAndSelect("rubrik.groups", "groups")
       .leftJoinAndSelect("groups.pertanyaans", "pertanyaans")
@@ -40,9 +41,10 @@ export class PenilaianRepository {
 
   async findByJadwalAndLecturer(
     jadwalId: number,
-    lecturerId: number
+    lecturerId: number,
+    studentId?: number
   ): Promise<Penilaian | null> {
-    return await this.repository
+    const query = this.repository
       .createQueryBuilder("penilaian")
       .leftJoinAndSelect("penilaian.rubrik", "rubrik")
       .leftJoinAndSelect("rubrik.groups", "groups")
@@ -52,7 +54,15 @@ export class PenilaianRepository {
       .leftJoinAndSelect("jawabans.pertanyaan", "jawaban_pertanyaan")
       .leftJoinAndSelect("jawabans.opsiJawaban", "jawaban_opsi")
       .where("penilaian.jadwalId = :jadwalId", { jadwalId })
-      .andWhere("penilaian.lecturerId = :lecturerId", { lecturerId })
+      .andWhere("penilaian.lecturerId = :lecturerId", { lecturerId });
+
+    if (studentId) {
+      query.andWhere("penilaian.studentId = :studentId", { studentId });
+    } else {
+      query.andWhere("penilaian.studentId IS NULL");
+    }
+
+    return await query
       .orderBy("groups.urutan", "ASC")
       .addOrderBy("pertanyaans.urutan", "ASC")
       .addOrderBy("opsiJawabans.urutan", "ASC")
@@ -72,12 +82,42 @@ export class PenilaianRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
-  async finalize(id: string): Promise<void> {
-    await this.repository.update(id, { isFinalized: true });
+  async finalize(
+    id: string,
+    finalizedById?: number,
+    finalizedByName?: string
+  ): Promise<void> {
+    await this.repository.update(id, {
+      isFinalized: true,
+      finalizedById,
+      finalizedByName,
+      finalizedAt: new Date(),
+    });
   }
 
   async checkAllFinalized(jadwalId: number): Promise<boolean> {
     const penilaians = await this.findByJadwalId(jadwalId);
     return penilaians.length > 0 && penilaians.every((p) => p.isFinalized);
+  }
+
+  async findByJadwalAndStudent(
+    jadwalId: number,
+    studentId: number
+  ): Promise<Penilaian[]> {
+    return await this.repository
+      .createQueryBuilder("penilaian")
+      .leftJoinAndSelect("penilaian.lecturer", "lecturer")
+      .leftJoinAndSelect("lecturer.user", "lecturer_user")
+      .leftJoinAndSelect("penilaian.rubrik", "rubrik")
+      .leftJoinAndSelect("rubrik.groups", "groups")
+      .leftJoinAndSelect("groups.pertanyaans", "pertanyaans")
+      .leftJoinAndSelect("penilaian.jawabans", "jawabans")
+      .leftJoinAndSelect("jawabans.pertanyaan", "jawaban_pertanyaan")
+      .leftJoinAndSelect("jawabans.opsiJawaban", "opsiJawaban")
+      .where("penilaian.jadwalId = :jadwalId", { jadwalId })
+      .andWhere("penilaian.studentId = :studentId", { studentId })
+      .orderBy("groups.urutan", "ASC")
+      .addOrderBy("pertanyaans.urutan", "ASC")
+      .getMany();
   }
 }

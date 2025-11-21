@@ -4,6 +4,7 @@ import { createSubmission } from "@/controllers/student/guidance/createSubmissio
 import { getDashboardData } from "@/controllers/student/guidance/getDashboardData";
 import { createSubmissionDefense } from "@/controllers/student/guidance/createSubmissionDefense";
 import { getExpertisesGroup } from "@/controllers/student/guidance/getExpertisesGroup";
+import { getFPMembers } from "@/controllers/student/guidance/getFPMembers";
 
 // middleware
 import {
@@ -45,5 +46,7 @@ router.post(
 );
 
 router.get("/kelompok-keahlian", getExpertisesGroup);
+
+router.get("/anggota-tugas-akhir/:userId", getFPMembers);
 
 export default router;

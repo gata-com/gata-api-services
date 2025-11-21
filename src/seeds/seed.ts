@@ -85,7 +85,6 @@ async function main() {
       is_active: true,
     } as Partial<User>);
     await userRepo.save(adminUser);
-    console.log("Created admin user:", adminEmail);
   } else {
     console.log("Admin already exists:", adminEmail);
   }
@@ -126,7 +125,6 @@ async function main() {
     } as Partial<Lecturer>);
 
     await lecturerRepo.save(lc);
-    console.log(`Created Lecturer record for ${email}`);
 
     // Tambahkan expertises sesuai dengan data kk di seedData
     if (lecturer.kk && lecturer.kk.length > 0) {
@@ -175,7 +173,6 @@ async function main() {
         is_active: true,
       } as Partial<User>);
       await userRepo.save(user);
-      console.log(`Created User for student ${email}`);
     } else {
       console.log(`User ${email} exists, reusing`);
     }
@@ -201,7 +198,6 @@ async function main() {
     } as Partial<Student>);
 
     await studentRepo.save(student);
-    console.log(`Created Student record for ${email} with NIM ${nim}`);
   }
 
   console.log("\n✅ Seeding complete.");

@@ -7,10 +7,12 @@ import {
   ManyToOne,
   Index,
   OneToMany,
+  JoinColumn,
 } from "typeorm";
 import { Lecturer } from "./lecturer";
 import { FinalProjects } from "./finalProject";
 import ExpertisesGroup from "./expertisesGroup";
+import { Student } from "./student";
 
 @Entity("defense_submissions")
 @Index(["final_project"])
@@ -97,7 +99,6 @@ export class DefenseSubmission {
     type: "varchar",
     length: 5,
     nullable: true,
-    unique: true,
   })
   capstone_code?: string;
 
@@ -147,6 +148,8 @@ export class DefenseSubmission {
 
 @Entity("defense_submission_documents")
 @Index(["defense_submission"])
+@Index(["student"])
+@Index(["type"])
 export class DefenseSubmissionDocument {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -164,6 +167,22 @@ export class DefenseSubmissionDocument {
   })
   url!: string;
 
+  // Tipe dokumen (draft atau ppt)
+  @Column({
+    type: "enum",
+    enum: ["draft", "ppt"],
+    default: "draft",
+    comment: "Type of document: draft or ppt",
+  })
+  type!: string;
+
+  // Email mahasiswa yang mengupload
+  @Column({
+    type: "varchar",
+    length: 255,
+  })
+  email!: string;
+
   @CreateDateColumn()
   uploaded_at!: Date;
 
@@ -171,6 +190,10 @@ export class DefenseSubmissionDocument {
 
   @ManyToOne(() => DefenseSubmission, { onDelete: "CASCADE" })
   defense_submission!: DefenseSubmission;
+
+  // One-to-one relationship dengan Student
+  @ManyToOne(() => Student, { nullable: false, onDelete: "CASCADE" })
+  student!: Student;
 
   // *** Methods ***
 }

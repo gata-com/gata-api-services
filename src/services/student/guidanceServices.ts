@@ -196,6 +196,50 @@ export class GuidanceService {
     }
   }
 
+  async getFPMembers(
+    userId: number
+  ): Promise<ServicesReturn | { error: ErrorValidation }> {
+    try {
+      // 1. Cari student berdasarkan userId dengan final project
+      const student = await this.studentRepo.findByUserIdWithFinalProject(
+        userId
+      );
+      if (!student || !student.final_project_members) {
+        return {
+          error: {
+            path: "server",
+            msg: "Student or final project not found",
+          },
+        };
+      }
+
+      // 2. Dapatkan final project ID dari student member
+      const fpId = student.final_project_members.final_project.id;
+
+      // 3. Ambil semua members dari final project berdasarkan fpId
+      const members = await this.FPMRepo.findAllMembersByFinalProjectId(fpId);
+
+      if (!members || members.length === 0) {
+        return {
+          error: {
+            path: "server",
+            msg: "No final project members found",
+          },
+        };
+      }
+
+      // 4. Transform data ke format yang diinginkan (array dengan email dan name)
+      const result = members.map((member: any) => ({
+        email: member.student.user.email,
+        name: member.student.user.name,
+      }));
+
+      return { error: null, data: result };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async createSubmission(
     data: GuidanceSessionCreateRequest
   ): Promise<ServicesReturn | { error: ErrorValidation }> {
@@ -237,7 +281,7 @@ export class GuidanceService {
       expertiseGroup1Id,
       expertiseGroup2Id,
       tipeSidang,
-      finalDraftLinks,
+      defenseDocuments,
     } = data;
     try {
       // 1. Validasi final project exists
@@ -297,23 +341,26 @@ export class GuidanceService {
         tipeSidang
       );
 
-      // 6. Simpan draft links ke defense_submission_documents
-      if (finalDraftLinks && finalDraftLinks.length > 0) {
+      // 6. Simpan documents ke defense_submission_documents dengan detail lengkap
+      if (defenseDocuments && defenseDocuments.length > 0) {
         // Get the inserted ID dari newSubmission
         const submissionId =
           newSubmission.raw.insertId || newSubmission.identifiers[0]?.id;
 
         if (submissionId) {
-          // Transform draft links to documents format
-          const documents = finalDraftLinks.map((link) => ({
-            name: link.name,
-            url: link.url,
+          // Transform documents dengan type, email, dan studentId
+          const documents = defenseDocuments.map((doc) => ({
+            name: doc.name,
+            url: doc.url,
+            type: doc.type,
+            email: doc.email,
+            studentId: doc.studentId || undefined,
           }));
 
           // Save documents
           await this.DSRepo.createDocuments(submissionId, documents);
           console.log(
-            `Saved ${documents.length} draft documents for defense submission ${submissionId}`
+            `Saved ${documents.length} defense documents for submission ${submissionId}`
           );
         }
       }

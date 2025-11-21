@@ -212,7 +212,6 @@ export async function seedDummyData(dataSource: DataSource) {
     min_guidance_sup_1_proposal: 5,
     min_guidance_sup_2_proposal: 2,
     student_notes: "Siap untuk seminar proposal",
-    capstone_code: "ABCD1",
     defense_date: new Date(2024, 10, 15, 9, 0), // 15 Nov 2024
     processed_at: new Date(2024, 10, 1),
     examiner_1: lecturer3,
@@ -221,16 +220,29 @@ export async function seedDummyData(dataSource: DataSource) {
     expertises_group_2: expertiseGroups[2],
   });
 
+  // Defense Submission Documents untuk Proposal (Draft + PPT)
   await defenseSubmissionDocRepo.save({
     defense_submission: defenseSubmission1Proposal,
-    name: "Proposal Final",
-    url: "https://drive.google.com/file/proposal-final-student1",
+    name: "Proposal Final - Draft",
+    url: "https://www.google.com/search?q=proposal-final-student1-draft",
+    type: "draft",
+    email: student1.user.email,
+    student: student1,
+  });
+
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission1Proposal,
+    name: "Presentasi Proposal - PPT",
+    url: "https://www.google.com/search?q=presentasi-proposal-student1-ppt",
+    type: "ppt",
+    email: student1.user.email,
+    student: student1,
   });
 
   // Defense Schedule Proposal (Completed)
   const defenseSchedule1Proposal = await defenseScheduleRepo.save({
     defense_submission: defenseSubmission1Proposal,
-    scheduled_date: "2024-11-15",
+    scheduled_date: "2025-12-03",
     start_time: "09:00",
     end_time: "10:30",
     scheduler_status: "scheduled",
@@ -345,6 +357,25 @@ export async function seedDummyData(dataSource: DataSource) {
     expertises_group_1: expertiseGroups[1],
     expertises_group_2: expertiseGroups[1],
     // capstone_code dan defense_date akan diisi saat penjadwalan
+  });
+
+  // Defense Submission Documents untuk Student 2 (Capstone - Multiple Members)
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission2,
+    name: "Proposal E-Commerce - Draft",
+    url: "https://www.google.com/search?q=proposal-ecommerce-draft",
+    type: "draft",
+    email: student2.user.email,
+    student: student2,
+  });
+
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission2,
+    name: "Presentasi E-Commerce - PPT",
+    url: "https://www.google.com/search?q=presentasi-ecommerce-ppt",
+    type: "ppt",
+    email: student2.user.email,
+    student: student2,
   });
 
   // ==================== SCENARIO 3: MAHASISWA 3 - SEDANG BIMBINGAN PROPOSAL ====================
@@ -470,9 +501,6 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // Defense Submission & Schedule (H-10 dari sekarang)
-  const today = new Date();
-  const defenseDate4 = new Date(today);
-  defenseDate4.setDate(today.getDate() + 10); // H+10
 
   const defenseSubmission4 = await defenseSubmissionRepo.save({
     final_project: finalProject4,
@@ -484,8 +512,7 @@ export async function seedDummyData(dataSource: DataSource) {
     min_guidance_sup_1_proposal: 5,
     min_guidance_sup_2_proposal: 2,
     student_notes: "Siap seminar proposal",
-    capstone_code: "WXYZ4",
-    defense_date: defenseDate4,
+    defense_date: "2025-12-03",
     processed_at: new Date(2024, 11, 1),
     examiner_1: lecturer3,
     examiner_2: lecturer4,
@@ -495,12 +522,31 @@ export async function seedDummyData(dataSource: DataSource) {
 
   const defenseSchedule4 = await defenseScheduleRepo.save({
     defense_submission: defenseSubmission4,
-    scheduled_date: defenseDate4.toISOString().split("T")[0],
+    scheduled_date: "2025-12-03",
     start_time: "10:30",
     end_time: "12:00",
     scheduler_status: "scheduled",
     room: "Ruang Sidang B",
     status: "scheduled",
+  });
+
+  // Defense Submission Documents untuk Student 4
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission4,
+    name: "Proposal IoT - Draft",
+    url: "https://www.google.com/search?q=proposal-iot-draft",
+    type: "draft",
+    email: student4.user.email,
+    student: student4,
+  });
+
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission4,
+    name: "Presentasi IoT - PPT",
+    url: "https://www.google.com/search?q=presentasi-iot-ppt",
+    type: "ppt",
+    email: student4.user.email,
+    student: student4,
   });
 
   // ==================== SCENARIO 5: MAHASISWA 5 - SUDAH DIJADWALKAN SEMINAR PROPOSAL (H+5) ====================
@@ -568,8 +614,7 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // Defense Submission & Schedule (H+5 dari sekarang - sudah selesai sidang)
-  const defenseDate5 = new Date(today);
-  defenseDate5.setDate(today.getDate() - 5); // H-5 (sudah lewat)
+  const today = new Date();
 
   const defenseSubmission5 = await defenseSubmissionRepo.save({
     final_project: finalProject5,
@@ -581,8 +626,7 @@ export async function seedDummyData(dataSource: DataSource) {
     min_guidance_sup_1_proposal: 5,
     min_guidance_sup_2_proposal: 2,
     student_notes: "Siap seminar",
-    capstone_code: "PQRS5",
-    defense_date: defenseDate5,
+    defense_date: "2025-12-03",
     processed_at: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000),
     examiner_1: lecturer3,
     examiner_2: lecturer4,
@@ -592,12 +636,31 @@ export async function seedDummyData(dataSource: DataSource) {
 
   const defenseSchedule5 = await defenseScheduleRepo.save({
     defense_submission: defenseSubmission5,
-    scheduled_date: defenseDate5.toISOString().split("T")[0],
+    scheduled_date: "2025-12-03",
     start_time: "13:00",
     end_time: "14:30",
     scheduler_status: "scheduled",
     room: "Ruang Sidang A",
     status: "completed",
+  });
+
+  // Defense Submission Documents untuk Student 5
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission5,
+    name: "Proposal Chatbot - Draft",
+    url: "https://www.google.com/search?q=proposal-chatbot-draft",
+    type: "draft",
+    email: student5.user.email,
+    student: student5,
+  });
+
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission5,
+    name: "Presentasi Chatbot - PPT",
+    url: "https://www.google.com/search?q=presentasi-chatbot-ppt",
+    type: "ppt",
+    email: student5.user.email,
+    student: student5,
   });
 
   // ==================== SCENARIO 6: MAHASISWA 6 - DIJADWALKAN SIDANG HASIL (H+15) ====================
@@ -670,9 +733,8 @@ export async function seedDummyData(dataSource: DataSource) {
     guidance_sup_1_count: 5,
     guidance_sup_2_count: 2,
     student_notes: "Proposal selesai",
-    capstone_code: "MNOP6",
-    defense_date: new Date(2024, 9, 20),
-    processed_at: new Date(2024, 9, 10),
+    defense_date: "2025-12-04",
+    processed_at: "2025-12-03",
     examiner_1: lecturer3,
     examiner_2: lecturer4,
     expertises_group_1: expertiseGroups[0],
@@ -681,12 +743,31 @@ export async function seedDummyData(dataSource: DataSource) {
 
   await defenseScheduleRepo.save({
     defense_submission: defenseSubmission6Proposal,
-    scheduled_date: "2024-10-20",
+    scheduled_date: "2025-12-04",
     start_time: "14:30",
     end_time: "16:00",
     scheduler_status: "scheduled",
     room: "Ruang Sidang C",
     status: "completed",
+  });
+
+  // Defense Submission Documents untuk Student 6 - Proposal
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission6Proposal,
+    name: "Proposal Sentimen - Draft",
+    url: "https://www.google.com/search?q=proposal-sentimen-draft",
+    type: "draft",
+    email: student6.user.email,
+    student: student6,
+  });
+
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission6Proposal,
+    name: "Presentasi Sentimen - PPT",
+    url: "https://www.google.com/search?q=presentasi-sentimen-ppt",
+    type: "ppt",
+    email: student6.user.email,
+    student: student6,
   });
 
   // Bimbingan Hasil (Completed)
@@ -721,8 +802,6 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // Sidang Hasil dijadwalkan H+15
-  const defenseDate6Hasil = new Date(today);
-  defenseDate6Hasil.setDate(today.getDate() + 15);
 
   const defenseSubmission6Hasil = await defenseSubmissionRepo.save({
     final_project: finalProject6,
@@ -732,9 +811,8 @@ export async function seedDummyData(dataSource: DataSource) {
     guidance_sup_1_count: 5,
     guidance_sup_2_count: 2,
     student_notes: "Siap sidang hasil",
-    capstone_code: "LMNO6",
-    defense_date: defenseDate6Hasil,
-    processed_at: new Date(2024, 11, 5),
+    defense_date: "2025-12-04",
+    processed_at: "2025-12-03",
     examiner_1: lecturer3,
     examiner_2: lecturer4,
     expertises_group_1: expertiseGroups[0],
@@ -743,12 +821,31 @@ export async function seedDummyData(dataSource: DataSource) {
 
   const defenseSchedule6Hasil = await defenseScheduleRepo.save({
     defense_submission: defenseSubmission6Hasil,
-    scheduled_date: defenseDate6Hasil.toISOString().split("T")[0],
+    scheduled_date: "2025-12-04",
     start_time: "09:00",
     end_time: "10:30",
     scheduler_status: "scheduled",
     room: "Ruang Sidang A",
     status: "scheduled",
+  });
+
+  // Defense Submission Documents untuk Student 6 - Hasil
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission6Hasil,
+    name: "Implementasi Sentimen - Draft",
+    url: "https://www.google.com/search?q=implementasi-sentimen-draft",
+    type: "draft",
+    email: student6.user.email,
+    student: student6,
+  });
+
+  await defenseSubmissionDocRepo.save({
+    defense_submission: defenseSubmission6Hasil,
+    name: "Presentasi Hasil - PPT",
+    url: "https://www.google.com/search?q=presentasi-hasil-sentimen-ppt",
+    type: "ppt",
+    email: student6.user.email,
+    student: student6,
   });
 
   // ==================== RUBRIK & PENILAIAN ====================
@@ -1157,10 +1254,14 @@ export async function seedDummyData(dataSource: DataSource) {
   const penilaian5Pem1 = await penilaianRepo.save({
     jadwalId: defenseSchedule5.id,
     lecturerId: lecturer1.id,
+    studentId: student5.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Presentasi bagus, metodologi sudah sesuai",
     nilaiAkhir: 85.5,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0), // Hari setelah sidang
   });
 
   // Jawaban untuk setiap pertanyaan
@@ -1178,10 +1279,14 @@ export async function seedDummyData(dataSource: DataSource) {
   const penilaian5Pem2 = await penilaianRepo.save({
     jadwalId: defenseSchedule5.id,
     lecturerId: lecturer5.id,
+    studentId: student5.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Tinjauan pustaka perlu ditambah referensi terbaru",
     nilaiAkhir: 82.0,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
   });
 
   for (const pertanyaan of allPertanyaanSeminar) {
@@ -1198,10 +1303,14 @@ export async function seedDummyData(dataSource: DataSource) {
   const penilaian5Exam1 = await penilaianRepo.save({
     jadwalId: defenseSchedule5.id,
     lecturerId: lecturer3.id,
+    studentId: student5.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Sangat baik, keep up the good work",
     nilaiAkhir: 88.0,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
   });
 
   for (const pertanyaan of allPertanyaanSeminar) {
@@ -1218,10 +1327,14 @@ export async function seedDummyData(dataSource: DataSource) {
   const penilaian5Exam2 = await penilaianRepo.save({
     jadwalId: defenseSchedule5.id,
     lecturerId: lecturer4.id,
+    studentId: student5.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Baik, lanjutkan ke tahap implementasi",
     nilaiAkhir: 84.5,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
   });
 
   for (const pertanyaan of allPertanyaanSeminar) {
@@ -1241,10 +1354,14 @@ export async function seedDummyData(dataSource: DataSource) {
   const penilaian1Pem1 = await penilaianRepo.save({
     jadwalId: defenseSchedule1Proposal.id,
     lecturerId: lecturer1.id,
+    studentId: student1.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Proposal sangat baik, sistem rekomendasi menarik",
     nilaiAkhir: 87.0,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 10, 26, 11, 0), // Hari setelah sidang
   });
 
   for (const pertanyaan of allPertanyaanSeminar) {
@@ -1260,34 +1377,952 @@ export async function seedDummyData(dataSource: DataSource) {
   await penilaianRepo.save({
     jadwalId: defenseSchedule1Proposal.id,
     lecturerId: lecturer2.id,
+    studentId: student1.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Dataset perlu diperbesar untuk hasil lebih akurat",
     nilaiAkhir: 83.0,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 10, 26, 11, 0),
   });
 
-  await penilaianRepo.save({
+  // Get penilaian lecturer2 yang baru saja disimpan
+  const penilaian1Pem2 = (await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: defenseSchedule1Proposal.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer2.id })
+    .andWhere("studentId = :studentId", { studentId: student1.id })
+    .orderBy("createdAt", "DESC")
+    .getOne())!;
+
+  for (const pertanyaan of allPertanyaanSeminar) {
+    const opsi = pertanyaan.opsiJawabans[1];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaian1Pem2.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  const penilaian1Exam1 = await penilaianRepo.save({
     jadwalId: defenseSchedule1Proposal.id,
     lecturerId: lecturer3.id,
+    studentId: student1.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Presentasi sangat komunikatif",
     nilaiAkhir: 89.0,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 10, 26, 11, 0),
   });
 
-  await penilaianRepo.save({
+  for (const pertanyaan of allPertanyaanSeminar) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaian1Exam1.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  const penilaian1Exam2 = await penilaianRepo.save({
     jadwalId: defenseSchedule1Proposal.id,
     lecturerId: lecturer4.id,
+    studentId: student1.id, // Per-student penilaian
     rubrikId: rubrikSeminar.id,
     catatan: "Metodologi sudah tepat",
     nilaiAkhir: 85.0,
     isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 10, 26, 11, 0),
+  });
+
+  for (const pertanyaan of allPertanyaanSeminar) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaian1Exam2.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // ==================== CAPSTONE SCENARIOS ====================
+  console.log("\n🎓 Creating CAPSTONE project scenarios...\n");
+
+  // Get more students for capstone projects
+  const capstoneStudents = students.slice(6, 12); // Students 7-12 untuk capstone
+
+  // ==================== SCENARIO 7: CAPSTONE - SEDANG BIMBINGAN PROPOSAL (3 MEMBERS) ====================
+  console.log("Scenario 7: Capstone - 3 members doing proposal guidance...");
+
+  const capstoneFinalProject1 = await finalProjectRepo.save({
+    type: "capstone",
+    status: "baru",
+    source_topic: "perusahaan",
+    description: "Platform E-Learning Adaptif dengan AI Personalisasi",
+    max_members: 3,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[0], // AI
+    expertises_group_2: expertiseGroups[1], // Software Engineering
+    supervisor_1: lecturer1,
+    supervisor_2: lecturer2,
+    final_project_period: period,
+  });
+
+  // Member 1 - dengan judul spesifik
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject1,
+    student: capstoneStudents[0],
+    title: "Modul Backend dan AI Engine untuk Platform E-Learning",
+    resume:
+      "Mengembangkan backend API dan machine learning engine untuk personalisasi konten pembelajaran",
+    draft_path: "/storages/final-projects/capstone1-member1.pdf",
+    draft_filename: "capstone1-member1.pdf",
+    draft_size: "2.8MB",
+  });
+
+  // Member 2 - dengan judul spesifik
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject1,
+    student: capstoneStudents[1],
+    title: "Frontend Mobile dan UI/UX Design untuk Platform E-Learning",
+    resume:
+      "Mengembangkan aplikasi mobile Flutter dengan desain UX yang intuitif dan responsif",
+    draft_path: "/storages/final-projects/capstone1-member2.pdf",
+    draft_filename: "capstone1-member2.pdf",
+    draft_size: "3.1MB",
+  });
+
+  // Member 3 - dengan judul spesifik
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject1,
+    student: capstoneStudents[2],
+    title: "Database Architecture dan Analytics Dashboard untuk E-Learning",
+    resume:
+      "Merancang database scalable dan dashboard analytics untuk monitoring pembelajaran",
+    draft_path: "/storages/final-projects/capstone1-member3.pdf",
+    draft_filename: "capstone1-member3.pdf",
+    draft_size: "2.5MB",
+  });
+
+  // Bimbingan Proposal (In Progress)
+  for (let i = 1; i <= 3; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject1,
+      lecturer: lecturer1,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i} - Review Architecture`,
+      lecturer_feedback: `Progress tim bagus, koordinasi antar modul sudah baik`,
+      status: "completed",
+      session_date: new Date(2024, 11, i * 4),
+      completed_at: new Date(2024, 11, i * 4, 10, 0),
+    });
+  }
+
+  await guidanceSessionRepo.save({
+    final_project: capstoneFinalProject1,
+    lecturer: lecturer2,
+    guidance_availability: availability2,
+    supervisor_type: 2,
+    defense_type: "proposal",
+    topic: `Bimbingan Proposal Capstone 1 - Review Design`,
+    lecturer_feedback: `UI/UX design sudah baik`,
+    status: "completed",
+    session_date: new Date(2024, 11, 10),
+    completed_at: new Date(2024, 11, 10, 14, 0),
+  });
+
+  // ==================== SCENARIO 8: CAPSTONE - APPROVED, WAITING FOR SCHEDULING (2 MEMBERS) ====================
+  console.log(
+    "Scenario 8: Capstone - 2 members approved, waiting for scheduling..."
+  );
+
+  const capstoneFinalProject2 = await finalProjectRepo.save({
+    type: "capstone",
+    status: "baru",
+    source_topic: "mandiri",
+    description: "Sistem Manajemen Inventaris Berbasis IoT & Cloud Computing",
+    max_members: 2,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[1], // Software Engineering
+    expertises_group_2: expertiseGroups[3], // Cybersecurity
+    supervisor_1: lecturer5,
+    supervisor_2: lecturer2,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject2,
+    student: capstoneStudents[3],
+    title: "IoT Device Integration dan Cloud Backend untuk Sistem Inventaris",
+    resume:
+      "Mengintegrasikan sensor IoT dan backend cloud untuk real-time inventory tracking",
+    draft_path: "/storages/final-projects/capstone2-member1.pdf",
+    draft_filename: "capstone2-member1.pdf",
+    draft_size: "2.9MB",
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject2,
+    student: capstoneStudents[4],
+    title: "Web Dashboard dan Mobile App untuk Sistem Inventaris",
+    resume:
+      "Mengembangkan web dashboard admin dan mobile app untuk pengguna inventory",
+    draft_path: "/storages/final-projects/capstone2-member2.pdf",
+    draft_filename: "capstone2-member2.pdf",
+    draft_size: "3.2MB",
+  });
+
+  // Bimbingan Proposal (Completed)
+  for (let i = 1; i <= 5; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject2,
+      lecturer: lecturer5,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i}`,
+      lecturer_feedback: `Progress bagus`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 2),
+      completed_at: new Date(2024, 10, i * 2, 10, 0),
+    });
+  }
+
+  for (let i = 1; i <= 2; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject2,
+      lecturer: lecturer2,
+      guidance_availability: availability2,
+      supervisor_type: 2,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i}`,
+      lecturer_feedback: `Sudah sesuai`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 5),
+      completed_at: new Date(2024, 10, i * 5, 14, 0),
+    });
+  }
+
+  // Defense Submission
+  const capstoneDefenseSubmission2 = await defenseSubmissionRepo.save({
+    final_project: capstoneFinalProject2,
+    lecturer: lecturer5,
+    defense_type: "proposal",
+    status: "approved",
+    guidance_sup_1_count: 5,
+    guidance_sup_2_count: 2,
+    min_guidance_sup_1_proposal: 5,
+    min_guidance_sup_2_proposal: 2,
+    student_notes: "Tim capstone siap untuk seminar proposal",
+    processed_at: new Date(2024, 11, 1),
+    expertises_group_1: expertiseGroups[1],
+    expertises_group_2: expertiseGroups[3],
+  });
+
+  // ==================== SCENARIO 9: CAPSTONE - COMPLETED PROPOSAL DEFENSE (3 MEMBERS) WITH ASSESSMENTS ====================
+  console.log("Scenario 9: Capstone - 3 members with completed assessment...");
+
+  const capstoneFinalProject3 = await finalProjectRepo.save({
+    type: "capstone",
+    status: "baru",
+    source_topic: "dosen",
+    description: "Smart Campus Management System dengan IoT & Analytics",
+    max_members: 3,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[1], // Software Engineering
+    expertises_group_2: expertiseGroups[2], // Data Science
+    supervisor_1: lecturer1,
+    supervisor_2: lecturer5,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject3,
+    student: capstoneStudents[5],
+    title: "Backend Infrastructure dan Data Pipeline untuk Smart Campus",
+    resume:
+      "Membangun backend infrastructure scalable dengan data pipeline untuk analytics",
+    draft_path: "/storages/final-projects/capstone3-member1.pdf",
+    draft_filename: "capstone3-member1.pdf",
+    draft_size: "3.0MB",
+  });
+
+  // Member 2 - dengan judul spesifik
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject3,
+    student: students[16],
+    title: "IoT Integration dan Sensor Management untuk Smart Campus",
+    resume:
+      "Mengintegrasikan sensor IoT dan real-time monitoring system untuk campus facilities",
+    draft_path: "/storages/final-projects/capstone3-member2.pdf",
+    draft_filename: "capstone3-member2.pdf",
+    draft_size: "2.9MB",
+  });
+
+  // Member 3 - dengan judul spesifik
+  await finalProjectMemberRepo.save({
+    final_project: capstoneFinalProject3,
+    student: students[17],
+    title: "Analytics Dashboard dan Reporting System untuk Smart Campus",
+    resume:
+      "Mengembangkan dashboard analytics dengan visualization dan reporting untuk decision making",
+    draft_path: "/storages/final-projects/capstone3-member3.pdf",
+    draft_filename: "capstone3-member3.pdf",
+    draft_size: "2.6MB",
+  });
+
+  // Bimbingan Proposal
+  for (let i = 1; i <= 5; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject3,
+      lecturer: lecturer1,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i}`,
+      lecturer_feedback: `Arsitektur sudah solid`,
+      status: "completed",
+      session_date: new Date(2024, 9, i * 3),
+      completed_at: new Date(2024, 9, i * 3, 10, 0),
+    });
+  }
+
+  for (let i = 1; i <= 2; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject3,
+      lecturer: lecturer5,
+      guidance_availability: availability2,
+      supervisor_type: 2,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i}`,
+      lecturer_feedback: `Analytics sudah komprehensif`,
+      status: "completed",
+      session_date: new Date(2024, 9, i * 5),
+      completed_at: new Date(2024, 9, i * 5, 14, 0),
+    });
+  }
+
+  // Defense Submission & Schedule
+  const capstoneDefenseSubmission3 = await defenseSubmissionRepo.save({
+    final_project: capstoneFinalProject3,
+    lecturer: lecturer1,
+    defense_type: "proposal",
+    status: "approved",
+    guidance_sup_1_count: 5,
+    guidance_sup_2_count: 2,
+    student_notes: "Capstone siap seminar",
+    capstone_code: "CAPS3",
+    defense_date: "2025-12-03",
+    processed_at: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000),
+    examiner_1: lecturer3,
+    examiner_2: lecturer4,
+    expertises_group_1: expertiseGroups[1],
+    expertises_group_2: expertiseGroups[2],
+  });
+
+  const capstoneDefenseSchedule3 = await defenseScheduleRepo.save({
+    defense_submission: capstoneDefenseSubmission3,
+    scheduled_date: "2025-12-03",
+    start_time: "15:00",
+    end_time: "16:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang B",
+    status: "completed",
+  });
+
+  // Penilaian dari semua dosen - PER STUDENT (Multi-member team scenario)
+  const allPertanyaanSeminarForCapstone = await pertanyaanRepo.find({
+    where: { group: { rubrikId: rubrikSeminar.id } },
+    relations: ["opsiJawabans"],
+  });
+
+  // Get member references
+  const capstoneMember1 = capstoneStudents[5];
+  const capstoneMember2 = students[16];
+  const capstoneMember3 = students[17];
+
+  // ==================== PENILAIAN UNTUK MEMBER 1 ====================
+  // Penilaian Pembimbing 1 - Member 1
+  const capstonePenilaian3Pem1Member1 = await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer1.id,
+    studentId: capstoneMember1.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan:
+      "Backend infrastructure member sangat excellent, API design scalable",
+    nilaiAkhir: 89.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: capstonePenilaian3Pem1Member1.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Pembimbing 2 - Member 1
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer5.id,
+    studentId: capstoneMember1.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Data architecture member 1 well structured",
+    nilaiAkhir: 87.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember1Pem2 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer5.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember1.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember1Pem2!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Penguji 1 - Member 1
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer3.id,
+    studentId: capstoneMember1.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Presentasi backend member 1 sangat technical dan detail",
+    nilaiAkhir: 88.5,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember1Exam1 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer3.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember1.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember1Exam1!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Penguji 2 - Member 1
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer4.id,
+    studentId: capstoneMember1.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Backend implementation member 1 sangat solid",
+    nilaiAkhir: 87.5,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember1Exam2 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer4.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember1.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember1Exam2!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // ==================== PENILAIAN UNTUK MEMBER 2 ====================
+  // Penilaian Pembimbing 1 - Member 2
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer1.id,
+    studentId: capstoneMember2.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan:
+      "IoT integration member 2 excellent, sensor management sangat baik",
+    nilaiAkhir: 88.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember2Pem1 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer1.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember2.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember2Pem1!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Pembimbing 2 - Member 2
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer5.id,
+    studentId: capstoneMember2.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "IoT implementation member 2 complete dan well tested",
+    nilaiAkhir: 85.5,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember2Pem2 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer5.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember2.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember2Pem2!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Penguji 1 - Member 2
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer3.id,
+    studentId: capstoneMember2.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Presentasi IoT member 2 clear dan komunikatif",
+    nilaiAkhir: 87.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember2Exam1 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer3.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember2.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember2Exam1!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Penguji 2 - Member 2
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer4.id,
+    studentId: capstoneMember2.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "IoT implementation member 2 robust dan production ready",
+    nilaiAkhir: 86.5,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember2Exam2 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer4.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember2.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember2Exam2!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // ==================== PENILAIAN UNTUK MEMBER 3 ====================
+  // Penilaian Pembimbing 1 - Member 3
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer1.id,
+    studentId: capstoneMember3.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan:
+      "Analytics dashboard member 3 sangat comprehensive dan user-friendly",
+    nilaiAkhir: 87.5,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember3Pem1 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer1.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember3.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember3Pem1!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Pembimbing 2 - Member 3
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer5.id,
+    studentId: capstoneMember3.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Analytics member 3 very good, visualization sangat helpful",
+    nilaiAkhir: 86.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember3Pem2 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer5.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember3.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember3Pem2!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Penguji 1 - Member 3
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer3.id,
+    studentId: capstoneMember3.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Presentasi analytics member 3 excellent dan data-driven",
+    nilaiAkhir: 88.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember3Exam1 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer3.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember3.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember3Exam1!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // Penilaian Penguji 2 - Member 3
+  await penilaianRepo.save({
+    jadwalId: capstoneDefenseSchedule3.id,
+    lecturerId: lecturer4.id,
+    studentId: capstoneMember3.id, // Per-student
+    rubrikId: rubrikSeminar.id,
+    catatan: "Reporting system member 3 complete dan insightful",
+    nilaiAkhir: 87.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 11, 3, 11, 0),
+  });
+
+  const penilaianMember3Exam2 = await dataSource
+    .getRepository(Penilaian)
+    .createQueryBuilder()
+    .where("jadwalId = :jadwalId", { jadwalId: capstoneDefenseSchedule3.id })
+    .andWhere("lecturerId = :lecturerId", { lecturerId: lecturer4.id })
+    .andWhere("studentId = :studentId", { studentId: capstoneMember3.id })
+    .orderBy("createdAt", "DESC")
+    .getOne();
+
+  for (const pertanyaan of allPertanyaanSeminarForCapstone) {
+    const opsi = pertanyaan.opsiJawabans[0];
+    await jawabanPenilaianRepo.save({
+      penilaianId: penilaianMember3Exam2!.id,
+      pertanyaanId: pertanyaan.id,
+      opsiJawabanId: opsi.id,
+      nilai: opsi.nilai,
+    });
+  }
+
+  // ==================== SCENARIO 10: CAPSTONE - SCHEDULED UNTUK HASIL DEFENSE (3 MEMBERS) ====================
+  console.log(
+    "Scenario 10: Capstone - 3 members scheduled for hasil defense..."
+  );
+
+  const capstoneFinalProject4 = await finalProjectRepo.save({
+    type: "capstone",
+    status: "baru",
+    source_topic: "perusahaan",
+    description:
+      "Mobile Banking Application dengan Biometric Security dan Blockchain",
+    max_members: 3,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[3], // Cybersecurity
+    expertises_group_2: expertiseGroups[1], // Software Engineering
+    supervisor_1: lecturer2,
+    supervisor_2: lecturer5,
+    final_project_period: period,
+  });
+
+  // 3 members dengan judul berbeda untuk capstone
+  for (let i = 0; i < 3; i++) {
+    const titles = [
+      "Biometric Authentication System dengan Multi-Modal Verification",
+      "Mobile App Development dengan Blockchain Integration",
+      "Security Infrastructure dan Compliance Management",
+    ];
+
+    const resumes = [
+      "Implementasi sistem autentikasi biometrik dengan teknologi multi-modal untuk keamanan berlapis",
+      "Pengembangan aplikasi mobile banking dengan integrasi blockchain untuk transaksi aman",
+      "Merancang infrastruktur security dan memastikan compliance dengan standar industry",
+    ];
+
+    await finalProjectMemberRepo.save({
+      final_project: capstoneFinalProject4,
+      student: students[12 + i], // Use students 13, 14, 15
+      title: titles[i],
+      resume: resumes[i],
+      draft_path: `/storages/final-projects/capstone4-member${i + 1}.pdf`,
+      draft_filename: `capstone4-member${i + 1}.pdf`,
+      draft_size: (2.7 + i * 0.2).toFixed(1) + "MB",
+    });
+  }
+
+  // Bimbingan Proposal (Completed)
+  for (let i = 1; i <= 5; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject4,
+      lecturer: lecturer2,
+      guidance_availability: availability2,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i}`,
+      lecturer_feedback: `Progress bagus, security considerations sudah covered`,
+      status: "completed",
+      session_date: new Date(2024, 8, i * 3),
+      completed_at: new Date(2024, 8, i * 3, 14, 0),
+    });
+  }
+
+  for (let i = 1; i <= 2; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject4,
+      lecturer: lecturer5,
+      guidance_availability: availability1,
+      supervisor_type: 2,
+      defense_type: "proposal",
+      topic: `Bimbingan Proposal Capstone ${i}`,
+      lecturer_feedback: `Sudah ready`,
+      status: "completed",
+      session_date: new Date(2024, 8, i * 5),
+      completed_at: new Date(2024, 8, i * 5, 10, 0),
+    });
+  }
+
+  // Seminar Proposal sudah selesai
+  const capstoneDefenseSubmission4Proposal = await defenseSubmissionRepo.save({
+    final_project: capstoneFinalProject4,
+    lecturer: lecturer2,
+    defense_type: "proposal",
+    status: "approved",
+    guidance_sup_1_count: 5,
+    guidance_sup_2_count: 2,
+    student_notes: "Capstone proposal selesai",
+    capstone_code: "CAPS4",
+    defense_date: "2025-11-28",
+    processed_at: new Date(2024, 8, 20),
+    examiner_1: lecturer3,
+    examiner_2: lecturer4,
+    expertises_group_1: expertiseGroups[3],
+    expertises_group_2: expertiseGroups[1],
+  });
+
+  await defenseScheduleRepo.save({
+    defense_submission: capstoneDefenseSubmission4Proposal,
+    scheduled_date: "2025-11-28",
+    start_time: "10:00",
+    end_time: "11:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang C",
+    status: "completed",
+  });
+
+  // Bimbingan Hasil (Completed)
+  for (let i = 1; i <= 5; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject4,
+      lecturer: lecturer2,
+      guidance_availability: availability2,
+      supervisor_type: 1,
+      defense_type: "hasil",
+      topic: `Bimbingan Hasil Capstone ${i}`,
+      lecturer_feedback: `Implementasi security sangat solid`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 3),
+      completed_at: new Date(2024, 10, i * 3, 14, 0),
+    });
+  }
+
+  for (let i = 1; i <= 2; i++) {
+    await guidanceSessionRepo.save({
+      final_project: capstoneFinalProject4,
+      lecturer: lecturer5,
+      guidance_availability: availability1,
+      supervisor_type: 2,
+      defense_type: "hasil",
+      topic: `Bimbingan Hasil Capstone ${i}`,
+      lecturer_feedback: `Siap sidang hasil`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 4),
+      completed_at: new Date(2024, 10, i * 4, 10, 0),
+    });
+  }
+
+  // Sidang Hasil dijadwalkan
+  const capstoneDefenseSubmission4Hasil = await defenseSubmissionRepo.save({
+    final_project: capstoneFinalProject4,
+    lecturer: lecturer2,
+    defense_type: "hasil",
+    status: "approved",
+    guidance_sup_1_count: 5,
+    guidance_sup_2_count: 2,
+    student_notes: "Tim capstone siap sidang hasil",
+    capstone_code: "CAPS4H",
+    defense_date: "2025-12-10",
+    processed_at: new Date(2024, 10, 30),
+    examiner_1: lecturer3,
+    examiner_2: lecturer4,
+    expertises_group_1: expertiseGroups[3],
+    expertises_group_2: expertiseGroups[1],
+  });
+
+  const capstoneDefenseSchedule4Hasil = await defenseScheduleRepo.save({
+    defense_submission: capstoneDefenseSubmission4Hasil,
+    scheduled_date: "2025-12-10",
+    start_time: "11:00",
+    end_time: "12:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang A",
+    status: "scheduled",
   });
 
   console.log("✅ Dummy data seeding completed successfully!");
   console.log("=".repeat(50));
   console.log("Summary:");
-  console.log("- 6 Students with final projects");
+  console.log("REGULAR PROJECTS:");
   console.log("- Student 1: Completed proposal, doing hasil guidance");
   console.log("- Student 2: Approved for scheduling, waiting for schedule");
   console.log(
@@ -1296,8 +2331,17 @@ export async function seedDummyData(dataSource: DataSource) {
   console.log("- Student 4: Scheduled for proposal defense (H+10)");
   console.log("- Student 5: Completed proposal defense (H+5) with assessments");
   console.log("- Student 6: Scheduled for hasil defense (H+15)");
+  console.log("\nCAPSTONE PROJECTS:");
+  console.log("- Capstone 1 (3 members): Currently doing proposal guidance");
+  console.log("- Capstone 2 (2 members): Approved, waiting for scheduling");
+  console.log(
+    "- Capstone 3 (3 members): Completed proposal defense with assessments"
+  );
+  console.log("- Capstone 4 (3 members): Scheduled for hasil defense (H+20)");
+  console.log("\nADDITIONAL:");
   console.log("- 2 Rubrics: Seminar (SEM) and Sidang (SID)");
-  console.log("- Assessment data for completed defenses");
+  console.log("- Complete assessment data for completed defenses");
+  console.log("- Individual member titles for capstone projects");
   console.log("=".repeat(50));
 }
 

@@ -167,4 +167,5 @@ export const validateGuidanceDefenseCreate: ValidationChain[] = [
   body("finalDraftLinks")
     .isArray()
     .withMessage("Final draft links harus berupa array"),
+  body("pptLinks").isArray().withMessage("PPT links harus berupa array"),
 ];

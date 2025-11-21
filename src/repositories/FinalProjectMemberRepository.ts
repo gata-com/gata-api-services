@@ -51,4 +51,25 @@ export class FinalProjectMemberRepository {
       .where("fpm.id = :id", { id })
       .getOne();
   }
+
+  async findAllMembersByFinalProjectId(
+    finalProjectId: number
+  ): Promise<FinalProjectMembers[]> {
+    return this.repository
+      .createQueryBuilder("fpm")
+      .leftJoinAndSelect("fpm.student", "student")
+      .leftJoinAndSelect("student.user", "user")
+      .where("fpm.final_project.id = :finalProjectId", { finalProjectId })
+      .getMany();
+  }
+
+  async findAllMembersByStudentUserId(userId: number): Promise<any[]> {
+    return this.repository
+      .createQueryBuilder("fpm")
+      .leftJoinAndSelect("fpm.student", "student")
+      .leftJoinAndSelect("student.user", "user")
+      .leftJoinAndSelect("fpm.final_project", "fp")
+      .where("student.user.id = :userId", { userId })
+      .getMany();
+  }
 }

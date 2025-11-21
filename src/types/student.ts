@@ -61,16 +61,18 @@ export interface GuidanceDashboardRequest {
 }
 
 export interface GuidanceDefenseRequest {
+  tipeSidang: "proposal" | "hasil";
   fpId: number;
   lecturerId: number;
   expertiseGroup1Id: number;
   expertiseGroup2Id: number;
-  tipeSidang: "proposal" | "hasil";
-  finalDraftLinks?: DraftLink[];
+  defenseDocuments: DefenseDocumentRequest[];
 }
 
-export interface DraftLink {
-  id: string;
+export interface DefenseDocumentRequest {
   name: string;
   url: string;
+  type: "draft" | "ppt";
+  email: string;
+  studentId?: number;
 }

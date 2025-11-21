@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PenilaianService } from "@/services/admin/penilaianService";
+import { PenilaianService } from "@/services/lecturer/penilaianService";
 import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { ApiResponse } from "@/types";
 import { Jadwal } from "@/types/lecturer";

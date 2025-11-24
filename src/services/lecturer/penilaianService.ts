@@ -5,7 +5,10 @@ import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleReposit
 import { Penilaian } from "@/entities/penilaian";
 import { DefenseSubmissionRepository } from "@/repositories/DefenseSubmissionRepository";
 import { DefenseSubmissionRepository as DSDRepository } from "@/repositories/DefenseSubmissionDocumentsRepository";
-import { Jadwal, JadwalKomentar } from "@/types/lecturer";
+import { PertanyaanRepository } from "@/repositories/PertanyaanRepository";
+import { LecturerRepository } from "@/repositories/LecturerRepository";
+import { JawabanPenilaianRepository } from "@/repositories/JawabanPenilaianRepository";
+import { Jadwal, JadwalKomentar, JadwalRekap } from "@/types/lecturer";
 
 interface JawabanInput {
   pertanyaanId: string;
@@ -20,19 +23,14 @@ interface NilaiPerGroup {
   bobotGroup: number;
 }
 
-interface RekapNilai {
-  rata2Pembimbing: number;
-  rata2Penguji: number;
+interface SavePenilaianResponse {
+  penilaianId: string;
+  jadwalId: string;
+  dosenId: string;
   nilaiAkhir: number;
   nilaiHuruf: string;
-  finalisasiOleh?: string;
-  detailDosen: Array<{
-    lecturerId: number;
-    lecturerNama: string;
-    role: string;
-    nilaiAkhir: number;
-    perGroup: NilaiPerGroup[];
-  }>;
+  catatanDisimpan: boolean;
+  tanggalDisimpan: string;
 }
 
 export class PenilaianService {
@@ -42,6 +40,9 @@ export class PenilaianService {
   private scheduleRepo: DefenseScheduleRepository;
   private defenseSubmissionRepo: DefenseSubmissionRepository;
   private dsdRepo: DSDRepository;
+  private pertanyaanRepo: PertanyaanRepository;
+  private lecturerRepo: LecturerRepository;
+  private jawabanRepo: JawabanPenilaianRepository;
 
   constructor() {
     this.penilaianRepo = new PenilaianRepository();
@@ -50,6 +51,265 @@ export class PenilaianService {
     this.scheduleRepo = new DefenseScheduleRepository();
     this.defenseSubmissionRepo = new DefenseSubmissionRepository();
     this.dsdRepo = new DSDRepository();
+    this.pertanyaanRepo = new PertanyaanRepository();
+    this.lecturerRepo = new LecturerRepository();
+    this.jawabanRepo = new JawabanPenilaianRepository();
+  }
+
+  /**
+   * Save penilaian dengan nilai yang sudah dihitung di frontend
+   * Menyimpan nilai penilaian mahasiswa untuk sidang/proposal
+   * tanpa melakukan perhitungan di backend
+   */
+  async savePenilaianWithPreCalculatedValues(
+    jadwalId: number,
+    nilaiPertanyaan: { [pertanyaanId: string]: number },
+    nilaiAkhir: number,
+    nilaiHuruf: string,
+    catatan: string,
+    userId: number,
+    studentId: number
+  ): Promise<SavePenilaianResponse> {
+    // Validasi input
+    if (!jadwalId) {
+      throw new Error("Jadwal ID wajib diisi");
+    }
+
+    if (!nilaiPertanyaan || Object.keys(nilaiPertanyaan).length === 0) {
+      throw new Error("Nilai pertanyaan wajib diisi");
+    }
+
+    if (!catatan || catatan.trim().length < 10) {
+      throw new Error("Catatan tidak boleh kosong dan minimal 10 karakter");
+    }
+
+    if (isNaN(nilaiAkhir) || nilaiAkhir < 0 || nilaiAkhir > 100) {
+      throw new Error("Nilai akhir harus antara 0-100");
+    }
+
+    if (!nilaiHuruf || nilaiHuruf.trim().length === 0) {
+      throw new Error("Nilai huruf wajib diisi");
+    }
+
+    // Convert userId to number for lookup
+    const userIdNum = typeof userId === "string" ? parseInt(userId) : userId;
+
+    // Get lecturer from userId
+    const lecturer = await this.lecturerRepo.findByUserId(userIdNum);
+    if (!lecturer) {
+      throw new Error("Dosen tidak ditemukan untuk user ini");
+    }
+
+    const lecturerId = lecturer.id;
+
+    // Get jadwal
+    const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
+    if (!jadwal) {
+      throw new Error("Jadwal tidak ditemukan");
+    }
+
+    // Validasi bahwa lecturer adalah pembimbing atau penguji
+    const submission = jadwal.defense_submission;
+    const final_project = submission.final_project;
+
+    const supervisor1Id = final_project.supervisor_1?.id;
+    const supervisor2Id = final_project.supervisor_2?.id;
+    const examiner1Id = submission.examiner_1?.id;
+    const examiner2Id = submission.examiner_2?.id;
+
+    const isAuthorized = [
+      supervisor1Id,
+      supervisor2Id,
+      examiner1Id,
+      examiner2Id,
+    ].includes(lecturerId);
+    if (!isAuthorized) {
+      throw new Error(
+        "Anda tidak memiliki akses untuk memberikan nilai pada jadwal ini"
+      );
+    }
+
+    // Get default rubrik based on defense type (untuk validasi pertanyaan)
+    const rubrikType = submission.defense_type === "proposal" ? "SEM" : "SID";
+    const rubrik = await this.rubrikRepo.findDefaultByType(rubrikType);
+
+    if (!rubrik) {
+      throw new Error("Rubrik default tidak ditemukan");
+    }
+
+    // Validasi semua pertanyaan memiliki nilai
+    const allPertanyaanIds: string[] = [];
+    const pertanyaanNilaiMap: { [key: string]: number } = {};
+
+    for (const group of rubrik.groups || []) {
+      for (const pertanyaan of group.pertanyaans || []) {
+        allPertanyaanIds.push(pertanyaan.id);
+
+        if (!nilaiPertanyaan[pertanyaan.id]) {
+          throw new Error(
+            `Semua pertanyaan harus memiliki nilai. Pertanyaan yang belum diisi: ${pertanyaan.id}`
+          );
+        }
+
+        // Validasi nilai sesuai dengan opsi jawaban yang ada
+        const nilaiForPertanyaan = nilaiPertanyaan[pertanyaan.id];
+        const isValidNilai = (pertanyaan.opsiJawabans || []).some(
+          (opsi: any) => Number(opsi.nilai) === Number(nilaiForPertanyaan)
+        );
+
+        if (!isValidNilai) {
+          throw new Error(
+            `Nilai ${nilaiForPertanyaan} tidak sesuai dengan opsi jawaban untuk pertanyaan ${pertanyaan.id}`
+          );
+        }
+
+        pertanyaanNilaiMap[pertanyaan.id] = nilaiForPertanyaan;
+      }
+    }
+
+    // Check if penilaian is locked (finalized)
+    const existing = await this.penilaianRepo.findByJadwalAndLecturer(
+      jadwalId,
+      lecturerId
+    );
+
+    if (existing && existing.isFinalized) {
+      throw new Error("Jadwal sudah terkunci");
+    }
+
+    // Convert nilaiPertanyaan to jawaban format
+    const jawabanList: Array<{
+      pertanyaanId: string;
+      opsiJawabanId: string;
+      nilai: number;
+    }> = [];
+
+    for (const group of rubrik.groups || []) {
+      for (const pertanyaan of group.pertanyaans || []) {
+        const nilai = nilaiPertanyaan[pertanyaan.id];
+        const opsiJawaban = (pertanyaan.opsiJawabans || []).find(
+          (opsi: any) => Number(opsi.nilai) === Number(nilai)
+        );
+
+        if (opsiJawaban) {
+          jawabanList.push({
+            pertanyaanId: pertanyaan.id,
+            opsiJawabanId: opsiJawaban.id,
+            nilai: nilai,
+          });
+        }
+      }
+    }
+
+    // Save or update penilaian dengan nilai yang sudah dihitung di frontend
+    let penilaian: Penilaian;
+
+    if (existing) {
+      // Update existing penilaian
+      await this.penilaianRepo.update(existing.id, {
+        catatan,
+        nilaiAkhir, // Gunakan nilai dari frontend
+      });
+
+      // Delete old jawabans and create new ones
+      await this.jawabanRepo.deleteByPenilaianId(existing.id);
+
+      // Create new jawaban entities
+      const jawabanEntities = jawabanList.map((jawaban) => ({
+        penilaianId: existing.id,
+        ...jawaban,
+      }));
+      await this.jawabanRepo.createMany(jawabanEntities);
+
+      penilaian = (await this.penilaianRepo.findByJadwalAndLecturer(
+        jadwalId,
+        lecturerId
+      ))!;
+    } else {
+      // Create new penilaian first
+      penilaian = await this.penilaianRepo.create({
+        jadwalId: jadwalId,
+        lecturerId,
+        studentId,
+        rubrikId: rubrik.id,
+        catatan,
+        nilaiAkhir, // Gunakan nilai dari frontend
+      });
+
+      // Create jawaban entities with the penilaianId
+      const jawabanEntities = jawabanList.map((jawaban) => ({
+        penilaianId: penilaian.id,
+        ...jawaban,
+      }));
+      await this.jawabanRepo.createMany(jawabanEntities);
+    }
+
+    return {
+      penilaianId: penilaian.id,
+      jadwalId: jadwalId.toString(),
+      dosenId: userId.toString(),
+      nilaiAkhir, // Return nilai dari frontend
+      nilaiHuruf, // Return nilai huruf dari frontend
+      catatanDisimpan: !!catatan,
+      tanggalDisimpan: penilaian.updatedAt.toISOString(),
+    };
+  }
+
+  /**
+   * Calculate final score from rubrik and nilai pertanyaan
+   */
+  private hitungNilaiAkhirFromRubrik(
+    rubrik: any,
+    nilaiPertanyaan: { [pertanyaanId: string]: number }
+  ): number {
+    let totalPoin = 0;
+    let totalBobot = 0;
+
+    for (const group of rubrik.groups || []) {
+      const nilaiGroup = this.hitungNilaiGroupFromRubrik(
+        group,
+        nilaiPertanyaan
+      );
+      const bobotGroup = Number(group.bobotTotal);
+
+      totalPoin += nilaiGroup * bobotGroup;
+      totalBobot += bobotGroup;
+    }
+
+    if (totalBobot === 0) {
+      return 0;
+    }
+
+    // Rata-rata tertimbang × 20 untuk konversi ke skala 100
+    const nilaiRataRata = totalPoin / totalBobot;
+    return Math.round(nilaiRataRata * 20 * 100) / 100; // 2 decimal places
+  }
+
+  /**
+   * Calculate score per group from rubrik
+   */
+  private hitungNilaiGroupFromRubrik(
+    group: any,
+    nilaiPertanyaan: { [pertanyaanId: string]: number }
+  ): number {
+    let totalPoin = 0;
+    let totalBobot = 0;
+
+    for (const pertanyaan of group.pertanyaans || []) {
+      const nilai = nilaiPertanyaan[pertanyaan.id];
+
+      if (nilai !== undefined) {
+        const bobotPertanyaan = Number(pertanyaan.bobot);
+        totalPoin += nilai * bobotPertanyaan;
+        totalBobot += bobotPertanyaan;
+      }
+    }
+
+    if (totalBobot === 0) {
+      return 0;
+    }
+
+    return totalPoin / totalBobot;
   }
 
   /**
@@ -124,6 +384,181 @@ export class PenilaianService {
   }
 
   /**
+   * Update penilaian yang sudah ada (Update Nilai)
+   * Memperbarui nilai penilaian mahasiswa yang sudah pernah disimpan sebelumnya
+   */
+  async updatePenilaian(
+    penilaianId: string,
+    jadwalId: number,
+    nilaiPertanyaan: { [pertanyaanId: string]: number },
+    catatan: string,
+    userId: number,
+    studentId: number
+  ): Promise<SavePenilaianResponse> {
+    // Validasi input
+    if (!jadwalId) {
+      throw new Error("Jadwal ID wajib diisi");
+    }
+
+    if (!nilaiPertanyaan || Object.keys(nilaiPertanyaan).length === 0) {
+      throw new Error("Nilai pertanyaan wajib diisi");
+    }
+
+    if (!catatan || catatan.trim().length < 10) {
+      throw new Error("Catatan tidak boleh kosong dan minimal 10 karakter");
+    }
+
+    // Convert userId to number for lookup
+    const userIdNum = typeof userId === "string" ? parseInt(userId) : userId;
+
+    // Get lecturer from userId
+    const lecturer = await this.lecturerRepo.findByUserId(userIdNum);
+    if (!lecturer) {
+      throw new Error("Dosen tidak ditemukan untuk user ini");
+    }
+
+    const lecturerId = lecturer.id;
+
+    // Get jadwal
+    const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
+    if (!jadwal) {
+      throw new Error("Jadwal tidak ditemukan");
+    }
+
+    // Validasi bahwa lecturer adalah pembimbing atau penguji
+    const submission = jadwal.defense_submission;
+    const final_project = submission.final_project;
+
+    const supervisor1Id = final_project.supervisor_1?.id;
+    const supervisor2Id = final_project.supervisor_2?.id;
+    const examiner1Id = submission.examiner_1?.id;
+    const examiner2Id = submission.examiner_2?.id;
+
+    const isAuthorized = [
+      supervisor1Id,
+      supervisor2Id,
+      examiner1Id,
+      examiner2Id,
+    ].includes(lecturerId);
+    if (!isAuthorized) {
+      throw new Error(
+        "Anda tidak memiliki akses untuk memperbarui nilai pada jadwal ini"
+      );
+    }
+
+    // Check if penilaian exists
+    const existing = await this.penilaianRepo.findById(penilaianId);
+
+    if (!existing) {
+      throw new Error(
+        "tidak ada penilaian sebelumnya untuk diperbarui. Gunakan endpoint simpan-nilai untuk membuat penilaian baru"
+      );
+    }
+
+    // Check if penilaian is finalized
+    if (existing.isFinalized) {
+      throw new Error("Nilai sudah difinalisasi dan tidak dapat diperbarui");
+    }
+
+    // Get default rubrik based on defense type (untuk validasi pertanyaan)
+    const rubrikType = submission.defense_type === "proposal" ? "SEM" : "SID";
+    const rubrik = await this.rubrikRepo.findDefaultByType(rubrikType);
+
+    if (!rubrik) {
+      throw new Error("Rubrik default tidak ditemukan");
+    }
+
+    // Validasi semua pertanyaan memiliki nilai
+    const allPertanyaanIds: string[] = [];
+    const pertanyaanNilaiMap: { [key: string]: number } = {};
+
+    for (const group of rubrik.groups || []) {
+      for (const pertanyaan of group.pertanyaans || []) {
+        allPertanyaanIds.push(pertanyaan.id);
+
+        if (!nilaiPertanyaan[pertanyaan.id]) {
+          throw new Error(
+            `Semua pertanyaan harus memiliki nilai. Pertanyaan yang belum diisi: ${pertanyaan.id}`
+          );
+        }
+
+        // Validasi nilai sesuai dengan opsi jawaban yang ada
+        const nilaiForPertanyaan = nilaiPertanyaan[pertanyaan.id];
+        const isValidNilai = (pertanyaan.opsiJawabans || []).some(
+          (opsi: any) => Number(opsi.nilai) === Number(nilaiForPertanyaan)
+        );
+
+        if (!isValidNilai) {
+          throw new Error(
+            `Nilai ${nilaiForPertanyaan} tidak sesuai dengan opsi jawaban untuk pertanyaan ${pertanyaan.id}`
+          );
+        }
+
+        pertanyaanNilaiMap[pertanyaan.id] = nilaiForPertanyaan;
+      }
+    }
+
+    // Calculate final score from rubrik
+    const nilaiAkhir = this.hitungNilaiAkhirFromRubrik(rubrik, nilaiPertanyaan);
+
+    // Get grade letter
+    const nilaiHuruf = await this.rentangRepo.getGradeByScore(nilaiAkhir);
+
+    // Convert nilaiPertanyaan to jawaban format
+    const jawabanList: Array<{
+      pertanyaanId: string;
+      opsiJawabanId: string;
+      nilai: number;
+    }> = [];
+
+    for (const group of rubrik.groups || []) {
+      for (const pertanyaan of group.pertanyaans || []) {
+        const nilai = nilaiPertanyaan[pertanyaan.id];
+        const opsiJawaban = (pertanyaan.opsiJawabans || []).find(
+          (opsi: any) => Number(opsi.nilai) === Number(nilai)
+        );
+
+        if (opsiJawaban) {
+          jawabanList.push({
+            pertanyaanId: pertanyaan.id,
+            opsiJawabanId: opsiJawaban.id,
+            nilai: nilai,
+          });
+        }
+      }
+    }
+
+    // Update existing penilaian
+    await this.penilaianRepo.update(existing.id, {
+      catatan,
+      nilaiAkhir,
+    });
+
+    // Delete old jawabans and create new ones
+    await this.jawabanRepo.deleteByPenilaianId(existing.id);
+
+    // Create new jawaban entities
+    const jawabanEntities = jawabanList.map((jawaban) => ({
+      penilaianId: existing.id,
+      ...jawaban,
+    }));
+    await this.jawabanRepo.createMany(jawabanEntities);
+
+    // Fetch updated penilaian
+    const updatedPenilaian = (await this.penilaianRepo.findById(penilaianId))!;
+
+    return {
+      penilaianId: updatedPenilaian.id,
+      jadwalId: jadwalId.toString(),
+      dosenId: userId.toString(),
+      nilaiAkhir,
+      nilaiHuruf,
+      catatanDisimpan: !!catatan,
+      tanggalDisimpan: updatedPenilaian.updatedAt.toISOString(),
+    };
+  }
+
+  /**
    * Hitung nilai akhir berdasarkan rubrik dan jawaban
    * Formula: Σ(nilaiGroup × bobotGroup) / Σ(bobotGroup) × 20
    */
@@ -192,31 +627,18 @@ export class PenilaianService {
   /**
    * Get rekap nilai untuk jadwal sidang (per student atau all)
    * Return undefined jika tidak ada penilaian
+   * Support baik single object maupun array of penilaian
+   * Syarat perhitungan nilai akhir: minimal 2 penguji + 1 pembimbing
+   * Jika tidak terpenuhi, nilaiAkhir akan kosong
    */
   async getRekapNilai(
     jadwalId: number,
-    finalisasiOleh?: string,
+    supervisor1Id: number,
+    supervisor2Id?: number,
     studentId?: number
-  ): Promise<RekapNilai | undefined> {
-    let penilaians: Penilaian[];
-
-    if (studentId) {
-      // Get penilaian untuk student tertentu
-      penilaians = await this.penilaianRepo.findByJadwalAndStudent(
-        jadwalId,
-        studentId
-      );
-    } else {
-      // Get semua penilaian untuk jadwal (untuk backward compatibility)
-      penilaians = await this.penilaianRepo.findByJadwalId(jadwalId);
-      // Filter yang tidak punya studentId (untuk backward compatibility)
-      penilaians = penilaians.filter((p) => !p.studentId);
-    }
-
-    if (penilaians.length === 0) {
-      // Return undefined jika tidak ada penilaian (tidak throw error)
-      return undefined;
-    }
+  ): Promise<JadwalRekap | undefined> {
+    // Convert single object to array untuk konsistensi
+    const penilaianList = await this.penilaianRepo.findByJadwalId(jadwalId);
 
     // Get jadwal untuk mengetahui pembimbing dan penguji
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
@@ -241,9 +663,9 @@ export class PenilaianService {
       defenseSubmission?.examiner_2?.id,
     ].filter(Boolean) as number[];
 
-    // Hitung rata-rata pembimbing
-    const nilaiPembimbing = penilaians
-      .filter((p) => pembimbingIds.includes(p.lecturerId))
+    // Filter penilaian yang ada nilainya (tidak null/0)
+    const nilaiPembimbing = penilaianList
+      .filter((p) => pembimbingIds.includes(p.lecturerId) && p.nilaiAkhir)
       .map((p) => Number(p.nilaiAkhir || 0));
 
     const rata2Pembimbing =
@@ -251,9 +673,9 @@ export class PenilaianService {
         ? nilaiPembimbing.reduce((a, b) => a + b, 0) / nilaiPembimbing.length
         : 0;
 
-    // Hitung rata-rata penguji
-    const nilaiPenguji = penilaians
-      .filter((p) => pengujiIds.includes(p.lecturerId))
+    // Filter penilaian penguji yang ada nilainya (tidak null/0)
+    const nilaiPenguji = penilaianList
+      .filter((p) => pengujiIds.includes(p.lecturerId) && p.nilaiAkhir)
       .map((p) => Number(p.nilaiAkhir || 0));
 
     const rata2Penguji =
@@ -261,70 +683,47 @@ export class PenilaianService {
         ? nilaiPenguji.reduce((a, b) => a + b, 0) / nilaiPenguji.length
         : 0;
 
-    // Nilai akhir mahasiswa
-    const nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2;
+    // Validasi kondisi: harus ada minimal 2 penguji dan 1 pembimbing
+    const hasSufficientPembimbing = nilaiPembimbing.length >= 1;
+    const hasSufficientPenguji = nilaiPenguji.length >= 2;
+    const canCalculateNilaiAkhir =
+      hasSufficientPembimbing && hasSufficientPenguji;
 
-    // Get nilai huruf
-    const nilaiHuruf = await this.rentangRepo.getGradeByScore(nilaiAkhir);
+    // Nilai akhir mahasiswa - hanya dihitung jika kondisi terpenuhi
+    const nilaiAkhir = canCalculateNilaiAkhir
+      ? Math.round(((rata2Pembimbing + rata2Penguji) / 2) * 100) / 100
+      : undefined;
 
-    // Get finalisasi info dari database jika tidak disediakan
-    let finalizedByName = finalisasiOleh;
-    if (!finalizedByName) {
-      const finalizedPenilaian = penilaians.find(
-        (p) => p.isFinalized && p.finalizedByName
-      );
-      finalizedByName = finalizedPenilaian?.finalizedByName;
+    // Get nilai huruf - hanya jika nilai akhir ada
+    let nilaiHuruf = "";
+    if (nilaiAkhir !== undefined && nilaiAkhir !== null) {
+      nilaiHuruf = await this.rentangRepo.getGradeByScore(nilaiAkhir);
     }
 
-    // Detail per dosen
-    const detailDosen = penilaians.map((p) => {
-      const role = pembimbingIds.includes(p.lecturerId)
-        ? "Pembimbing"
-        : "Penguji";
+    // Get finalisasi info dari database
+    const finalizedPenilaian = penilaianList.find(
+      (p) => p.isFinalized === true
+    );
+    const isFinalized = finalizedPenilaian?.isFinalized || false;
+    const finalizedByName = finalizedPenilaian?.finalizedByName;
 
-      const perGroup: NilaiPerGroup[] = [];
-      if (p.rubrik && p.rubrik.groups) {
-        for (const group of p.rubrik.groups) {
-          const jawabanGroup = p.jawabans?.filter((j) =>
-            group.pertanyaans?.some((pt) => pt.id === j.pertanyaanId)
-          );
-
-          if (jawabanGroup && jawabanGroup.length > 0) {
-            const nilaiGroup = this.hitungNilaiGroup(
-              group,
-              jawabanGroup.map((j) => ({
-                pertanyaanId: j.pertanyaanId,
-                opsiJawabanId: j.opsiJawabanId,
-                nilai: Number(j.nilai),
-              }))
-            );
-
-            perGroup.push({
-              groupId: group.id,
-              groupNama: group.nama,
-              nilaiGroup: Math.round(nilaiGroup * 100) / 100,
-              bobotGroup: Number(group.bobotTotal),
-            });
-          }
-        }
-      }
-
-      return {
-        lecturerId: p.lecturerId,
-        lecturerNama: p.lecturer?.user?.name || "",
-        role,
-        nilaiAkhir: Number(p.nilaiAkhir || 0),
-        perGroup,
-      };
-    });
+    // Detail per dosen - sesuai interface DosenNilai
+    const detailPerDosen = penilaianList.map((p) => ({
+      lecturerId: p.lecturerId,
+      kode: p.lecturer?.lecturer_code || "",
+      nama: p.lecturer?.user?.name || "",
+      nilai: Math.round(Number(p.nilaiAkhir || 0) * 100) / 100,
+      tanggal: p.updatedAt.toISOString(),
+    }));
 
     return {
       rata2Pembimbing: Math.round(rata2Pembimbing * 100) / 100,
       rata2Penguji: Math.round(rata2Penguji * 100) / 100,
-      nilaiAkhir: Math.round(nilaiAkhir * 100) / 100,
+      nilaiAkhir: nilaiAkhir ?? undefined, // Kosong jika tidak memenuhi kondisi
       nilaiHuruf,
+      isFinalized,
       finalisasiOleh: finalizedByName,
-      detailDosen,
+      detailPerDosen,
     };
   }
 
@@ -333,7 +732,7 @@ export class PenilaianService {
    */
   async finalisasiNilai(
     jadwalId: number,
-    lecturerId: number,
+    lecturerId?: number,
     studentId?: number
   ): Promise<void> {
     // Cek apakah lecturer adalah pembimbing utama
@@ -545,7 +944,8 @@ export class PenilaianService {
         // Get penilaian for this lecturer
         const penilaian = await this.penilaianRepo.findByJadwalAndLecturer(
           schedule.id,
-          lecturerId
+          lecturerId,
+          student?.id
         );
 
         // Determine status penilaian
@@ -568,13 +968,28 @@ export class PenilaianService {
 
         // Get rekap nilai if status kehadiran is LEWAT
         let rekap = undefined;
-        if (statusKehadiran === "LEWAT") {
-          try {
-            rekap = await this.getRekapNilai(schedule.id);
-          } catch (error) {
-            // Rekap might not be available yet
-          }
+        try {
+          rekap = await this.getRekapNilai(
+            schedule.id,
+            supervisor1?.id,
+            supervisor2?.id,
+            student?.id
+          );
+        } catch (error) {
+          // Rekap might not be available yet
         }
+
+        // Get all rentang nilai for dropdown/reference
+        const allRentangNilai = await this.rentangRepo.findAll();
+        const rentangNilaiData =
+          allRentangNilai && allRentangNilai.length > 0
+            ? allRentangNilai.map((rn) => ({
+                id: rn.id,
+                urutan: rn.urutan,
+                grade: rn.grade,
+                minScore: Number(rn.minScore),
+              }))
+            : undefined;
 
         // Get komentars
         const komentarDosens = await this.getKomentarDosen(schedule.id);
@@ -583,23 +998,6 @@ export class PenilaianService {
           nama: k.lecturerNama,
           komentar: k.catatan,
           tanggal: new Date().toISOString(),
-        }));
-
-        // Get semua penilaian untuk dosenNilai
-        const semuaPenilaian = await this.penilaianRepo.findByJadwalId(
-          schedule.id
-        );
-
-        const dosenNilai = semuaPenilaian.map((p) => ({
-          lecturerId: p.lecturerId,
-          kode: p.lecturer.lecturer_code,
-          nama: p.lecturer?.user?.name || "-",
-          role: [supervisor1?.id, supervisor2?.id].includes(p.lecturerId)
-            ? ("Pembimbing" as const)
-            : ("Penguji" as const),
-          tanggal: p.updatedAt.toISOString(),
-          nilai: Number(p.nilaiAkhir || 0),
-          perGroup: [], // Could be populated from rubrik groups if needed
         }));
 
         // Get dokumen untuk member pertama (laporan TA dan slide presentasi)
@@ -612,7 +1010,9 @@ export class PenilaianService {
         );
 
         const jadwal: Jadwal = {
-          id: schedule.id.toString(),
+          jadwalId: schedule.id,
+          penilaianId: penilaian?.id?.toString() || "",
+          studentId: student?.id,
           nama: user?.name || "-",
           nim: student?.nim || "-",
           jenisSidang,
@@ -633,10 +1033,10 @@ export class PenilaianService {
           catatanMahasiswa: submission.student_notes,
           isSupervisor1: lecturerId === supervisor1?.id,
           rekap,
-          dosenNilai: dosenNilai.length > 0 ? dosenNilai : undefined,
           catatan: penilaian?.catatan,
           komentar: komenta.length > 0 ? komenta : undefined,
           rubrik: rubrikResponse,
+          rentangNilai: rentangNilaiData,
         };
 
         jadwalList.push(jadwal);
@@ -685,7 +1085,8 @@ export class PenilaianService {
               try {
                 rekapOther = await this.getRekapNilai(
                   schedule.id,
-                  undefined,
+                  supervisor1?.id,
+                  supervisor2?.id,
                   otherStudent?.id
                 );
               } catch (error) {
@@ -707,25 +1108,6 @@ export class PenilaianService {
               })
             );
 
-            // Get penilaian dari semua dosen untuk member lain
-            const semuaPenilaianOther =
-              await this.penilaianRepo.findByJadwalAndStudent(
-                schedule.id,
-                otherStudent?.id!
-              );
-
-            const dosenNilaiOther = semuaPenilaianOther.map((p) => ({
-              lecturerId: p.lecturerId,
-              kode: p.lecturer.lecturer_code,
-              nama: p.lecturer?.user?.name || "-",
-              role: [supervisor1?.id, supervisor2?.id].includes(p.lecturerId)
-                ? ("Pembimbing" as const)
-                : ("Penguji" as const),
-              tanggal: p.updatedAt.toISOString(),
-              nilai: Number(p.nilaiAkhir || 0),
-              perGroup: [], // Could be populated from rubrik groups if needed
-            }));
-
             // Get dokumen untuk member lain (laporan TA dan slide presentasi)
             const draftDocForOtherStudent = allDocsForSubmission.find(
               (doc: any) =>
@@ -737,7 +1119,9 @@ export class PenilaianService {
             );
 
             const jadwalOther: Jadwal = {
-              id: schedule.id.toString(),
+              jadwalId: schedule.id,
+              penilaianId: penilaianOtherMember?.id?.toString() || "",
+              studentId: otherStudent?.id,
               nama: otherUser?.name || "-",
               nim: otherStudent?.nim || "-",
               jenisSidang,
@@ -758,11 +1142,10 @@ export class PenilaianService {
               catatanMahasiswa: submission.student_notes,
               isSupervisor1: lecturerId === supervisor1?.id,
               rekap: rekapOther,
-              dosenNilai:
-                dosenNilaiOther.length > 0 ? dosenNilaiOther : undefined,
               catatan: penilaianOtherMember?.catatan,
               komentar: komentaOther.length > 0 ? komentaOther : undefined,
               rubrik: rubrikResponse,
+              rentangNilai: rentangNilaiData,
             };
 
             jadwalList.push(jadwalOther);

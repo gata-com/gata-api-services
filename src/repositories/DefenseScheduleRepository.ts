@@ -128,7 +128,7 @@ export class DefenseScheduleRepository {
    * @returns DefenseSchedule or null
    */
   async findByDefenseSubmissionId(
-    defenseSubmissionId: number
+    DSId: number
   ): Promise<DefenseSchedule | null> {
     return this.repository
       .createQueryBuilder("ds")
@@ -145,7 +145,7 @@ export class DefenseScheduleRepository {
       .leftJoinAndSelect("fp.members", "members")
       .leftJoinAndSelect("members.student", "student")
       .leftJoinAndSelect("student.user", "student_user")
-      .where("def.id = :defenseSubmissionId", { defenseSubmissionId })
+      .where("ds.id = :DSId", { DSId })
       .getOne();
   }
 

@@ -55,197 +55,6 @@ export const getPenilaian = async (
 };
 
 /**
- * Submit/Update penilaian
- * POST /dosen/penilaian/jadwal/:jadwalId/nilai
- */
-export const submitPenilaian = async (
-  req: Request,
-  res: Response<ApiResponse>
-): Promise<Response> => {
-  try {
-    const jadwalId = parseInt(req.params.jadwalId);
-
-    if (isNaN(jadwalId)) {
-      return res.status(400).json({
-        message: "Invalid jadwal ID",
-        errors: { path: "jadwalId", msg: "Jadwal ID must be a number" },
-      });
-    }
-
-    // @ts-ignore - user added by auth middleware
-    const lecturerId = req.user?.lecturer?.id;
-
-    if (!lecturerId) {
-      return res.status(403).json({
-        message: "Forbidden",
-        errors: { path: "user", msg: "Lecturer ID not found" },
-      });
-    }
-
-    const { jawaban, catatan } = req.body;
-
-    if (!jawaban || !Array.isArray(jawaban) || jawaban.length === 0) {
-      return res.status(400).json({
-        message: "Jawaban tidak boleh kosong",
-        errors: {
-          path: "jawaban",
-          msg: "Jawaban is required and must be an array",
-        },
-      });
-    }
-
-    const penilaian = await penilaianService.submitPenilaian(
-      jadwalId,
-      lecturerId,
-      jawaban,
-      catatan
-    );
-
-    return res.status(200).json({
-      message: "Penilaian berhasil disimpan",
-      data: penilaian,
-    });
-  } catch (error) {
-    console.error("Error submitting penilaian:", error);
-    return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
-    });
-  }
-};
-
-/**
- * Get penilaian dosen
- * GET /dosen/penilaian/jadwal/:jadwalId/nilai
- */
-export const getPenilaianDosen = async (
-  req: Request,
-  res: Response<ApiResponse>
-): Promise<Response> => {
-  try {
-    const jadwalId = parseInt(req.params.jadwalId);
-
-    if (isNaN(jadwalId)) {
-      return res.status(400).json({
-        message: "Invalid jadwal ID",
-        errors: { path: "jadwalId", msg: "Jadwal ID must be a number" },
-      });
-    }
-
-    // @ts-ignore - user added by auth middleware
-    const lecturerId = req.user?.lecturer?.id;
-
-    if (!lecturerId) {
-      return res.status(403).json({
-        message: "Forbidden",
-        errors: { path: "user", msg: "Lecturer ID not found" },
-      });
-    }
-
-    const penilaian = await penilaianService.getPenilaianDosen(
-      jadwalId,
-      lecturerId
-    );
-
-    if (!penilaian) {
-      return res.status(404).json({
-        message: "Penilaian belum ada",
-        errors: { path: "penilaian", msg: "Penilaian not found" },
-      });
-    }
-
-    return res.status(200).json({
-      message: "Penilaian retrieved successfully",
-      data: penilaian,
-    });
-  } catch (error) {
-    console.error("Error getting penilaian:", error);
-    return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
-    });
-  }
-};
-
-/**
- * Get rekap nilai
- * GET /dosen/penilaian/jadwal/:jadwalId/rekap
- */
-export const getRekapNilai = async (
-  req: Request,
-  res: Response<ApiResponse>
-): Promise<Response> => {
-  try {
-    const jadwalId = parseInt(req.params.jadwalId);
-
-    if (isNaN(jadwalId)) {
-      return res.status(400).json({
-        message: "Invalid jadwal ID",
-        errors: { path: "jadwalId", msg: "Jadwal ID must be a number" },
-      });
-    }
-
-    const rekap = await penilaianService.getRekapNilai(jadwalId);
-
-    return res.status(200).json({
-      message: "Rekap nilai retrieved successfully",
-      data: rekap,
-    });
-  } catch (error) {
-    console.error("Error getting rekap nilai:", error);
-    return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
-    });
-  }
-};
-
-/**
- * Get komentar dosen
- * GET /dosen/penilaian/jadwal/:jadwalId/komentar
- */
-export const getKomentarDosen = async (
-  req: Request,
-  res: Response<ApiResponse>
-): Promise<Response> => {
-  try {
-    const jadwalId = parseInt(req.params.jadwalId);
-
-    if (isNaN(jadwalId)) {
-      return res.status(400).json({
-        message: "Invalid jadwal ID",
-        errors: { path: "jadwalId", msg: "Jadwal ID must be a number" },
-      });
-    }
-
-    const komentars = await penilaianService.getKomentarDosen(jadwalId);
-
-    return res.status(200).json({
-      message: "Komentar retrieved successfully",
-      data: komentars,
-    });
-  } catch (error) {
-    console.error("Error getting komentar:", error);
-    return res.status(500).json({
-      message: "Terjadi kesalahan",
-      errors: {
-        path: "server",
-        msg: error instanceof Error ? error.message : "Unknown error",
-      },
-    });
-  }
-};
-
-/**
  * Finalisasi nilai (Pembimbing 1 only)
  * POST /dosen/penilaian/jadwal/:jadwalId/finalisasi
  */
@@ -254,26 +63,9 @@ export const finalisasiNilai = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const jadwalId = parseInt(req.params.jadwalId);
+    const { jadwalId, lecturerIds } = req.body;
 
-    if (isNaN(jadwalId)) {
-      return res.status(400).json({
-        message: "Invalid jadwal ID",
-        errors: { path: "jadwalId", msg: "Jadwal ID must be a number" },
-      });
-    }
-
-    // @ts-ignore - user added by auth middleware
-    const lecturerId = req.user?.lecturer?.id;
-
-    if (!lecturerId) {
-      return res.status(403).json({
-        message: "Forbidden",
-        errors: { path: "user", msg: "Lecturer ID not found" },
-      });
-    }
-
-    await penilaianService.finalisasiNilai(jadwalId, lecturerId);
+    await penilaianService.finalisasiNilai(jadwalId, lecturerIds);
 
     return res.status(200).json({
       message: "Nilai berhasil difinalisasi",
@@ -286,6 +78,196 @@ export const finalisasiNilai = async (
         path: "server",
         msg: error instanceof Error ? error.message : "Unknown error",
       },
+    });
+  }
+};
+
+/**
+ * Save penilaian (Simpan Nilai)
+ * POST /dosen/penilaian/simpan-nilai
+ * Request body:
+ * {
+ *   jadwalId: number,
+ *   userId: number,
+ *   studentId: number,
+ *   nilaiPertanyaan: { [pertanyaanId: string]: number },
+ *   nilaiAkhir: number,
+ *   nilaiHuruf: string,
+ *   catatan: string
+ * }
+ */
+export const savePenilaian = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
+  try {
+    const {
+      jadwalId,
+      userId,
+      studentId,
+      nilaiPertanyaan,
+      nilaiAkhir,
+      nilaiHuruf,
+      catatan,
+    } = req.body;
+
+    // Call service to save penilaian dengan nilai yang sudah dihitung dari frontend
+    const result = await penilaianService.savePenilaianWithPreCalculatedValues(
+      jadwalId,
+      nilaiPertanyaan,
+      nilaiAkhir,
+      nilaiHuruf,
+      catatan,
+      userId,
+      studentId
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Nilai penilaian berhasil disimpan",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error saving penilaian:", error);
+
+    // Handle specific error cases
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+
+    if (errorMsg.includes("Dosen tidak ditemukan")) {
+      return res.status(403).json({
+        success: false,
+        message: "Dosen tidak ditemukan untuk user ini",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("Jadwal tidak ditemukan")) {
+      return res.status(404).json({
+        success: false,
+        message: "Jadwal tidak ditemukan",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("tidak memiliki akses")) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Anda tidak memiliki akses untuk memberikan nilai pada jadwal ini",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("sudah terkunci")) {
+      return res.status(409).json({
+        success: false,
+        message: "Jadwal sudah terkunci",
+        data: null,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan pada server saat menyimpan nilai",
+      data: null,
+    });
+  }
+};
+
+/**
+ * Update penilaian yang sudah pernah disimpan (Update Nilai)
+ * POST /dosen/penilaian/update-nilai
+ * Request body:
+ * {
+ *   jadwalId: number,
+ *   userId: number,
+ *   studentId: number,
+ *   nilaiPertanyaan: { [pertanyaanId: string]: number },
+ *   catatan: string
+ * }
+ */
+export const updateNilai = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
+  try {
+    const {
+      penilaianId,
+      jadwalId,
+      userId,
+      studentId,
+      nilaiPertanyaan,
+      catatan,
+    } = req.body;
+
+    // Call service to update penilaian
+    const result = await penilaianService.updatePenilaian(
+      penilaianId,
+      jadwalId,
+      nilaiPertanyaan,
+      catatan,
+      userId,
+      studentId
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Nilai penilaian berhasil diperbarui",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error updating penilaian:", error);
+
+    // Handle specific error cases
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+
+    if (errorMsg.includes("Dosen tidak ditemukan")) {
+      return res.status(403).json({
+        success: false,
+        message: "Dosen tidak ditemukan untuk user ini",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("Jadwal tidak ditemukan")) {
+      return res.status(404).json({
+        success: false,
+        message: "Jadwal tidak ditemukan",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("tidak ada penilaian sebelumnya")) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Tidak ada penilaian sebelumnya untuk diperbarui. Gunakan endpoint simpan-nilai untuk membuat penilaian baru.",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("tidak memiliki akses")) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Anda tidak memiliki akses untuk memperbarui nilai pada jadwal ini",
+        data: null,
+      });
+    }
+
+    if (errorMsg.includes("sudah difinalisasi")) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Nilai sudah difinalisasi dan terkunci. Tidak dapat diperbarui.",
+        data: null,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan pada server saat memperbarui nilai",
+      data: null,
     });
   }
 };

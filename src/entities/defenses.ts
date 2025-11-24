@@ -8,6 +8,7 @@ import {
   Index,
   OneToMany,
   JoinColumn,
+  OneToOne,
 } from "typeorm";
 import { Lecturer } from "./lecturer";
 import { FinalProjects } from "./finalProject";
@@ -97,7 +98,7 @@ export class DefenseSubmission {
   // Kode capstone (5 huruf uppercase, unik)
   @Column({
     type: "varchar",
-    length: 5,
+    length: 6,
     nullable: true,
   })
   capstone_code?: string;
@@ -116,9 +117,6 @@ export class DefenseSubmission {
   updated_at!: Date;
 
   // *** Relationships ***
-
-  @ManyToOne(() => FinalProjects, { onDelete: "CASCADE" })
-  final_project!: FinalProjects;
 
   // Dosen yang memproses (pembimbing 1 atau 2)
   @ManyToOne(() => Lecturer, { onDelete: "CASCADE" })
@@ -142,6 +140,13 @@ export class DefenseSubmission {
 
   @ManyToOne(() => ExpertisesGroup, { onDelete: "CASCADE" })
   expertises_group_2!: ExpertisesGroup;
+
+  // @OneToOne(() => FinalProjects, { onDelete: "CASCADE" })
+  // @JoinColumn()
+  // final_project!: FinalProjects;
+
+  @ManyToOne(() => FinalProjects, { onDelete: "CASCADE" })
+  final_project!: FinalProjects;
 
   // *** Methods ***
 }

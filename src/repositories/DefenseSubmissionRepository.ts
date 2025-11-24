@@ -202,13 +202,19 @@ export class DefenseSubmissionRepository {
     fpId: number,
     defense_type: string
   ): Promise<any> {
-    return this.repository.findOne({
-      where: {
-        final_project: { id: fpId },
-        defense_type,
-      },
-      relations: ["lecturer", "lecturer.user", "documents"],
-    });
+    return this.repository
+      .createQueryBuilder("ds")
+      .leftJoinAndSelect("ds.final_project", "fp")
+      .leftJoinAndSelect("ds.lecturer", "lecturer")
+      .leftJoinAndSelect("lecturer.user", "lecturerUser")
+      .leftJoinAndSelect("ds.examiner_1", "examiner1")
+      .leftJoinAndSelect("examiner1.user", "examiner1User")
+      .leftJoinAndSelect("ds.examiner_2", "examiner2")
+      .leftJoinAndSelect("examiner2.user", "examiner2User")
+      .leftJoinAndSelect("ds.documents", "documents")
+      .where("fp.id = :fpId", { fpId })
+      .andWhere("ds.defense_type = :defense_type", { defense_type })
+      .getOne();
   }
 
   /**

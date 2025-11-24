@@ -56,6 +56,50 @@ export async function seedDummyData(dataSource: DataSource) {
   const penilaianRepo = dataSource.getRepository(Penilaian);
   const jawabanPenilaianRepo = dataSource.getRepository(JawabanPenilaian);
 
+  function pad(n: number, width = 3) {
+    return n.toString().padStart(width, "0");
+  }
+
+  // 4) Buat 20 students (User + Student)
+  for (let i = 1; i <= 20; i++) {
+    const email = `student${i}@example.com`;
+    let user = await userRepo.findOne({ where: { email } });
+    if (!user) {
+      user = userRepo.create({
+        name: `Student ${pad(i, 2)}`,
+        email,
+        password: "password123",
+        role: "student",
+        is_active: true,
+      } as Partial<User>);
+      await userRepo.save(user);
+    } else {
+      console.log(`User ${email} exists, reusing`);
+    }
+
+    const existingStudent = await studentRepo.findOne({
+      where: { user: { id: (user as any).id } },
+      relations: ["user"],
+    });
+    if (existingStudent) {
+      console.log(`Student for user ${email} already exists, skipping`);
+      continue;
+    }
+
+    // generate nim 9 chars (sesuaikan format Anda)
+    const yearPrefix = "2025"; // ubah tahun angkatan jika perlu
+    const nimCore = pad(i, 5); // contoh: 00001..00020
+    const nim = (yearPrefix + nimCore).slice(0, 9);
+
+    const student = studentRepo.create({
+      nim,
+      semester: 7,
+      user: user,
+    } as Partial<Student>);
+
+    await studentRepo.save(student);
+  }
+
   // ==================== EXPERTISES GROUP ====================
   console.log("Creating expertises groups...");
   const expertiseGroups = await expertisesGroupRepo.save([
@@ -353,6 +397,8 @@ export async function seedDummyData(dataSource: DataSource) {
     min_guidance_sup_1_proposal: 5,
     min_guidance_sup_2_proposal: 2,
     student_notes: "Mohon dijadwalkan seminar proposal",
+    examiner_1: lecturer3,
+    examiner_2: lecturer4,
     processed_at: new Date(2024, 11, 1),
     expertises_group_1: expertiseGroups[1],
     expertises_group_2: expertiseGroups[1],
@@ -1630,6 +1676,8 @@ export async function seedDummyData(dataSource: DataSource) {
     min_guidance_sup_1_proposal: 5,
     min_guidance_sup_2_proposal: 2,
     student_notes: "Tim capstone siap untuk seminar proposal",
+    examiner_1: lecturer3,
+    examiner_2: lecturer4,
     processed_at: new Date(2024, 11, 1),
     expertises_group_1: expertiseGroups[1],
     expertises_group_2: expertiseGroups[3],

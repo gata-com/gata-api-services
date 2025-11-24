@@ -16,6 +16,7 @@ import ExpertisesGroup from "./expertisesGroup";
 import { Student } from "./student";
 import { Lecturer } from "./lecturer";
 import { GuidanceSession } from "./guidance";
+import { DefenseSubmission } from "./defenses";
 
 // Final Project Periods
 @Entity("final_project_periods")
@@ -146,6 +147,17 @@ export class FinalProjects {
 
   @ManyToOne(() => Lecturer, { onDelete: "CASCADE", nullable: true })
   supervisor_2!: Lecturer;
+
+  // @OneToOne(() => DefenseSubmission, (defense) => defense.final_project, {
+  //   onDelete: "CASCADE",
+  // })
+  // @JoinColumn({name: ""})
+  // defense_submission!: DefenseSubmission;
+
+  @OneToMany(() => DefenseSubmission, (defense) => defense.final_project, {
+    onDelete: "CASCADE",
+  })
+  defense_submissions!: DefenseSubmission[];
 
   // *** Method ***
 }

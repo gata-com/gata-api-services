@@ -63,12 +63,6 @@ export interface DosenNilai {
   nama: string;
   nilai: number;
   tanggal: string;
-  perGroup: Array<{
-    groupId: string;
-    groupNama: string;
-    nilaiGroup: number;
-    bobotGroup: number;
-  }>;
 }
 
 export interface JadwalKomentar {
@@ -81,9 +75,11 @@ export interface JadwalKomentar {
 export interface JadwalRekap {
   rata2Pembimbing: number;
   rata2Penguji: number;
-  nilaiAkhir: number;
+  nilaiAkhir?: number; // Optional - kosong jika tidak memenuhi syarat (< 2 penguji atau < 1 pembimbing)
   nilaiHuruf: string;
+  isFinalized: boolean;
   finalisasiOleh?: string;
+  detailPerDosen: DosenNilai[];
 }
 
 export interface OpsiJawabanResponse {
@@ -121,7 +117,9 @@ export interface RubrikResponse {
 }
 
 export interface Jadwal {
-  id: string;
+  jadwalId: number;
+  penilaianId?: string;
+  studentId: number;
   nama: string;
   nim: string;
   jenisSidang: "PROPOSAL" | "HASIL";
@@ -138,14 +136,20 @@ export interface Jadwal {
   laporanTA: string;
   slidePresentasi: string;
   statusPenilaian: "belum_dinilai" | "sudah_dinilai" | "terkunci";
+
   nilaiPertanyaan?: {
     [pertanyaanId: string]: number;
   };
   catatanMahasiswa?: string;
   isSupervisor1: boolean; // Penanda apakah dosen adalah pembimbing 1 (untuk finalisasi & lihat all)
   rekap?: JadwalRekap;
-  dosenNilai?: DosenNilai[];
   catatan?: string;
   komentar?: JadwalKomentar[];
   rubrik?: RubrikResponse;
+  rentangNilai?: Array<{
+    id: string;
+    urutan: number;
+    grade: string;
+    minScore: number;
+  }>;
 }

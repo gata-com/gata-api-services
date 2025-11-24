@@ -2,6 +2,7 @@ import { Repository, QueryRunner } from "typeorm";
 import AppDataSource from "../config/database";
 import User from "../entities/user";
 import { Student } from "../entities/student";
+import { Lecturer } from "../entities/lecturer";
 import {
   CreateUserData,
   UpdateUserData,
@@ -57,6 +58,32 @@ export class UserRepository {
       }
 
       // Return user dengan data student
+      return savedUser.id;
+    });
+
+    return await this.findById(id);
+  }
+
+  async createUserWithLecturer(
+    userData: Partial<User>,
+    lecturerData: Partial<Lecturer>
+  ): Promise<any> {
+    const id = await AppDataSource.manager.transaction(async (manager) => {
+      // Create dan save user terlebih dahulu
+      const user = manager.create(User, userData);
+      const savedUser = await manager.save(user);
+
+      if (savedUser) {
+        // Create lecturer dengan userId yang otomatis terisi
+        const lecturerRepository = manager.getRepository(Lecturer);
+        const lecturer = lecturerRepository.create({
+          ...lecturerData,
+          user: savedUser, // Foreign key otomatis terisi
+        });
+        await manager.save(lecturer);
+      }
+
+      // Return user dengan data lecturer
       return savedUser.id;
     });
 
@@ -163,9 +190,7 @@ export class UserRepository {
     });
   }
 
-  async findByIdWithStudentAndFPMAndFPAndFPP(
-    id: number
-  ): Promise<User | null> { 
+  async findByIdWithStudentAndFPMAndFPAndFPP(id: number): Promise<User | null> {
     return await this.repository
       .createQueryBuilder("user")
       .innerJoinAndSelect("user.student", "student")
@@ -174,8 +199,6 @@ export class UserRepository {
       .innerJoinAndSelect("fp.final_project_period", "fpp")
       .where("user.id = :id", { id })
       .getOne();
-    
-
   }
 
   async findAllWithPagination(
@@ -186,6 +209,10 @@ export class UserRepository {
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.repository.createQueryBuilder("user");
+
+    // Left join untuk student dan lecturer
+    queryBuilder.leftJoinAndSelect("user.student", "student");
+    queryBuilder.leftJoinAndSelect("user.lecturer", "lecturer");
 
     // Apply filters
     if (query.role) {
@@ -204,22 +231,25 @@ export class UserRepository {
       });
     }
 
-    if (typeof query.isActive === "boolean") {
-      queryBuilder.andWhere("user.isActive = :isActive", {
-        isActive: query.isActive,
-      });
-    }
-
     if (query.search) {
       queryBuilder.andWhere(
-        "(user.nama LIKE :search OR user.email LIKE :search OR user.nim LIKE :search OR user.kelompokKeahlian LIKE :search)",
+        "(user.name LIKE :search OR user.email LIKE :search OR student.nim LIKE :search OR lecturer.nip LIKE :search)",
         { search: `%${query.search}%` }
       );
     }
 
     // Apply sorting
-    const sortBy = query.sortBy || "createdAt";
+    let sortBy = query.sortBy || "created_at";
     const sortOrder = query.sortOrder || "DESC";
+
+    // Map camelCase to snake_case for database columns
+    const columnMapping: { [key: string]: string } = {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+      lastLogin: "last_login",
+    };
+
+    sortBy = columnMapping[sortBy] || sortBy;
     queryBuilder.orderBy(`user.${sortBy}`, sortOrder as "ASC" | "DESC");
 
     // Apply pagination
@@ -248,6 +278,11 @@ export class UserRepository {
 
   async updateLastLogin(id: number): Promise<void> {
     await this.repository.update(id, { last_login: new Date() });
+  }
+
+  async hardDelete(id: number): Promise<boolean> {
+    const result = await this.repository.delete(id);
+    return result.affected ? result.affected > 0 : false;
   }
 
   async softDelete(id: number): Promise<boolean> {
@@ -315,5 +350,24 @@ export class UserRepository {
       })
       .where("id = :id", { id: userId })
       .execute();
+  }
+
+  /**
+   * Find lecturer by user ID
+   */
+  async findLecturerByUserId(userId: number): Promise<Lecturer | null> {
+    const lecturerRepository = AppDataSource.getRepository(Lecturer);
+    return await lecturerRepository.findOne({
+      where: { user: { id: userId } },
+    });
+  }
+
+  /**
+   * Find student by user ID
+   */
+  async findStudentByUserId(userId: number): Promise<Student | null> {
+    return await this.studentRepository.findOne({
+      where: { user: { id: userId } },
+    });
   }
 }

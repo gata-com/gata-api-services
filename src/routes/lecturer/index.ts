@@ -2,7 +2,7 @@ import { Router } from "express";
 import tugasAkhir from "./finalProject";
 import bimbingan from "./guidance";
 import penilaian from "./penilaian";
-import { requireLecturer } from "@/middleware/role";
+import { requireLecturer, requireLecturerOrAdmin } from "@/middleware/role";
 import { auth } from "@/middleware/auth";
 
 const router = Router();
@@ -10,8 +10,8 @@ const router = Router();
 // Semua route memerlukan authentication
 router.use(auth);
 
-router.use("/tugas-akhir", requireLecturer, tugasAkhir);
-router.use("/bimbingan", requireLecturer, bimbingan);
-router.use("/penilaian", penilaian);
+router.use("/tugas-akhir", requireLecturerOrAdmin, tugasAkhir);
+router.use("/bimbingan", requireLecturerOrAdmin, bimbingan);
+router.use("/penilaian", requireLecturerOrAdmin, penilaian);
 
 export default router;

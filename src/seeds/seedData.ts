@@ -1,3 +1,5 @@
+export const lecturerAdminCodes = ["ANS", "MCT", "MCU"];
+
 export const lecturers: {
   code: string;
   nip: string;
@@ -201,4 +203,40 @@ export const lecturers: {
     email: "alya.rizkita@if.itera.ac.id",
     kk: [],
   },
+];
+
+export const expertiseList = [
+  { name: "MLTR", description: "Traditional Machine Learning (All Domain)" },
+  { name: "DLCV", description: "Deep Learning – Citra" },
+  { name: "DLNL", description: "Deep Learning – NLP" },
+  { name: "CYBR", description: "Keamanan Siber" },
+  { name: "NETW", description: "Jaringan Komputer" },
+  {
+    name: "IOTC",
+    description: "Internet of Things & Embedded System & Cloud Computing",
+  },
+  { name: "MOBL", description: "Pengembangan Perangkat Lunak – Mobile" },
+  {
+    name: "WEBI",
+    description: "Pengembangan Perangkat Lunak – Web & Sistem Informasi",
+  },
+  { name: "DSKT", description: "Pengembangan Perangkat Lunak – Desktop" },
+  {
+    name: "PPMP",
+    description: "Pengembangan Perangkat Lunak – Multi Platform",
+  },
+  { name: "DATA", description: "Basis Data & Data Mining & Data Warehouse" },
+  { name: "LITR", description: "Riset Literatur" },
+  { name: "GAME", description: "Game" },
+  { name: "VRAR", description: "Virtual Reality / Augmented Reality" },
+  { name: "ROBO", description: "Robotika / Kontrol Kendali Cerdas" },
+  { name: "ALGO", description: "Strategi dan Algoritma" },
+  { name: "MMED", description: "Multimedia" },
+  { name: "COMP", description: "Teknologi Kompresi" },
+  { name: "HCIU", description: "Interaksi Manusia dan Komputer, UI, UX" },
+  { name: "SIGN", description: "Pengolahan Sinyal" },
+  { name: "IMAG", description: "Pengolahan Citra" },
+  { name: "TEXT", description: "Pemrosesan Teks" },
+  { name: "VISD", description: "Visualisasi Data" },
+  { name: "KRIP", description: "Kriptografi" },
 ];

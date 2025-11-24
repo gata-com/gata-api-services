@@ -22,6 +22,12 @@ export class PenilaianRepository {
       .getMany();
   }
 
+  async findById(id: string): Promise<Penilaian | null> {
+    return await this.repository.findOne({
+      where: { id },
+    });
+  }
+
   async findByJadwalId(jadwalId: number): Promise<Penilaian[]> {
     return await this.repository
       .createQueryBuilder("penilaian")
@@ -54,7 +60,8 @@ export class PenilaianRepository {
       .leftJoinAndSelect("jawabans.pertanyaan", "jawaban_pertanyaan")
       .leftJoinAndSelect("jawabans.opsiJawaban", "jawaban_opsi")
       .where("penilaian.jadwalId = :jadwalId", { jadwalId })
-      .andWhere("penilaian.lecturerId = :lecturerId", { lecturerId });
+      .andWhere("penilaian.lecturerId = :lecturerId", { lecturerId })
+      .andWhere("penilaian.studentId = :studentId", { studentId });
 
     if (studentId) {
       query.andWhere("penilaian.studentId = :studentId", { studentId });

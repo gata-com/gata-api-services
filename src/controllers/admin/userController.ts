@@ -149,10 +149,12 @@ export const updateUser = async (
 ): Promise<Response> => {
   try {
     const { id } = req.params;
-    const { name, email, password, whatsapp_number, is_active } = req.body;
+    const { role, name, email, password, whatsapp_number, is_active } =
+      req.body;
 
     const updateUserData: UpdateUserRequest = {};
 
+    if (role !== undefined) updateUserData.role = role;
     if (name !== undefined) updateUserData.name = name;
     if (email !== undefined) updateUserData.email = email;
     if (password !== undefined) updateUserData.password = password;

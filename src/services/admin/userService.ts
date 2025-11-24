@@ -16,6 +16,7 @@ export interface CreateUserRequest {
 }
 
 export interface UpdateUserRequest {
+  role?: "student" | "admin" | "lecturer";
   name?: string;
   email?: string;
   password?: string;
@@ -196,6 +197,7 @@ export class UserService {
     // Prepare update data
     const updateData: Partial<User> = {};
 
+    if (data.role !== undefined) updateData.role = data.role;
     if (data.name !== undefined) updateData.name = data.name;
     if (data.email !== undefined) updateData.email = data.email;
     if (data.password !== undefined) {

@@ -31,4 +31,11 @@ export class ExpertisesGroupRepository {
   async findAll(): Promise<ExpertisesGroup[]> {
     return this.repository.find();
   }
+
+  /**
+   * Find expertise group by ID
+   */
+  async findById(id: number): Promise<ExpertisesGroup | null> {
+    return await this.repository.findOne({ where: { id } });
+  }
 }

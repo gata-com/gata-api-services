@@ -36,7 +36,7 @@ export class DefenseSubmission {
   // Status pengajuan
   @Column({
     type: "enum",
-    enum: ["pending", "approved", "rejected"],
+    enum: ["pending", "approved", "rejected", "completed"],
     default: "pending",
   })
   status!: string;

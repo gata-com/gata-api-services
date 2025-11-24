@@ -108,6 +108,7 @@ export class UserRepository {
   async findById(id: number): Promise<User | null> {
     return await this.repository.findOne({
       where: { id },
+      relations: ["student", "lecturer.expertises"],
     });
   }
   // find by query email (like %email%) if role is student
@@ -369,5 +370,24 @@ export class UserRepository {
     return await this.studentRepository.findOne({
       where: { user: { id: userId } },
     });
+  }
+
+  /**
+   * Find student profile with final project and supervisors
+   */
+  async findStudentProfileWithProjectAndSupervisors(
+    userId: number
+  ): Promise<User | null> {
+    return await this.repository
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.student", "student")
+      .leftJoinAndSelect("student.final_project_members", "fpm")
+      .leftJoinAndSelect("fpm.final_project", "fp")
+      .leftJoinAndSelect("fp.supervisor_1", "sup1")
+      .leftJoinAndSelect("sup1.user", "sup1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "sup2")
+      .leftJoinAndSelect("sup2.user", "sup2_user")
+      .where("user.id = :id", { id: userId })
+      .getOne();
   }
 }

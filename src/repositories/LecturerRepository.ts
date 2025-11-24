@@ -150,4 +150,40 @@ export class LecturerRepository {
       .innerJoinAndSelect("lc.guidance_availability", "ga")
       .getMany();
   }
+
+  async findByNip(nip: string): Promise<Lecturer | null> {
+    return await this.repository.findOne({
+      where: { nip },
+    });
+  }
+
+  /**
+   * Find lecturer by name (from User table)
+   * @param name - Lecturer name
+   * @returns Lecturer or null
+   */
+  async findByName(name: string): Promise<any> {
+    return this.repository
+      .createQueryBuilder("lc")
+      .leftJoinAndSelect("lc.user", "u")
+      .where("u.name = :name", { name })
+      .getOne();
+  }
+
+  /**
+   * Get all lecturers with id and name for examiner/supervisor selection
+   * @returns Array of lecturer with id and name
+   */
+  async findAllExaminers(): Promise<any> {
+    return this.repository
+      .createQueryBuilder("lc")
+      .leftJoinAndSelect("lc.user", "u")
+      .select("lc.id", "id")
+      .addSelect("u.name", "name")
+      .getRawMany();
+  }
+
+  async update(id: number, data: any): Promise<void> {
+    await this.repository.update(id, data);
+  }
 }

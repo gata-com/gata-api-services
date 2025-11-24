@@ -1,40 +1,28 @@
-// routes/mahasiswa/profile.ts
 import { Router } from "express";
 import {
   getProfile,
   updateProfile,
-  uploadProfilePicture,
-  deleteProfilePicture,
-  changePassword,
-  getStatusPengajuan,
-  requestPembimbingChange,
-} from "../../controllers/student/profileController";
-import { auth } from "../../middleware/auth";
+} from "@/controllers/student/profileController";
+import { auth } from "@/middleware/auth";
+import { requireStudent } from "@/middleware/role";
 
 const router = Router();
 
-// Semua route memerlukan authentication
+// Apply auth and student role middleware to all routes
 router.use(auth);
+router.use(requireStudent);
 
-// Profile data
-router.get("/profile", getProfile);
-router.put("/profile", updateProfile);
+/**
+ * GET /student/profile
+ * Get student profile
+ */
+router.get("/", getProfile);
 
-// Profile picture
-// router.post(
-//   "/profile/picture",
-//   upload.single("profilePicture"),
-//   uploadProfilePicture
-// );
-router.delete("/profile/picture", deleteProfilePicture);
-
-// Password
-router.put("/profile/password", changePassword);
-
-// Status pengajuan
-router.get("/profile/status-pengajuan", getStatusPengajuan);
-
-// Pembimbing change request
-router.post("/profile/request-pembimbing-change", requestPembimbingChange);
+/**
+ * PUT /student/profile
+ * Update student profile
+ * Body: name?, nim?, email?, whatsapp_number?, password?
+ */
+router.put("/", updateProfile);
 
 export default router;

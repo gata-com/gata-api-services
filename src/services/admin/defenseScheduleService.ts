@@ -1,4 +1,6 @@
 import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleRepository";
+import { LecturerRepository } from "@/repositories/LecturerRepository";
+import { DefenseSubmissionRepository } from "@/repositories/DefenseSubmissionRepository";
 import fs from "fs";
 import path from "path";
 
@@ -22,9 +24,13 @@ interface ScheduleRow {
 
 export class DefenseScheduleImportService {
   private scheduleRepo: DefenseScheduleRepository;
+  private lecturerRepo: LecturerRepository;
+  private defenseSubmissionRepo: DefenseSubmissionRepository;
 
   constructor() {
     this.scheduleRepo = new DefenseScheduleRepository();
+    this.lecturerRepo = new LecturerRepository();
+    this.defenseSubmissionRepo = new DefenseSubmissionRepository();
   }
 
   /**
@@ -228,29 +234,271 @@ export class DefenseScheduleImportService {
     return schedules.map((schedule) => {
       // Get student data from final project members
       const member = schedule.defense_submission.final_project.members[0];
+      const fp = schedule.defense_submission.final_project;
       const student = member?.student;
       const user = student?.user;
 
       // Get supervisor and examiner names
-      const supervisor1 = schedule.defense_submission.lecturer;
+      const supervisor1 = fp.supervisor_1;
+      const supervisor2 = fp.supervisor_2;
       const examiner1 = schedule.defense_submission.examiner_1;
       const examiner2 = schedule.defense_submission.examiner_2;
 
       return {
+        id: schedule.id,
         nim: student?.nim || "-",
         name: user?.name || "-",
+        judul: member?.title || "-",
         capstone_code: schedule.defense_submission.capstone_code || "-",
         type: schedule.defense_submission.defense_type || "-",
         date: schedule.scheduled_date || "-",
         startTime: schedule.start_time || "-",
         endTime: schedule.end_time || "-",
         spv_1: supervisor1?.user?.name || "-",
-        spv_2: "-", // Currently no spv_2 in DefenseSubmission entity
+        spv_2: supervisor2?.user?.name || "-",
         examiner_1: examiner1?.user?.name || "-",
         examiner_2: examiner2?.user?.name || "-",
         status: schedule.status || "-",
         location: schedule.room || "Prodi",
       };
     });
+  }
+
+  /**
+   * Get schedule by ID with formatted response
+   * @param id Schedule ID
+   * @returns Formatted schedule data or null
+   */
+  async getScheduleById(id: number): Promise<any> {
+    const schedule = await this.scheduleRepo.findById(id);
+
+    if (!schedule) {
+      return null;
+    }
+
+    const member = schedule.defense_submission.final_project.members[0];
+    const student = member?.student;
+    const user = student?.user;
+    const supervisor1 = schedule.defense_submission.final_project.supervisor_1;
+    const supervisor2 = schedule.defense_submission.final_project.supervisor_2;
+    const examiner1 = schedule.defense_submission.examiner_1;
+    const examiner2 = schedule.defense_submission.examiner_2;
+    const eg1 = schedule.defense_submission.expertises_group_1;
+    const eg2 = schedule.defense_submission.expertises_group_2;
+
+    return {
+      id: schedule.id,
+      pengajuanId: schedule.defense_submission.id,
+      tanggal: schedule.scheduled_date,
+      mulai: schedule.start_time,
+      selesai: schedule.end_time,
+      type: schedule.defense_submission.defense_type || "-",
+      lokasi: schedule.room || "Prodi",
+      judul: member?.title || "-",
+      nim: student?.nim || "-",
+      namaMahasiswa: user?.name || "-",
+      capstone: schedule.defense_submission.capstone_code ? true : false,
+      pembimbing1: supervisor1?.user?.name || "-",
+      pembimbing2: supervisor2?.user?.name || "-",
+      penguji1: examiner1?.user?.name || "-",
+      penguji2: examiner2?.user?.name || "-",
+      kk1: eg1?.name || "-",
+      kk2: eg2?.name || "-",
+      status: schedule.status,
+    };
+  }
+
+  /**
+   * Update defense schedule
+   * @param id Schedule ID
+   * @param data Updated schedule data
+   * @returns Updated schedule or error
+   */
+  async updateSchedule(
+    id: number,
+    data: {
+      tanggal?: string;
+      mulai?: string;
+      selesai?: string;
+      lokasi?: string;
+    }
+  ): Promise<{ data?: any; error?: any }> {
+    try {
+      // Validate required fields
+      if (data.tanggal && !this.isValidDate(data.tanggal)) {
+        return { error: "Format tanggal tidak valid (YYYY-MM-DD)" };
+      }
+
+      if (data.mulai && !this.isValidTime(data.mulai)) {
+        return { error: "Format mulai tidak valid (HH:mm)" };
+      }
+
+      if (data.selesai && !this.isValidTime(data.selesai)) {
+        return { error: "Format selesai tidak valid (HH:mm)" };
+      }
+
+      // Check if mulai < selesai
+      if (data.mulai && data.selesai) {
+        if (data.mulai >= data.selesai) {
+          return { error: "Waktu mulai harus lebih kecil dari waktu selesai" };
+        }
+      }
+
+      // Check if schedule exists
+      const existingSchedule = await this.scheduleRepo.findById(id);
+      if (!existingSchedule) {
+        return { error: "Jadwal tidak ditemukan" };
+      }
+
+      // Update schedule
+      const updateData = {
+        scheduled_date: data.tanggal,
+        start_time: data.mulai,
+        end_time: data.selesai,
+        room: data.lokasi,
+      };
+
+      const updatedSchedule = await this.scheduleRepo.updateSchedule(
+        id,
+        updateData
+      );
+
+      if (!updatedSchedule) {
+        return { error: "Gagal mengupdate jadwal" };
+      }
+
+      const response = await this.getScheduleById(id);
+      return { data: response };
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  }
+
+  /**
+   * Update defense schedule with examiner lookup
+   * @param scheduleId Schedule ID
+   * @param defenseSubmissionId Defense submission ID
+   * @param data Updated schedule data with examiner names
+   * @returns Updated schedule or error
+   */
+  async updateScheduleWithExaminer(
+    scheduleId: number,
+    defenseSubmissionId: number,
+    data: {
+      tanggal?: string;
+      mulai?: string;
+      selesai?: string;
+      lokasi?: string;
+      penguji1?: string;
+      penguji2?: string;
+    }
+  ): Promise<{ data?: any; error?: any }> {
+    try {
+      // Lookup examiner IDs dari nama
+      let examiner_1_id: number | null = null;
+      let examiner_2_id: number | null = null;
+
+      if (data.penguji1) {
+        const examiner1 = await this.lecturerRepo.findByName(data.penguji1);
+        if (!examiner1) {
+          return {
+            error: `Dosen penguji 1 "${data.penguji1}" tidak ditemukan`,
+          };
+        }
+        examiner_1_id = examiner1.id;
+      }
+
+      if (data.penguji2) {
+        const examiner2 = await this.lecturerRepo.findByName(data.penguji2);
+        if (!examiner2) {
+          return {
+            error: `Dosen penguji 2 "${data.penguji2}" tidak ditemukan`,
+          };
+        }
+        examiner_2_id = examiner2.id;
+      }
+
+      // Update schedule
+      const updatedSchedule = await this.updateSchedule(scheduleId, {
+        tanggal: data.tanggal,
+        mulai: data.mulai,
+        selesai: data.selesai,
+        lokasi: data.lokasi,
+      });
+
+      if ("error" in updatedSchedule && updatedSchedule.error) {
+        return updatedSchedule;
+      }
+
+      // Update examiner di defense submission
+      if (examiner_1_id || examiner_2_id) {
+        await this.defenseSubmissionRepo.updateDefenseSchedule(
+          defenseSubmissionId,
+          {
+            examiner_1_id,
+            examiner_2_id,
+          }
+        );
+      }
+
+      return {
+        data: {
+          ...updatedSchedule.data,
+          examiner_1_id,
+          examiner_2_id,
+        },
+      };
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  }
+
+  /**
+   * Delete defense schedule
+   * @param id Schedule ID
+   * @returns Success or error
+   */
+  async deleteSchedule(id: number): Promise<{ error?: any }> {
+    try {
+      // Check if schedule exists
+      const schedule = await this.scheduleRepo.findById(id);
+      if (!schedule) {
+        return { error: "Jadwal tidak ditemukan" };
+      }
+
+      // Delete schedule
+      await this.scheduleRepo.deleteSchedule(id);
+
+      return {};
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  }
+
+  /**
+   * Validate date format YYYY-MM-DD
+   * @param date Date string
+   * @returns true if valid
+   */
+  private isValidDate(date: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date));
+  }
+
+  /**
+   * Validate time format HH:mm
+   * @param time Time string
+   * @returns true if valid
+   */
+  private isValidTime(time: string): boolean {
+    return /^([0-1]\d|2[0-3]):([0-5]\d)$/.test(time);
   }
 }

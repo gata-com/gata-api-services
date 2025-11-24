@@ -47,4 +47,14 @@ export class StudentRepository {
       where: { id },
     });
   }
+
+  async findByNim(nim: string): Promise<Student | null> {
+    return await this.repository.findOne({
+      where: { nim },
+    });
+  }
+
+  async update(id: number, data: any): Promise<void> {
+    await this.repository.update(id, data);
+  }
 }

@@ -101,25 +101,37 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // ==================== EXPERTISES GROUP ====================
-  console.log("Creating expertises groups...");
-  const expertiseGroups = await expertisesGroupRepo.save([
-    {
-      name: "Artificial Intelligence",
-      description: "Machine Learning, Deep Learning, Computer Vision",
-    },
-    {
-      name: "Software Engineering",
-      description: "Web Development, Mobile Development, System Design",
-    },
-    {
-      name: "Data Science",
-      description: "Data Analytics, Big Data, Data Visualization",
-    },
-    {
-      name: "Cybersecurity",
-      description: "Network Security, Application Security, Cryptography",
-    },
-  ]);
+  console.log("Fetching existing expertises groups...");
+  const expertiseGroups = await expertisesGroupRepo.find();
+
+  if (expertiseGroups.length < 2) {
+    console.error(
+      "❌ Not enough expertises groups. Please seed expertises groups first!"
+    );
+    return;
+  }
+
+  // Helper function untuk random selection dari array
+  function getRandomItem<T>(array: T[]): T {
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  // Helper function untuk get 2 different random items
+  function getTwoDifferentExpertises(): [ExpertisesGroup, ExpertisesGroup] {
+    let item1 = getRandomItem(expertiseGroups);
+    let item2 = getRandomItem(expertiseGroups);
+    while (item2.id === item1.id) {
+      item2 = getRandomItem(expertiseGroups);
+    }
+    return [item1, item2];
+  }
+
+  // Helper function untuk generate unique capstone code
+  let capstoneCodeCounter = 0;
+  function generateCapstoneCode(): string {
+    capstoneCodeCounter++;
+    return `CAPS${String(capstoneCodeCounter).padStart(3, "0")}`;
+  }
 
   // ==================== FINAL PROJECT PERIOD ====================
   console.log("Creating final project period...");
@@ -1666,6 +1678,7 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // Defense Submission
+  const capstoneCode2 = generateCapstoneCode();
   const capstoneDefenseSubmission2 = await defenseSubmissionRepo.save({
     final_project: capstoneFinalProject2,
     lecturer: lecturer5,
@@ -1679,8 +1692,9 @@ export async function seedDummyData(dataSource: DataSource) {
     examiner_1: lecturer3,
     examiner_2: lecturer4,
     processed_at: new Date(2024, 11, 1),
-    expertises_group_1: expertiseGroups[1],
-    expertises_group_2: expertiseGroups[3],
+    capstone_code: capstoneCode2,
+    expertises_group_1: getRandomItem(expertiseGroups),
+    expertises_group_2: getRandomItem(expertiseGroups),
   });
 
   // ==================== SCENARIO 9: CAPSTONE - COMPLETED PROPOSAL DEFENSE (3 MEMBERS) WITH ASSESSMENTS ====================
@@ -1770,6 +1784,7 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // Defense Submission & Schedule
+  const capstoneCode3 = generateCapstoneCode();
   const capstoneDefenseSubmission3 = await defenseSubmissionRepo.save({
     final_project: capstoneFinalProject3,
     lecturer: lecturer1,
@@ -1778,13 +1793,13 @@ export async function seedDummyData(dataSource: DataSource) {
     guidance_sup_1_count: 5,
     guidance_sup_2_count: 2,
     student_notes: "Capstone siap seminar",
-    capstone_code: "CAPS3",
+    capstone_code: capstoneCode3,
     defense_date: "2025-12-03",
     processed_at: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000),
     examiner_1: lecturer3,
     examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[1],
-    expertises_group_2: expertiseGroups[2],
+    expertises_group_1: getRandomItem(expertiseGroups),
+    expertises_group_2: getRandomItem(expertiseGroups),
   });
 
   const capstoneDefenseSchedule3 = await defenseScheduleRepo.save({
@@ -2281,6 +2296,7 @@ export async function seedDummyData(dataSource: DataSource) {
   }
 
   // Seminar Proposal sudah selesai
+  const capstoneCode4 = generateCapstoneCode();
   const capstoneDefenseSubmission4Proposal = await defenseSubmissionRepo.save({
     final_project: capstoneFinalProject4,
     lecturer: lecturer2,
@@ -2289,13 +2305,13 @@ export async function seedDummyData(dataSource: DataSource) {
     guidance_sup_1_count: 5,
     guidance_sup_2_count: 2,
     student_notes: "Capstone proposal selesai",
-    capstone_code: "CAPS4",
+    capstone_code: capstoneCode4,
     defense_date: "2025-11-28",
     processed_at: new Date(2024, 8, 20),
     examiner_1: lecturer3,
     examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[3],
-    expertises_group_2: expertiseGroups[1],
+    expertises_group_1: getRandomItem(expertiseGroups),
+    expertises_group_2: getRandomItem(expertiseGroups),
   });
 
   await defenseScheduleRepo.save({
@@ -2306,65 +2322,6 @@ export async function seedDummyData(dataSource: DataSource) {
     scheduler_status: "scheduled",
     room: "Ruang Sidang C",
     status: "completed",
-  });
-
-  // Bimbingan Hasil (Completed)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject4,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 1,
-      defense_type: "hasil",
-      topic: `Bimbingan Hasil Capstone ${i}`,
-      lecturer_feedback: `Implementasi security sangat solid`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 3),
-      completed_at: new Date(2024, 10, i * 3, 14, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject4,
-      lecturer: lecturer5,
-      guidance_availability: availability1,
-      supervisor_type: 2,
-      defense_type: "hasil",
-      topic: `Bimbingan Hasil Capstone ${i}`,
-      lecturer_feedback: `Siap sidang hasil`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 4),
-      completed_at: new Date(2024, 10, i * 4, 10, 0),
-    });
-  }
-
-  // Sidang Hasil dijadwalkan
-  const capstoneDefenseSubmission4Hasil = await defenseSubmissionRepo.save({
-    final_project: capstoneFinalProject4,
-    lecturer: lecturer2,
-    defense_type: "hasil",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    student_notes: "Tim capstone siap sidang hasil",
-    capstone_code: "CAPS4H",
-    defense_date: "2025-12-10",
-    processed_at: new Date(2024, 10, 30),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[3],
-    expertises_group_2: expertiseGroups[1],
-  });
-
-  const capstoneDefenseSchedule4Hasil = await defenseScheduleRepo.save({
-    defense_submission: capstoneDefenseSubmission4Hasil,
-    scheduled_date: "2025-12-10",
-    start_time: "11:00",
-    end_time: "12:30",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang A",
-    status: "scheduled",
   });
 
   console.log("✅ Dummy data seeding completed successfully!");

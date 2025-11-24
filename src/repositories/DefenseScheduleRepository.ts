@@ -78,6 +78,51 @@ export class DefenseScheduleRepository {
   }
 
   /**
+   * Create new defense schedule
+   * @param defenseSubmissionId - Defense Submission ID
+   * @param data - Schedule data { scheduled_date, start_time, end_time, room }
+   * @returns DefenseSchedule
+   */
+  async createSchedule(
+    defenseSubmissionId: number,
+    data: {
+      scheduled_date: string;
+      start_time: string;
+      end_time: string;
+      room?: string;
+      notes?: string;
+    }
+  ): Promise<DefenseSchedule> {
+    // Check if schedule already exists
+    const existingSchedule = await this.repository.findOne({
+      where: { defense_submission: { id: defenseSubmissionId } },
+    });
+
+    if (existingSchedule) {
+      throw new Error("Schedule sudah ada untuk defense submission ini");
+    }
+
+    // Create new schedule
+    const schedule = this.repository.create({
+      defense_submission: { id: defenseSubmissionId },
+      scheduled_date: data.scheduled_date,
+      start_time: data.start_time,
+      end_time: data.end_time,
+      room: data.room || "Prodi",
+      notes: data.notes,
+      scheduler_status: "manual",
+      status: "scheduled",
+    });
+
+    // Update defense_date di defense_submission
+    await this.defenseRepo.update(defenseSubmissionId, {
+      defense_date: new Date(`${data.scheduled_date} ${data.start_time}`),
+    });
+
+    return this.repository.save(schedule);
+  }
+
+  /**
    * Get all schedules with relations
    * @param filters Optional filters
    * @returns Array of schedules
@@ -91,6 +136,10 @@ export class DefenseScheduleRepository {
       .createQueryBuilder("ds")
       .leftJoinAndSelect("ds.defense_submission", "def")
       .leftJoinAndSelect("def.final_project", "fp")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("supervisor_1.user", "supervisor_1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("supervisor_2.user", "supervisor_2_user")
       .leftJoinAndSelect("fp.members", "members")
       .leftJoinAndSelect("members.student", "student")
       .leftJoinAndSelect("student.user", "user")
@@ -159,6 +208,77 @@ export class DefenseScheduleRepository {
     status: "scheduled" | "rescheduled" | "cancelled" | "completed"
   ): Promise<void> {
     await this.repository.update(id, { status });
+  }
+
+  /**
+   * Find schedule by ID with all relations
+   * @param id Schedule ID
+   * @returns DefenseSchedule or null
+   */
+  async findById(id: number): Promise<DefenseSchedule | null> {
+    return this.repository
+      .createQueryBuilder("ds")
+      .leftJoinAndSelect("ds.defense_submission", "def")
+      .leftJoinAndSelect("def.final_project", "fp")
+      .leftJoinAndSelect("fp.members", "members")
+      .leftJoinAndSelect("members.student", "student")
+      .leftJoinAndSelect("student.user", "studentUser")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("supervisor_1.user", "supervisor_1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("supervisor_2.user", "supervisor_2_user")
+      .leftJoinAndSelect("def.examiner_1", "examiner_1")
+      .leftJoinAndSelect("examiner_1.user", "examiner_1_user")
+      .leftJoinAndSelect("def.examiner_2", "examiner_2")
+      .leftJoinAndSelect("examiner_2.user", "examiner_2_user")
+      .leftJoinAndSelect("def.expertises_group_1", "eg1")
+      .leftJoinAndSelect("def.expertises_group_2", "eg2")
+      .where("ds.id = :id", { id })
+      .getOne();
+  }
+
+  /**
+   * Update defense schedule
+   * @param id Schedule ID
+   * @param data Updated schedule data
+   * @returns DefenseSchedule
+   */
+  async updateSchedule(
+    id: number,
+    data: {
+      scheduled_date?: string;
+      start_time?: string;
+      end_time?: string;
+      room?: string;
+      notes?: string;
+    }
+  ): Promise<DefenseSchedule | null> {
+    const updateData: any = {};
+
+    if (data.scheduled_date) updateData.scheduled_date = data.scheduled_date;
+    if (data.start_time) updateData.start_time = data.start_time;
+    if (data.end_time) updateData.end_time = data.end_time;
+    if (data.room) updateData.room = data.room;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+
+    // Update status to rescheduled if changing date/time
+    if (data.scheduled_date || data.start_time || data.end_time) {
+      updateData.status = "rescheduled";
+    }
+
+    await this.repository.update(id, updateData);
+
+    // Update defense_date di defense_submission jika ada scheduled_date dan start_time
+    if (data.scheduled_date && data.start_time) {
+      const schedule = await this.findById(id);
+      if (schedule) {
+        await this.defenseRepo.update(schedule.defense_submission.id, {
+          defense_date: new Date(`${data.scheduled_date} ${data.start_time}`),
+        });
+      }
+    }
+
+    return this.findById(id);
   }
 
   /**

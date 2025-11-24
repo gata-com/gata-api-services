@@ -314,6 +314,40 @@ export class DefenseSubmissionRepository {
   }
 
   /**
+   * Get all defense submissions that don't have a schedule yet
+   * @returns Array of defense submissions without schedule
+   */
+  async findUnscheduled(): Promise<any> {
+    return this.repository
+      .createQueryBuilder("ds")
+      .leftJoinAndSelect("ds.examiner_1", "examiner_1")
+      .leftJoinAndSelect("examiner_1.user", "examiner_1_user")
+      .leftJoinAndSelect("ds.examiner_2", "examiner_2")
+      .leftJoinAndSelect("examiner_2.user", "examiner_2_user")
+      .leftJoinAndSelect("ds.final_project", "fp")
+      .leftJoinAndSelect("fp.members", "fpm")
+      .leftJoinAndSelect("fpm.student", "student")
+      .leftJoinAndSelect("student.user", "user")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("supervisor_1.user", "supervisor_1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("supervisor_2.user", "supervisor_2_user")
+      .leftJoinAndSelect("ds.expertises_group_1", "eg1")
+      .leftJoinAndSelect("ds.expertises_group_2", "eg2")
+      .leftJoinAndSelect(
+        (qb) =>
+          qb
+            .select("def_sch.defense_submission_id")
+            .from("defense_schedules", "def_sch"),
+        "scheduled_defense",
+        "scheduled_defense.defense_submission_id = ds.id"
+      )
+      .where("scheduled_defense.defense_submission_id IS NULL")
+      .orderBy("ds.created_at", "ASC")
+      .getMany();
+  }
+
+  /**
    * Update defense submission with examiners and defense date
    * @param id - Defense submission ID
    * @param data - Data to update (examiner_1, examiner_2, defense_date, capstone_code)

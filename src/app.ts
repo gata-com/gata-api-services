@@ -18,8 +18,8 @@ import * as swaggerDocument from "./swagger/swagger.json";
 import AppDataSource from "./config/database";
 
 // Route imports
+import GeneralRoutes from "./routes";
 import authRoutes from "./routes/auth";
-// import userRoutes from "./routes/users";
 import mahasiswaRoutes from "./routes/student";
 import dosenRoutes from "./routes/lecturer";
 import adminRoutes from "./routes/admin";
@@ -126,6 +126,12 @@ if (process.env.NODE_ENV !== "production") {
     })
   );
 }
+// API routes
+app.use("/", GeneralRoutes);
+app.use("/auth", authRoutes);
+app.use("/mahasiswa", mahasiswaRoutes);
+app.use("/dosen", dosenRoutes);
+app.use("/admin", adminRoutes);
 
 // Root endpoint with enhanced info
 app.get("/", (req: Request, res: Response) => {
@@ -151,12 +157,6 @@ app.get("/", (req: Request, res: Response) => {
   };
   res.status(200).json(response);
 });
-
-// API routes
-app.use("/auth", authRoutes);
-app.use("/mahasiswa", mahasiswaRoutes);
-app.use("/dosen", dosenRoutes);
-app.use("/admin", adminRoutes);
 
 // Enhanced health check endpoint
 app.get("/health", async (req: Request, res: Response) => {

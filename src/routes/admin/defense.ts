@@ -5,8 +5,23 @@ import {
   assignExaminers,
   importScheduleCSV,
 } from "@/controllers/admin/defense/exportDefenseCsv";
+import { getNotScheduled } from "@/controllers/admin/defense/getNotScheduled";
+import { getAllExaminers } from "@/controllers/admin/defense/getAllExaminers";
+import { addSchedule } from "@/controllers/admin/defense/addSchedule";
+import { editSchedule } from "@/controllers/admin/defense/editSchedule";
+import { deleteSchedule } from "@/controllers/admin/defense/deleteSchedule";
 
 const router = Router();
+
+router.get("/belum-terjadwal", getNotScheduled);
+
+router.get("/penguji", getAllExaminers);
+
+router.post("/tambah", addSchedule);
+
+router.put("/edit/:id", editSchedule);
+
+router.delete("/hapus/:id", deleteSchedule);
 
 // Configure multer for CSV file uploads
 const csvStorage = multer.diskStorage({

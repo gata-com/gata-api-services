@@ -1,176 +1,202 @@
-// controllers/mahasiswa/profileController.ts
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import path from "path";
-import fs from "fs/promises";
-import {
-  getProfileService,
-  updateProfileService,
-  // Comment dulu services yang belum diimplementasi
-  // changePasswordService,
-  // getStatusPengajuanService,
-  // requestPembimbingChangeService,
-  // updateJudulTAService
-} from "../../services/profileService";
-import { AuthRequest } from "@/types";
+import { StudentProfileService } from "@/services/student/studentProfileService";
+import { ApiResponse } from "@/types";
 
-// Get Profile
-export const getProfile = async (req: AuthRequest, res: Response) => {
+const studentProfileService = new StudentProfileService();
+
+/**
+ * Get student profile
+ * GET /student/profile
+ */
+export const getProfile = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
   try {
-    console.log("🔍 getProfile - req.user:", req.user);
+    const userId = (req as any).user?.id;
 
-    const mahasiswaId = req.user?.userId; // Ganti dari id ke userId
-
-    if (!mahasiswaId) {
-      console.log("❌ req.user.userId is undefined");
-      res.status(401).json({
-        success: false,
-        message: "User tidak terautentikasi",
+    if (!userId) {
+      return res.status(401).json({
+        message: "Tidak terautentikasi",
+        errors: {
+          path: "auth",
+          msg: "User ID not found in token",
+        },
       });
-      return;
     }
 
-    console.log("🔍 Getting profile for mahasiswaId:", mahasiswaId);
-    const profile = await getProfileService(mahasiswaId);
+    const profile = await studentProfileService.getStudentProfile(userId);
 
-    if (!profile) {
-      res.status(404).json({
-        success: false,
-        message: "Profile tidak ditemukan",
-      });
-      return;
-    }
-
-    console.log("✅ Profile found:", profile);
-    res.status(200).json({
-      success: true,
-      message: "Profile berhasil diambil",
+    return res.status(200).json({
+      message: "Profil mahasiswa berhasil diambil",
       data: profile,
     });
-  } catch (err: any) {
-    console.log("❌ getProfile error:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message || "Terjadi kesalahan internal server",
+  } catch (error) {
+    console.error("Error getting student profile:", error);
+
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return res.status(404).json({
+        message: "User tidak ditemukan",
+        errors: { path: "userId", msg: "User not found" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "USER_IS_NOT_STUDENT") {
+      return res.status(403).json({
+        message: "User bukan mahasiswa",
+        errors: { path: "role", msg: "User is not a student" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "STUDENT_DATA_NOT_FOUND") {
+      return res.status(404).json({
+        message: "Data mahasiswa tidak ditemukan",
+        errors: { path: "student", msg: "Student data not found" },
+      });
+    }
+
+    return res.status(500).json({
+      message: "Terjadi kesalahan saat mengambil profile",
+      errors: {
+        path: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
     });
   }
 };
 
-// Update Profile
-export const updateProfile = async (req: AuthRequest, res: Response) => {
+/**
+ * Update student profile
+ * PUT /student/profile
+ */
+export const updateProfile = async (
+  req: Request,
+  res: Response<ApiResponse>
+): Promise<Response> => {
   try {
-    const mahasiswaId = req.user?.userId; // Ganti dari id ke userId
-    const { nama, nim, nomorWhatsapp, email } = req.body;
+    const userId = (req as any).user?.id;
+    const { name, nim, email, whatsapp_number, password } = req.body;
 
-    if (!mahasiswaId) {
-      res.status(401).json({
-        success: false,
-        message: "User tidak terautentikasi",
+    if (!userId) {
+      return res.status(401).json({
+        message: "Tidak terautentikasi",
+        errors: {
+          path: "auth",
+          msg: "User ID not found in token",
+        },
       });
-      return;
     }
 
-    // Validasi data yang diperlukan
-    if (!nama || !nim || !nomorWhatsapp || !email) {
-      res.status(400).json({
-        success: false,
-        message: "Nama, NIM, nomor WhatsApp, dan email wajib diisi",
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (nim !== undefined) updateData.nim = nim;
+    if (email !== undefined) updateData.email = email;
+    if (whatsapp_number !== undefined)
+      updateData.whatsapp_number = whatsapp_number;
+    if (password !== undefined) updateData.password = password;
+
+    // Check if any data is provided
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        message: "Tidak ada data yang akan diupdate",
+        errors: { path: "body", msg: "No data provided" },
       });
-      return;
     }
 
-    // Validasi format email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      res.status(400).json({
-        success: false,
-        message: "Format email tidak valid",
-      });
-      return;
-    }
+    const updatedProfile = await studentProfileService.updateStudentProfile(
+      userId,
+      updateData
+    );
 
-    // Validasi NIM (hanya angka)
-    if (!/^\d+$/.test(nim)) {
-      res.status(400).json({
-        success: false,
-        message: "NIM harus berupa angka",
-      });
-      return;
-    }
-
-    // Validasi nomor WhatsApp
-    if (!/^\d{10,15}$/.test(nomorWhatsapp)) {
-      res.status(400).json({
-        success: false,
-        message: "Nomor WhatsApp harus 10-15 digit angka",
-      });
-      return;
-    }
-
-    const updatedProfile = await updateProfileService(mahasiswaId, {
-      name: nama,
-      nim,
-      whatsapp_number: nomorWhatsapp,
-      email,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "Profile berhasil diupdate",
+    return res.status(200).json({
+      message: "Profil mahasiswa berhasil diperbarui",
       data: updatedProfile,
     });
-    return;
-  } catch (err: any) {
-    res.status(500).json({
-      success: false,
-      message: err.message || "Terjadi kesalahan internal server",
+  } catch (error) {
+    console.error("Error updating student profile:", error);
+
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return res.status(404).json({
+        message: "User tidak ditemukan",
+        errors: { path: "userId", msg: "User not found" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "USER_IS_NOT_STUDENT") {
+      return res.status(403).json({
+        message: "User bukan mahasiswa",
+        errors: { path: "role", msg: "User is not a student" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "STUDENT_DATA_NOT_FOUND") {
+      return res.status(404).json({
+        message: "Data mahasiswa tidak ditemukan",
+        errors: { path: "student", msg: "Student data not found" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "NAME_TOO_SHORT") {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: { path: "name", msg: "Nama harus minimal 3 karakter" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "NAME_TOO_LONG") {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: { path: "name", msg: "Nama maksimal 255 karakter" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "NIM_INVALID_LENGTH") {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: { path: "nim", msg: "NIM harus 8-20 karakter" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "EMAIL_INVALID_FORMAT") {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: { path: "email", msg: "Format email tidak valid" },
+      });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "WHATSAPP_NUMBER_INVALID_LENGTH"
+    ) {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: {
+          path: "whatsapp_number",
+          msg: "Nomor WhatsApp minimal 10 digit",
+        },
+      });
+    }
+
+    if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
+      return res.status(409).json({
+        message: "Email sudah terdaftar",
+        errors: { path: "email", msg: "Email already exists" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "NIM_ALREADY_EXISTS") {
+      return res.status(409).json({
+        message: "NIM sudah terdaftar",
+        errors: { path: "nim", msg: "NIM already exists" },
+      });
+    }
+
+    return res.status(500).json({
+      message: "Terjadi kesalahan saat mengupdate profile",
+      errors: {
+        path: "server",
+        msg: error instanceof Error ? error.message : "Unknown error",
+      },
     });
-    return;
   }
-};
-
-// PLACEHOLDER FUNCTIONS untuk sementara - implement nanti
-export const uploadProfilePicture = async (req: AuthRequest, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Upload profile picture belum diimplementasi",
-  });
-};
-
-export const deleteProfilePicture = async (req: AuthRequest, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Delete profile picture belum diimplementasi",
-  });
-};
-
-export const changePassword = async (req: AuthRequest, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Change password belum diimplementasi",
-  });
-};
-
-export const getStatusPengajuan = async (req: AuthRequest, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Get status pengajuan belum diimplementasi",
-  });
-};
-
-export const requestPembimbingChange = async (
-  req: AuthRequest,
-  res: Response
-) => {
-  res.status(501).json({
-    success: false,
-    message: "Request pembimbing change belum diimplementasi",
-  });
-};
-
-export const updateJudulTA = async (req: AuthRequest, res: Response) => {
-  res.status(501).json({
-    success: false,
-    message: "Update judul TA belum diimplementasi",
-  });
 };

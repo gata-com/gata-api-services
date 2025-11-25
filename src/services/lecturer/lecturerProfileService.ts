@@ -28,10 +28,6 @@ export class LecturerProfileService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (user.role !== "lecturer") {
-      throw new Error("USER_IS_NOT_LECTURER");
-    }
-
     if (!user.lecturer) {
       throw new Error("LECTURER_DATA_NOT_FOUND");
     }
@@ -101,10 +97,6 @@ export class LecturerProfileService {
 
     if (!user) {
       throw new Error("USER_NOT_FOUND");
-    }
-
-    if (user.role !== "lecturer") {
-      throw new Error("USER_IS_NOT_LECTURER");
     }
 
     if (!user.lecturer) {

@@ -4,14 +4,8 @@ import {
   updateLecturerProfile,
   getAllExpertisesGroups,
 } from "@/controllers/lecturer/lecturerProfileController";
-import { auth } from "@/middleware/auth";
-import { requireLecturer } from "@/middleware/role";
 
 const router = Router();
-
-// Apply auth and lecturer role middleware to all routes
-router.use(auth);
-router.use(requireLecturer);
 
 /**
  * GET /lecturer/profile

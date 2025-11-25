@@ -15,16 +15,6 @@ export const getLecturerProfile = async (
   try {
     const userId = (req as any).user?.id;
 
-    if (!userId) {
-      return res.status(401).json({
-        message: "Tidak terautentikasi",
-        errors: {
-          path: "auth",
-          msg: "User ID not found in token",
-        },
-      });
-    }
-
     const profile = await lecturerProfileService.getLecturerProfile(userId);
 
     return res.status(200).json({
@@ -88,15 +78,6 @@ export const updateLecturerProfile = async (
       password,
     } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({
-        message: "Tidak terautentikasi",
-        errors: {
-          path: "auth",
-          msg: "User ID not found in token",
-        },
-      });
-    }
 
     const updateData: any = {};
 

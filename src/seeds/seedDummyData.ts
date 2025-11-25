@@ -130,7 +130,7 @@ export async function seedDummyData(dataSource: DataSource) {
   let capstoneCodeCounter = 0;
   function generateCapstoneCode(): string {
     capstoneCodeCounter++;
-    return `CAPS${String(capstoneCodeCounter).padStart(3, "0")}`;
+    return `CAP${String(capstoneCodeCounter).padStart(2, "0")}`;
   }
 
   // ==================== FINAL PROJECT PERIOD ====================

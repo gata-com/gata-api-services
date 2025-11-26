@@ -2314,10 +2314,549 @@ export async function seedDummyData(dataSource: DataSource) {
     status: "completed",
   });
 
+  // ==================== ADDITIONAL SCENARIOS: DATA UNTUK SEMUA DOSEN ====================
+  console.log(
+    "\n🎓 Creating additional data for all lecturers (5 lecturers)..."
+  );
+
+  // LECTURER 1 - Tambahan mahasiswa (sudah ada student 1, 4, 5)
+  // Mahasiswa tambahan untuk Lecturer 1 sebagai pembimbing
+  console.log("Creating data for Lecturer 1 (already has 3 students)...");
+
+  const fpLecturer1_1 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "mahasiswa",
+    description: "Smart IoT Home Automation System",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[1],
+    expertises_group_2: expertiseGroups[0],
+    supervisor_1: lecturer1,
+    supervisor_2: lecturer3,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer1_1,
+    student: students[9],
+    title: "Smart IoT Home Automation System",
+    resume:
+      "Sistem otomasi rumah pintar menggunakan IoT dengan kontrol voice assistant",
+    draft_path: "/storages/final-projects/iot-system.pdf",
+    draft_filename: "iot-system.pdf",
+    draft_size: "2.8MB",
+  });
+
+  // Bimbingan proposal
+  for (let i = 1; i <= 4; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer1_1,
+      lecturer: lecturer1,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan IoT Proposal ${i}`,
+      lecturer_feedback: `Progress baik untuk IoT implementation`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 2),
+      completed_at: new Date(2024, 10, i * 2, 9, 30),
+    });
+  }
+
+  // LECTURER 2 - Tambahan mahasiswa (sudah ada student 2)
+  console.log("Creating data for Lecturer 2...");
+
+  const fpLecturer2_1 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "mahasiswa",
+    description: "E-Commerce Platform dengan AI Chatbot",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[1],
+    supervisor_1: lecturer2,
+    supervisor_2: lecturer4,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer2_1,
+    student: students[10],
+    title: "E-Commerce Platform dengan AI Chatbot",
+    resume:
+      "Platform e-commerce dengan integrasi AI chatbot untuk customer service",
+    draft_path: "/storages/final-projects/ecommerce-ai.pdf",
+    draft_filename: "ecommerce-ai.pdf",
+    draft_size: "3.1MB",
+  });
+
+  // Bimbingan dan sidang proposal selesai
+  for (let i = 1; i <= 6; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer2_1,
+      lecturer: lecturer2,
+      guidance_availability: availability2,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan E-Commerce ${i}`,
+      lecturer_feedback: `AI implementation sudah bagus`,
+      status: "completed",
+      session_date: new Date(2024, 9, i * 2),
+      completed_at: new Date(2024, 9, i * 2, 13, 30),
+    });
+  }
+
+  const defenseSubmissionLecturer2_1 = await defenseSubmissionRepo.save({
+    final_project: fpLecturer2_1,
+    lecturer: lecturer2,
+    defense_type: "proposal",
+    status: "approved",
+    guidance_sup_1_count: 6,
+    guidance_sup_2_count: 3,
+    student_notes: "Ready for proposal defense",
+    defense_date: "2025-11-20",
+    processed_at: new Date(2024, 10, 15),
+    examiner_1: lecturer1,
+    examiner_2: lecturer5,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[1],
+  });
+
+  const scheduleL2_1 = await defenseScheduleRepo.save({
+    defense_submission: defenseSubmissionLecturer2_1,
+    scheduled_date: "2025-11-20",
+    start_time: "14:00",
+    end_time: "15:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang D",
+    status: "completed",
+  });
+
+  // Penilaian lengkap untuk lecturer 2 student
+  await penilaianRepo.save({
+    jadwalId: scheduleL2_1.id,
+    lecturerId: lecturer2.id,
+    studentId: students[10].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "E-commerce implementation bagus",
+    nilaiAkhir: 85.0,
+    isFinalized: true,
+    finalizedById: lecturer2.id,
+    finalizedByName: lecturer2.user?.name,
+    finalizedAt: new Date(2025, 10, 20, 15, 0),
+  });
+
+  await penilaianRepo.save({
+    jadwalId: scheduleL2_1.id,
+    lecturerId: lecturer4.id,
+    studentId: students[10].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "Chatbot integration excellent",
+    nilaiAkhir: 87.0,
+    isFinalized: true,
+    finalizedById: lecturer4.id,
+    finalizedByName: lecturer4.user?.name,
+    finalizedAt: new Date(2025, 10, 20, 15, 0),
+  });
+
+  await penilaianRepo.save({
+    jadwalId: scheduleL2_1.id,
+    lecturerId: lecturer1.id,
+    studentId: students[10].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "System architecture well designed",
+    nilaiAkhir: 86.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 10, 20, 15, 0),
+  });
+
+  await penilaianRepo.save({
+    jadwalId: scheduleL2_1.id,
+    lecturerId: lecturer5.id,
+    studentId: students[10].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "Good presentation and demo",
+    nilaiAkhir: 84.0,
+    isFinalized: true,
+    finalizedById: lecturer5.id,
+    finalizedByName: lecturer5.user?.name,
+    finalizedAt: new Date(2025, 10, 20, 15, 0),
+  });
+
+  // LECTURER 3 - Data mahasiswa sebagai pembimbing utama
+  console.log("Creating data for Lecturer 3...");
+
+  const fpLecturer3_1 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "dosen",
+    description: "Cloud-based Hospital Management System",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[1],
+    expertises_group_2: expertiseGroups[2],
+    supervisor_1: lecturer3,
+    supervisor_2: lecturer1,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer3_1,
+    student: students[11],
+    title: "Cloud-based Hospital Management System",
+    resume:
+      "Sistem manajemen rumah sakit berbasis cloud dengan fitur telemedicine",
+    draft_path: "/storages/final-projects/hospital-system.pdf",
+    draft_filename: "hospital-system.pdf",
+    draft_size: "3.3MB",
+  });
+
+  // Bimbingan
+  for (let i = 1; i <= 5; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer3_1,
+      lecturer: lecturer3,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan HMS ${i}`,
+      lecturer_feedback: `Cloud architecture progressing well`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 3),
+      completed_at: new Date(2024, 10, i * 3, 10, 0),
+    });
+  }
+
+  // Mahasiswa kedua untuk Lecturer 3
+  const fpLecturer3_2 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "mahasiswa",
+    description: "Real-time Traffic Monitoring System",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[2],
+    supervisor_1: lecturer3,
+    supervisor_2: lecturer2,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer3_2,
+    student: students[12],
+    title: "Real-time Traffic Monitoring System",
+    resume:
+      "Sistem monitoring lalu lintas real-time menggunakan computer vision",
+    draft_path: "/storages/final-projects/traffic-monitoring.pdf",
+    draft_filename: "traffic-monitoring.pdf",
+    draft_size: "2.9MB",
+  });
+
+  for (let i = 1; i <= 6; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer3_2,
+      lecturer: lecturer3,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan Traffic System ${i}`,
+      lecturer_feedback: `Computer vision implementation good`,
+      status: "completed",
+      session_date: new Date(2024, 9, i * 3),
+      completed_at: new Date(2024, 9, i * 3, 11, 0),
+    });
+  }
+
+  // Submit untuk sidang
+  const defenseSubmissionLecturer3_2 = await defenseSubmissionRepo.save({
+    final_project: fpLecturer3_2,
+    lecturer: lecturer3,
+    defense_type: "proposal",
+    status: "scheduled",
+    guidance_sup_1_count: 6,
+    guidance_sup_2_count: 3,
+    student_notes: "Ready for traffic system defense",
+    defense_date: "2025-12-01",
+    processed_at: new Date(2024, 10, 20),
+    examiner_1: lecturer4,
+    examiner_2: lecturer5,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[2],
+  });
+
+  await defenseScheduleRepo.save({
+    defense_submission: defenseSubmissionLecturer3_2,
+    scheduled_date: "2025-12-01",
+    start_time: "09:00",
+    end_time: "10:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang E",
+    status: "scheduled",
+  });
+
+  // LECTURER 4 - Data mahasiswa
+  console.log("Creating data for Lecturer 4...");
+
+  const fpLecturer4_1 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "mahasiswa",
+    description: "Blockchain-based Supply Chain Management",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[3],
+    expertises_group_2: expertiseGroups[1],
+    supervisor_1: lecturer4,
+    supervisor_2: lecturer2,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer4_1,
+    student: students[13],
+    title: "Blockchain-based Supply Chain Management",
+    resume:
+      "Sistem supply chain management dengan blockchain untuk transparency dan traceability",
+    draft_path: "/storages/final-projects/blockchain-scm.pdf",
+    draft_filename: "blockchain-scm.pdf",
+    draft_size: "3.5MB",
+  });
+
+  // Bimbingan lengkap dan sidang selesai
+  for (let i = 1; i <= 7; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer4_1,
+      lecturer: lecturer4,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan Blockchain ${i}`,
+      lecturer_feedback: `Blockchain implementation solid`,
+      status: "completed",
+      session_date: new Date(2024, 8, i * 3),
+      completed_at: new Date(2024, 8, i * 3, 14, 0),
+    });
+  }
+
+  const defenseSubmissionLecturer4_1 = await defenseSubmissionRepo.save({
+    final_project: fpLecturer4_1,
+    lecturer: lecturer4,
+    defense_type: "proposal",
+    status: "approved",
+    guidance_sup_1_count: 7,
+    guidance_sup_2_count: 3,
+    student_notes: "Blockchain ready for defense",
+    defense_date: "2025-11-18",
+    processed_at: new Date(2024, 9, 10),
+    examiner_1: lecturer3,
+    examiner_2: lecturer1,
+    expertises_group_1: expertiseGroups[3],
+    expertises_group_2: expertiseGroups[1],
+  });
+
+  const scheduleL4_1 = await defenseScheduleRepo.save({
+    defense_submission: defenseSubmissionLecturer4_1,
+    scheduled_date: "2025-11-18",
+    start_time: "13:00",
+    end_time: "14:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang F",
+    status: "completed",
+  });
+
+  // Penilaian lengkap
+  await penilaianRepo.save({
+    jadwalId: scheduleL4_1.id,
+    lecturerId: lecturer4.id,
+    studentId: students[13].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "Blockchain implementation excellent",
+    nilaiAkhir: 90.0,
+    isFinalized: true,
+    finalizedById: lecturer4.id,
+    finalizedByName: lecturer4.user?.name,
+    finalizedAt: new Date(2025, 10, 18, 14, 0),
+  });
+
+  await penilaianRepo.save({
+    jadwalId: scheduleL4_1.id,
+    lecturerId: lecturer2.id,
+    studentId: students[13].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "Very good understanding of distributed systems",
+    nilaiAkhir: 88.0,
+    isFinalized: true,
+    finalizedById: lecturer2.id,
+    finalizedByName: lecturer2.user?.name,
+    finalizedAt: new Date(2025, 10, 18, 14, 0),
+  });
+
+  await penilaianRepo.save({
+    jadwalId: scheduleL4_1.id,
+    lecturerId: lecturer3.id,
+    studentId: students[13].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "Smart contract implementation impressive",
+    nilaiAkhir: 89.0,
+    isFinalized: true,
+    finalizedById: lecturer3.id,
+    finalizedByName: lecturer3.user?.name,
+    finalizedAt: new Date(2025, 10, 18, 14, 0),
+  });
+
+  await penilaianRepo.save({
+    jadwalId: scheduleL4_1.id,
+    lecturerId: lecturer1.id,
+    studentId: students[13].id,
+    rubrikId: rubrikSeminar.id,
+    catatan: "Excellent work on supply chain integration",
+    nilaiAkhir: 91.0,
+    isFinalized: true,
+    finalizedById: lecturer1.id,
+    finalizedByName: lecturer1.user?.name,
+    finalizedAt: new Date(2025, 10, 18, 14, 0),
+  });
+
+  // LECTURER 5 - Data mahasiswa
+  console.log("Creating data for Lecturer 5...");
+
+  const fpLecturer5_1 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "dosen",
+    description: "Machine Learning untuk Prediksi Cuaca",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[2],
+    supervisor_1: lecturer5,
+    supervisor_2: lecturer1,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer5_1,
+    student: students[14],
+    title: "Machine Learning untuk Prediksi Cuaca",
+    resume:
+      "Sistem prediksi cuaca menggunakan deep learning dengan data historis",
+    draft_path: "/storages/final-projects/weather-ml.pdf",
+    draft_filename: "weather-ml.pdf",
+    draft_size: "3.2MB",
+  });
+
+  for (let i = 1; i <= 6; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer5_1,
+      lecturer: lecturer5,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan ML Weather ${i}`,
+      lecturer_feedback: `Deep learning model improving`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 2),
+      completed_at: new Date(2024, 10, i * 2, 15, 0),
+    });
+  }
+
+  // Mahasiswa kedua untuk Lecturer 5
+  const fpLecturer5_2 = await finalProjectRepo.save({
+    type: "regular",
+    status: "baru",
+    source_topic: "mahasiswa",
+    description: "Augmented Reality untuk Pendidikan",
+    max_members: 1,
+    supervisor_1_status: "approved",
+    supervisor_2_status: "approved",
+    admin_status: "approved",
+    is_only_sup_1: false,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[1],
+    supervisor_1: lecturer5,
+    supervisor_2: lecturer3,
+    final_project_period: period,
+  });
+
+  await finalProjectMemberRepo.save({
+    final_project: fpLecturer5_2,
+    student: students[15],
+    title: "Augmented Reality untuk Pendidikan",
+    resume: "Aplikasi AR untuk pembelajaran interaktif di sekolah dasar",
+    draft_path: "/storages/final-projects/ar-education.pdf",
+    draft_filename: "ar-education.pdf",
+    draft_size: "3.0MB",
+  });
+
+  for (let i = 1; i <= 5; i++) {
+    await guidanceSessionRepo.save({
+      final_project: fpLecturer5_2,
+      lecturer: lecturer5,
+      guidance_availability: availability1,
+      supervisor_type: 1,
+      defense_type: "proposal",
+      topic: `Bimbingan AR Education ${i}`,
+      lecturer_feedback: `AR implementation creative`,
+      status: "completed",
+      session_date: new Date(2024, 10, i * 3),
+      completed_at: new Date(2024, 10, i * 3, 16, 0),
+    });
+  }
+
+  // Submit untuk sidang
+  const defenseSubmissionLecturer5_2 = await defenseSubmissionRepo.save({
+    final_project: fpLecturer5_2,
+    lecturer: lecturer5,
+    defense_type: "proposal",
+    status: "approved",
+    guidance_sup_1_count: 5,
+    guidance_sup_2_count: 3,
+    student_notes: "AR ready for proposal defense",
+    defense_date: "2025-11-30",
+    processed_at: new Date(2024, 10, 22),
+    examiner_1: lecturer2,
+    examiner_2: lecturer4,
+    expertises_group_1: expertiseGroups[0],
+    expertises_group_2: expertiseGroups[1],
+  });
+
+  await defenseScheduleRepo.save({
+    defense_submission: defenseSubmissionLecturer5_2,
+    scheduled_date: "2025-11-30",
+    start_time: "10:00",
+    end_time: "11:30",
+    scheduler_status: "scheduled",
+    room: "Ruang Sidang G",
+    status: "scheduled",
+  });
+
   console.log("✅ Dummy data seeding completed successfully!");
-  console.log("=".repeat(50));
+  console.log("=".repeat(70));
   console.log("Summary:");
-  console.log("REGULAR PROJECTS:");
+  console.log("\n📊 REGULAR PROJECTS:");
   console.log("- Student 1: Completed proposal, doing hasil guidance");
   console.log("- Student 2: Approved for scheduling, waiting for schedule");
   console.log(
@@ -2326,18 +2865,49 @@ export async function seedDummyData(dataSource: DataSource) {
   console.log("- Student 4: Scheduled for proposal defense (H+10)");
   console.log("- Student 5: Completed proposal defense (H+5) with assessments");
   console.log("- Student 6: Scheduled for hasil defense (H+15)");
-  console.log("\nCAPSTONE PROJECTS:");
+  console.log("\n🎯 CAPSTONE PROJECTS:");
   console.log("- Capstone 1 (3 members): Currently doing proposal guidance");
   console.log("- Capstone 2 (2 members): Approved, waiting for scheduling");
   console.log(
     "- Capstone 3 (3 members): Completed proposal defense with assessments"
   );
   console.log("- Capstone 4 (3 members): Scheduled for hasil defense (H+20)");
-  console.log("\nADDITIONAL:");
+  console.log("\n👨‍🏫 DATA PER LECTURER (ALL 5 LECTURERS):");
+  console.log("LECTURER 1:");
+  console.log("  - As Supervisor 1: 4 students (Student 1, 4, 5, 10)");
+  console.log("  - As Supervisor 2: 3 students");
+  console.log("  - As Examiner: Multiple students");
+  console.log("LECTURER 2:");
+  console.log("  - As Supervisor 1: 3 students (Student 2, 11, Capstone)");
+  console.log("  - As Supervisor 2: Multiple students");
+  console.log("  - As Examiner: Multiple assessments");
+  console.log("LECTURER 3:");
+  console.log("  - As Supervisor 1: 3 students (Student 12, 13, HMS)");
+  console.log("  - As Supervisor 2: Multiple students");
+  console.log("  - As Examiner: Multiple assessments");
+  console.log("LECTURER 4:");
+  console.log("  - As Supervisor 1: 2 students (Student 14, Blockchain)");
+  console.log("  - As Supervisor 2: Multiple students");
+  console.log("  - As Examiner: Multiple assessments");
+  console.log("LECTURER 5:");
+  console.log("  - As Supervisor 1: 3 students (Student 15, 16, ML Weather)");
+  console.log("  - As Supervisor 2: Multiple students");
+  console.log("  - As Examiner: Multiple assessments");
+  console.log("\n📈 STATISTICS:");
+  console.log("- Total Students: 20");
+  console.log("- Total Lecturers: 5");
+  console.log("- Total Projects: ~15+ (Regular + Capstone)");
+  console.log("- Completed Defenses: 4");
+  console.log("- Scheduled Defenses: 5");
+  console.log("- In Progress: 6+");
+  console.log("\n✅ FEATURES COVERED:");
   console.log("- 2 Rubrics: Seminar (SEM) and Sidang (SID)");
   console.log("- Complete assessment data for completed defenses");
   console.log("- Individual member titles for capstone projects");
-  console.log("=".repeat(50));
+  console.log("- All lecturers have students as supervisors");
+  console.log("- All lecturers participate as examiners");
+  console.log("- Various project stages (guidance, scheduled, completed)");
+  console.log("=".repeat(70));
 }
 
 // Run as standalone script

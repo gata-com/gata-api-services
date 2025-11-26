@@ -50,7 +50,9 @@ const startServer = async () => {
     initializeCronJobs();
 
     // Start HTTP server
-    const server = app.listen(PORT, () => {});
+    const server = app.listen(PORT, () => {
+      console.log(`🎯 API Server listening on port ${PORT}`);
+    });
 
     // Enhanced graceful shutdown
     const shutdown = async (signal: string) => {
@@ -90,8 +92,14 @@ const startServer = async () => {
     };
 
     // Register shutdown handlers
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => {
+      console.log("🛑 Received SIGTERM signal");
+      shutdown("SIGTERM");
+    });
+    process.on("SIGINT", () => {
+      console.log("🛑 Received SIGINT signal");
+      shutdown("SIGINT");
+    });
 
     // Database connection monitoring (for MySQL)
     if (config.database.type === "mysql") {
@@ -184,7 +192,11 @@ if (config.nodeEnv === "development") {
 }
 
 // Start the server
-startServer().catch((error) => {
-  console.error("❌ Critical startup error:", error);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await startServer();
+  } catch (error) {
+    console.error("❌ Critical startup error:", error);
+    process.exit(1);
+  }
+})();

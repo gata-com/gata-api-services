@@ -43,9 +43,32 @@ router.post("/update-nilai", validateUpdateNilai, updateNilai);
 // POST /dosen/penilaian/jadwal/:jadwalId/finalisasi - Finalisasi nilai
 router.post(
   "/jadwal/:jadwalId/finalisasi",
-  validateFinalisasi,
-  handleValidationErrors,
+  // validateFinalisasi,
+  // handleValidationErrors,
   finalisasiNilai
 );
+
+// ========== BAP PDF ROUTES ==========
+import {
+  generateBapPdf,
+  downloadBapByStudent,
+  downloadBapByName,
+  getBapInfo,
+} from "@/controllers/admin/penilaian/bapPdfController";
+
+// POST /lecturer/penilaian/jadwal/:jadwalId/student/:studentId/generate-bap-pdf
+router.post(
+  "/jadwal/:jadwalId/student/:studentId/generate-bap-pdf",
+  generateBapPdf
+);
+
+// GET /lecturer/penilaian/student/:studentId/bap
+router.get("/student/:studentId/bap", getBapInfo);
+
+// GET /lecturer/penilaian/student/:studentId/bap/download
+router.get("/student/:studentId/bap/download", downloadBapByStudent);
+
+// GET /lecturer/penilaian/bap/download/:pdfName
+router.get("/bap/download/:pdfName", downloadBapByName);
 
 export default router;

@@ -36,6 +36,13 @@ import {
   downloadBap,
   previewBap,
 } from "@/controllers/admin/penilaian/penilaianViewController";
+import {
+  generateBapPdf,
+  downloadBapByStudent,
+  downloadBapByName,
+  getBapInfo,
+  getAllBap,
+} from "@/controllers/admin/penilaian/bapPdfController";
 import { auth } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/role";
 import {
@@ -163,5 +170,24 @@ router.get("/jadwal/:jadwalId/bap", downloadBap);
 
 // GET /admin/penilaian/jadwal/:jadwalId/bap/preview - Preview BAP
 router.get("/jadwal/:jadwalId/bap/preview", previewBap);
+
+// ========== BAP PDF ROUTES (New Implementation) ==========
+// POST /admin/penilaian/jadwal/:jadwalId/student/:studentId/generate-bap-pdf - Generate BAP PDF for student
+router.post(
+  "/jadwal/:jadwalId/student/:studentId/generate-bap-pdf",
+  generateBapPdf
+);
+
+// GET /admin/penilaian/student/:studentId/bap - Get BAP info by student
+router.get("/student/:studentId/bap", getBapInfo);
+
+// GET /admin/penilaian/student/:studentId/bap/download - Download BAP by student
+router.get("/student/:studentId/bap/download", downloadBapByStudent);
+
+// GET /admin/penilaian/bap/download/:pdfName - Download BAP by filename
+router.get("/bap/download/:pdfName", downloadBapByName);
+
+// GET /admin/penilaian/bap/all - Get all BAP
+router.get("/bap/all", getAllBap);
 
 export default router;

@@ -33,6 +33,7 @@ import { RentangNilai } from "../entities/rentangNilai";
 import { Penilaian } from "../entities/penilaian";
 import { JawabanPenilaian } from "../entities/jawabanPenilaian";
 import { BeritaAcaraPenilaian } from "../entities/beritaAcaraPenilaian";
+import { BeritaAcaraPDF } from "../entities/beritaAcaraPDF";
 
 // Create data source configuration based on database type
 const createDataSourceConfig = (): DataSourceOptions => {
@@ -64,6 +65,7 @@ const createDataSourceConfig = (): DataSourceOptions => {
       Penilaian,
       JawabanPenilaian,
       BeritaAcaraPenilaian,
+      BeritaAcaraPDF,
     ],
     migrations: [__dirname + "/../migrations/*.{ts,js}"],
     subscribers: [__dirname + "/../subscribers/*.{ts,js}"],

@@ -63,9 +63,9 @@ export const finalisasiNilai = async (
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
-    const { jadwalId, lecturerIds } = req.body;
+    const { jadwalId, studentId } = req.body;
 
-    await penilaianService.finalisasiNilai(jadwalId, lecturerIds);
+    await penilaianService.finalisasiNilai(jadwalId, studentId);
 
     return res.status(200).json({
       message: "Nilai berhasil difinalisasi",

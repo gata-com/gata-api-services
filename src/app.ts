@@ -110,7 +110,11 @@ const finalProjectsPath = path.join(
   "final-projects"
 );
 
+const BAPPath = path.join(process.cwd(), "src", "storages", "bap-pdf");
+
 app.use("/final-projects", express.static(finalProjectsPath));
+app.use("/bap", express.static(BAPPath));
+
 // ======================
 // Routes
 // ======================

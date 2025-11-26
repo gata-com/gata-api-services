@@ -8,6 +8,7 @@ import { DefenseSubmissionRepository as DSDRepository } from "@/repositories/Def
 import { PertanyaanRepository } from "@/repositories/PertanyaanRepository";
 import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { JawabanPenilaianRepository } from "@/repositories/JawabanPenilaianRepository";
+import { BeritaAcaraPDFRepository } from "@/repositories/BeritaAcaraPDFRepository";
 import { Jadwal, JadwalKomentar, JadwalRekap } from "@/types/lecturer";
 
 interface JawabanInput {
@@ -43,6 +44,7 @@ export class PenilaianService {
   private pertanyaanRepo: PertanyaanRepository;
   private lecturerRepo: LecturerRepository;
   private jawabanRepo: JawabanPenilaianRepository;
+  private bapPdfRepo: BeritaAcaraPDFRepository;
 
   constructor() {
     this.penilaianRepo = new PenilaianRepository();
@@ -54,6 +56,7 @@ export class PenilaianService {
     this.pertanyaanRepo = new PertanyaanRepository();
     this.lecturerRepo = new LecturerRepository();
     this.jawabanRepo = new JawabanPenilaianRepository();
+    this.bapPdfRepo = new BeritaAcaraPDFRepository();
   }
 
   /**
@@ -117,17 +120,17 @@ export class PenilaianService {
     const examiner1Id = submission.examiner_1?.id;
     const examiner2Id = submission.examiner_2?.id;
 
-    const isAuthorized = [
-      supervisor1Id,
-      supervisor2Id,
-      examiner1Id,
-      examiner2Id,
-    ].includes(lecturerId);
-    if (!isAuthorized) {
-      throw new Error(
-        "Anda tidak memiliki akses untuk memberikan nilai pada jadwal ini"
-      );
-    }
+    // const isAuthorized = [
+    //   supervisor1Id,
+    //   supervisor2Id,
+    //   examiner1Id,
+    //   examiner2Id,
+    // ].includes(lecturerId);
+    // if (!isAuthorized) {
+    //   throw new Error(
+    //     "Anda tidak memiliki akses untuk memberikan nilai pada jadwal ini"
+    //   );
+    // }
 
     // Get default rubrik based on defense type (untuk validasi pertanyaan)
     const rubrikType = submission.defense_type === "proposal" ? "SEM" : "SID";
@@ -633,12 +636,13 @@ export class PenilaianService {
    */
   async getRekapNilai(
     jadwalId: number,
-    supervisor1Id: number,
-    supervisor2Id?: number,
-    studentId?: number
+    studentId: number
   ): Promise<JadwalRekap | undefined> {
     // Convert single object to array untuk konsistensi
-    const penilaianList = await this.penilaianRepo.findByJadwalId(jadwalId);
+    const penilaianList = await this.penilaianRepo.findByJadwalAndStudent(
+      jadwalId,
+      studentId
+    );
 
     // Get jadwal untuk mengetahui pembimbing dan penguji
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
@@ -730,36 +734,20 @@ export class PenilaianService {
   /**
    * Finalisasi nilai (hanya pembimbing utama) - per student atau all
    */
-  async finalisasiNilai(
-    jadwalId: number,
-    lecturerId?: number,
-    studentId?: number
-  ): Promise<void> {
+  async finalisasiNilai(jadwalId: number, studentId: number): Promise<void> {
     // Cek apakah lecturer adalah pembimbing utama
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
     if (!jadwal) {
       throw new Error("Jadwal tidak ditemukan");
     }
 
-    const pembimbing1Id =
-      jadwal.defense_submission.final_project.supervisor_1?.id;
-    if (lecturerId !== pembimbing1Id) {
-      throw new Error("Hanya pembimbing utama yang bisa finalisasi nilai");
-    }
-
     // Cek apakah semua dosen sudah memberikan nilai
     let penilaians: Penilaian[];
 
-    if (studentId) {
-      penilaians = await this.penilaianRepo.findByJadwalAndStudent(
-        jadwalId,
-        studentId
-      );
-    } else {
-      penilaians = await this.penilaianRepo.findByJadwalId(jadwalId);
-      // Filter yang tidak punya studentId (untuk backward compatibility)
-      penilaians = penilaians.filter((p) => !p.studentId);
-    }
+    penilaians = await this.penilaianRepo.findByJadwalAndStudent(
+      jadwalId,
+      studentId
+    );
 
     // Minimal harus ada 4 penilaian (2 pembimbing + 2 penguji)
     if (penilaians.length < 4) {
@@ -768,15 +756,12 @@ export class PenilaianService {
 
     // Get pembimbing utama untuk record finalized info
     const pembimbing1 = jadwal.defense_submission.final_project.supervisor_1;
+    // const finalizedById = pembimbing1?.lecturer.
     const finalizedByName = pembimbing1?.user?.name;
 
     // Finalisasi semua penilaian
     for (const penilaian of penilaians) {
-      await this.penilaianRepo.finalize(
-        penilaian.id,
-        lecturerId,
-        finalizedByName
-      );
+      await this.penilaianRepo.finalize(penilaian.id, finalizedByName);
     }
   }
 
@@ -873,6 +858,13 @@ export class PenilaianService {
         const examiner1 = submission.examiner_1;
         const examiner2 = submission.examiner_2;
 
+        //
+        let jumlahPenilaian = 4;
+
+        if (!supervisor2) {
+          jumlahPenilaian = 3;
+        }
+
         // Determine status kehadiran
         const scheduledDate = new Date(schedule.scheduled_date);
         const startTime = schedule.start_time;
@@ -968,17 +960,16 @@ export class PenilaianService {
 
         // Get rekap nilai if status kehadiran is LEWAT
         let rekap = undefined;
+        let isCanFinalize = false;
         try {
-          rekap = await this.getRekapNilai(
-            schedule.id,
-            supervisor1?.id,
-            supervisor2?.id,
-            student?.id
-          );
+          rekap = await this.getRekapNilai(schedule.id, student?.id);
         } catch (error) {
           // Rekap might not be available yet
         }
 
+        if (rekap && rekap.detailPerDosen.length >= jumlahPenilaian) {
+          isCanFinalize = true;
+        }
         // Get all rentang nilai for dropdown/reference
         const allRentangNilai = await this.rentangRepo.findAll();
         const rentangNilaiData =
@@ -992,7 +983,10 @@ export class PenilaianService {
             : undefined;
 
         // Get komentars
-        const komentarDosens = await this.getKomentarDosen(schedule.id);
+        const komentarDosens = await this.getKomentarDosen(
+          schedule.id,
+          student?.id
+        );
         const komenta: JadwalKomentar[] = komentarDosens.map((k) => ({
           kode: k.code,
           nama: k.lecturerNama,
@@ -1008,6 +1002,11 @@ export class PenilaianService {
         const pptDocForStudent = allDocsForSubmission.find(
           (doc: any) => doc.type === "ppt" && doc.student?.id === student?.id
         );
+
+        // Get BAP PDF data dari tabel berita_acara_pdfs
+        const bapData = student?.id
+          ? await this.bapPdfRepo.findByStudentId(student.id)
+          : null;
 
         const jadwal: Jadwal = {
           jadwalId: schedule.id,
@@ -1032,11 +1031,16 @@ export class PenilaianService {
           nilaiPertanyaan,
           catatanMahasiswa: submission.student_notes,
           isSupervisor1: lecturerId === supervisor1?.id,
+          isCanFinalize,
           rekap,
           catatan: penilaian?.catatan,
           komentar: komenta.length > 0 ? komenta : undefined,
           rubrik: rubrikResponse,
           rentangNilai: rentangNilaiData,
+          BAPUrl: {
+            pdfName: bapData?.pdfName || null,
+            pdfUrl: bapData?.pdfUrl || null,
+          },
         };
 
         jadwalList.push(jadwal);
@@ -1081,17 +1085,22 @@ export class PenilaianService {
 
             // Get rekap nilai untuk member lain jika status kehadiran adalah LEWAT
             let rekapOther = undefined;
-            if (statusKehadiran === "LEWAT") {
-              try {
-                rekapOther = await this.getRekapNilai(
-                  schedule.id,
-                  supervisor1?.id,
-                  supervisor2?.id,
-                  otherStudent?.id
-                );
-              } catch (error) {
-                // Rekap might not be available yet
-              }
+            let isCanFinalizeOther = false;
+
+            try {
+              rekapOther = await this.getRekapNilai(
+                schedule.id,
+                otherStudent?.id
+              );
+            } catch (error) {
+              // Rekap might not be available yet
+            }
+
+            if (
+              rekapOther &&
+              rekapOther.detailPerDosen.length >= jumlahPenilaian
+            ) {
+              isCanFinalizeOther = true;
             }
 
             // Get komentar untuk member lain
@@ -1118,6 +1127,11 @@ export class PenilaianService {
                 doc.type === "ppt" && doc.student?.id === otherStudent?.id
             );
 
+            // Get BAP PDF data untuk member lain
+            const bapDataOther = otherStudent?.id
+              ? await this.bapPdfRepo.findByStudentId(otherStudent.id)
+              : null;
+
             const jadwalOther: Jadwal = {
               jadwalId: schedule.id,
               penilaianId: penilaianOtherMember?.id?.toString() || "",
@@ -1141,11 +1155,16 @@ export class PenilaianService {
               nilaiPertanyaan: nilaiPertanyaanOther,
               catatanMahasiswa: submission.student_notes,
               isSupervisor1: lecturerId === supervisor1?.id,
+              isCanFinalize: isCanFinalizeOther,
               rekap: rekapOther,
               catatan: penilaianOtherMember?.catatan,
               komentar: komentaOther.length > 0 ? komentaOther : undefined,
               rubrik: rubrikResponse,
               rentangNilai: rentangNilaiData,
+              BAPUrl: {
+                pdfName: bapDataOther?.pdfName || null,
+                pdfUrl: bapDataOther?.pdfUrl || null,
+              },
             };
 
             jadwalList.push(jadwalOther);

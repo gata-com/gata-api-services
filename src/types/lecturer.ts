@@ -142,6 +142,7 @@ export interface Jadwal {
   };
   catatanMahasiswa?: string;
   isSupervisor1: boolean; // Penanda apakah dosen adalah pembimbing 1 (untuk finalisasi & lihat all)
+  isCanFinalize: boolean; // Penanda apakah dosen bisa finalisasi penilaian
   rekap?: JadwalRekap;
   catatan?: string;
   komentar?: JadwalKomentar[];
@@ -152,4 +153,8 @@ export interface Jadwal {
     grade: string;
     minScore: number;
   }>;
+  BAPUrl: {
+    pdfName: string | null;
+    pdfUrl: string | null;
+  };
 }

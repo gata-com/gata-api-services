@@ -24,16 +24,17 @@ interface NilaiPerGroup {
 interface RekapNilai {
   rata2Pembimbing: number;
   rata2Penguji: number;
-  nilaiAkhir: number;
+  nilaiAkhir?: number; // Optional - kosong jika tidak memenuhi syarat (< 2 penguji atau < 1 pembimbing)
   nilaiHuruf: string;
+  isFinalized: boolean;
   finalisasiOleh?: string;
-  detailDosen: Array<{
+  detailPerDosen: {
     lecturerId: number;
-    lecturerNama: string;
-    role: string;
-    nilaiAkhir: number;
-    perGroup: NilaiPerGroup[];
-  }>;
+    kode: string;
+    nama: string;
+    nilai: number;
+    tanggal: string;
+  }[];
 }
 
 export class PenilaianService {
@@ -190,34 +191,15 @@ export class PenilaianService {
     );
   }
 
-  /**
-   * Get rekap nilai untuk jadwal sidang (per student atau all)
-   * Return undefined jika tidak ada penilaian
-   */
   async getRekapNilai(
     jadwalId: number,
-    finalisasiOleh?: string,
-    studentId?: number
+    studentId: number
   ): Promise<RekapNilai | undefined> {
-    let penilaians: Penilaian[];
-
-    if (studentId) {
-      // Get penilaian untuk student tertentu
-      penilaians = await this.penilaianRepo.findByJadwalAndStudent(
-        jadwalId,
-        studentId
-      );
-    } else {
-      // Get semua penilaian untuk jadwal (untuk backward compatibility)
-      penilaians = await this.penilaianRepo.findByJadwalId(jadwalId);
-      // Filter yang tidak punya studentId (untuk backward compatibility)
-      penilaians = penilaians.filter((p) => !p.studentId);
-    }
-
-    if (penilaians.length === 0) {
-      // Return undefined jika tidak ada penilaian (tidak throw error)
-      return undefined;
-    }
+    // Convert single object to array untuk konsistensi
+    const penilaianList = await this.penilaianRepo.findByJadwalAndStudent(
+      jadwalId,
+      studentId
+    );
 
     // Get jadwal untuk mengetahui pembimbing dan penguji
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
@@ -242,9 +224,9 @@ export class PenilaianService {
       defenseSubmission?.examiner_2?.id,
     ].filter(Boolean) as number[];
 
-    // Hitung rata-rata pembimbing
-    const nilaiPembimbing = penilaians
-      .filter((p) => pembimbingIds.includes(p.lecturerId))
+    // Filter penilaian yang ada nilainya (tidak null/0)
+    const nilaiPembimbing = penilaianList
+      .filter((p) => pembimbingIds.includes(p.lecturerId) && p.nilaiAkhir)
       .map((p) => Number(p.nilaiAkhir || 0));
 
     const rata2Pembimbing =
@@ -252,9 +234,9 @@ export class PenilaianService {
         ? nilaiPembimbing.reduce((a, b) => a + b, 0) / nilaiPembimbing.length
         : 0;
 
-    // Hitung rata-rata penguji
-    const nilaiPenguji = penilaians
-      .filter((p) => pengujiIds.includes(p.lecturerId))
+    // Filter penilaian penguji yang ada nilainya (tidak null/0)
+    const nilaiPenguji = penilaianList
+      .filter((p) => pengujiIds.includes(p.lecturerId) && p.nilaiAkhir)
       .map((p) => Number(p.nilaiAkhir || 0));
 
     const rata2Penguji =
@@ -262,70 +244,47 @@ export class PenilaianService {
         ? nilaiPenguji.reduce((a, b) => a + b, 0) / nilaiPenguji.length
         : 0;
 
-    // Nilai akhir mahasiswa
-    const nilaiAkhir = (rata2Pembimbing + rata2Penguji) / 2;
+    // Validasi kondisi: harus ada minimal 2 penguji dan 1 pembimbing
+    const hasSufficientPembimbing = nilaiPembimbing.length >= 1;
+    const hasSufficientPenguji = nilaiPenguji.length >= 2;
+    const canCalculateNilaiAkhir =
+      hasSufficientPembimbing && hasSufficientPenguji;
 
-    // Get nilai huruf
-    const nilaiHuruf = await this.rentangRepo.getGradeByScore(nilaiAkhir);
+    // Nilai akhir mahasiswa - hanya dihitung jika kondisi terpenuhi
+    const nilaiAkhir = canCalculateNilaiAkhir
+      ? Math.round(((rata2Pembimbing + rata2Penguji) / 2) * 100) / 100
+      : undefined;
 
-    // Get finalisasi info dari database jika tidak disediakan
-    let finalizedByName = finalisasiOleh;
-    if (!finalizedByName) {
-      const finalizedPenilaian = penilaians.find(
-        (p) => p.isFinalized && p.finalizedByName
-      );
-      finalizedByName = finalizedPenilaian?.finalizedByName;
+    // Get nilai huruf - hanya jika nilai akhir ada
+    let nilaiHuruf = "";
+    if (nilaiAkhir !== undefined && nilaiAkhir !== null) {
+      nilaiHuruf = await this.rentangRepo.getGradeByScore(nilaiAkhir);
     }
 
-    // Detail per dosen
-    const detailDosen = penilaians.map((p) => {
-      const role = pembimbingIds.includes(p.lecturerId)
-        ? "Pembimbing"
-        : "Penguji";
+    // Get finalisasi info dari database
+    const finalizedPenilaian = penilaianList.find(
+      (p) => p.isFinalized === true
+    );
+    const isFinalized = finalizedPenilaian?.isFinalized || false;
+    const finalizedByName = finalizedPenilaian?.finalizedByName;
 
-      const perGroup: NilaiPerGroup[] = [];
-      if (p.rubrik && p.rubrik.groups) {
-        for (const group of p.rubrik.groups) {
-          const jawabanGroup = p.jawabans?.filter((j) =>
-            group.pertanyaans?.some((pt) => pt.id === j.pertanyaanId)
-          );
-
-          if (jawabanGroup && jawabanGroup.length > 0) {
-            const nilaiGroup = this.hitungNilaiGroup(
-              group,
-              jawabanGroup.map((j) => ({
-                pertanyaanId: j.pertanyaanId,
-                opsiJawabanId: j.opsiJawabanId,
-                nilai: Number(j.nilai),
-              }))
-            );
-
-            perGroup.push({
-              groupId: group.id,
-              groupNama: group.nama,
-              nilaiGroup: Math.round(nilaiGroup * 100) / 100,
-              bobotGroup: Number(group.bobotTotal),
-            });
-          }
-        }
-      }
-
-      return {
-        lecturerId: p.lecturerId,
-        lecturerNama: p.lecturer?.user?.name || "",
-        role,
-        nilaiAkhir: Number(p.nilaiAkhir || 0),
-        perGroup,
-      };
-    });
+    // Detail per dosen - sesuai interface DosenNilai
+    const detailPerDosen = penilaianList.map((p) => ({
+      lecturerId: p.lecturerId,
+      kode: p.lecturer?.lecturer_code || "",
+      nama: p.lecturer?.user?.name || "",
+      nilai: Math.round(Number(p.nilaiAkhir || 0) * 100) / 100,
+      tanggal: p.updatedAt.toISOString(),
+    }));
 
     return {
       rata2Pembimbing: Math.round(rata2Pembimbing * 100) / 100,
       rata2Penguji: Math.round(rata2Penguji * 100) / 100,
-      nilaiAkhir: Math.round(nilaiAkhir * 100) / 100,
+      nilaiAkhir: nilaiAkhir ?? undefined, // Kosong jika tidak memenuhi kondisi
       nilaiHuruf,
+      isFinalized,
       finalisasiOleh: finalizedByName,
-      detailDosen,
+      detailPerDosen,
     };
   }
 
@@ -374,11 +333,7 @@ export class PenilaianService {
 
     // Finalisasi semua penilaian
     for (const penilaian of penilaians) {
-      await this.penilaianRepo.finalize(
-        penilaian.id,
-        lecturerId,
-        finalizedByName
-      );
+      await this.penilaianRepo.finalize(penilaian.id, finalizedByName);
     }
   }
 
@@ -439,5 +394,12 @@ export class PenilaianService {
    */
   async getAllPenilaians(): Promise<Penilaian[]> {
     return await this.penilaianRepo.findAll();
+  }
+
+  /**
+   * Check if all penilaian for jadwal are finalized
+   */
+  async checkAllFinalized(jadwalId: number): Promise<boolean> {
+    return await this.penilaianRepo.checkAllFinalized(jadwalId);
   }
 }

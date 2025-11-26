@@ -39,6 +39,7 @@
     "nodemailer": "^7.0.5",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pdf-lib": "^1.17.1",
     "reflect-metadata": "^0.1.14",
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",

@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class MigrationDB1763990172910 implements MigrationInterface {
-    name = 'MigrationDB1763990172910'
+export class MigrationDB1764130514318 implements MigrationInterface {
+    name = 'MigrationDB1764130514318'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE \`lecturer_expertise\` (\`id\` int NOT NULL AUTO_INCREMENT, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`lecturer_id\` int NULL, \`expertise_id\` int NULL, UNIQUE INDEX \`IDX_18f9354e6df5770364538a668b\` (\`lecturer_id\`, \`expertise_id\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
@@ -28,6 +28,7 @@ export class MigrationDB1763990172910 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE \`jawaban_penilaians\` (\`id\` varchar(36) NOT NULL, \`penilaianId\` varchar(255) NOT NULL, \`pertanyaanId\` varchar(255) NOT NULL, \`opsiJawabanId\` varchar(255) NOT NULL, \`nilai\` decimal(3,2) NOT NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
         await queryRunner.query(`CREATE TABLE \`penilaians\` (\`id\` varchar(36) NOT NULL, \`jadwalId\` int NOT NULL, \`lecturerId\` int NOT NULL, \`studentId\` int NULL, \`rubrikId\` varchar(255) NOT NULL, \`catatan\` text NULL, \`nilaiAkhir\` decimal(5,2) NULL, \`isFinalized\` tinyint NOT NULL DEFAULT 0, \`finalizedById\` int NULL, \`finalizedByName\` varchar(255) NULL, \`finalizedAt\` datetime NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
         await queryRunner.query(`CREATE TABLE \`berita_acara_penilaians\` (\`id\` varchar(36) NOT NULL, \`jadwalId\` int NOT NULL, \`fileName\` varchar(500) NOT NULL, \`fileUrl\` text NOT NULL, \`nilaiAkhir\` decimal(5,2) NOT NULL, \`nilaiHuruf\` varchar(5) NOT NULL, \`catatan\` text NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+        await queryRunner.query(`CREATE TABLE \`berita_acara_pdfs\` (\`id\` varchar(36) NOT NULL, \`studentId\` int NOT NULL, \`pdfName\` varchar(255) NOT NULL, \`pdfUrl\` text NOT NULL, \`nilaiAkhir\` decimal(5,2) NOT NULL, \`nilaiHuruf\` varchar(5) NOT NULL, \`jadwalId\` int NOT NULL, \`catatan\` text NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), INDEX \`IDX_47fa5248e58c8cd495384112e7\` (\`studentId\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
         await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` ADD CONSTRAINT \`FK_6827f408cf4878d95eb6aa71fda\` FOREIGN KEY (\`lecturer_id\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` ADD CONSTRAINT \`FK_73a5e7f156f4e157f54c834753f\` FOREIGN KEY (\`expertise_id\`) REFERENCES \`expertises_group\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`guidance_availability\` ADD CONSTRAINT \`FK_bb08af4944c488c7f6bc4e7d36f\` FOREIGN KEY (\`lecturerId\`) REFERENCES \`lecturer\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
@@ -65,9 +66,11 @@ export class MigrationDB1763990172910 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE \`penilaians\` ADD CONSTRAINT \`FK_e0560b8ac284b72d30ed8d0306e\` FOREIGN KEY (\`studentId\`) REFERENCES \`student\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`penilaians\` ADD CONSTRAINT \`FK_48d11ae012ac1a712004eb24e89\` FOREIGN KEY (\`rubrikId\`) REFERENCES \`rubriks\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`berita_acara_penilaians\` ADD CONSTRAINT \`FK_0c0bf408bbf1911fd7bd11782b1\` FOREIGN KEY (\`jadwalId\`) REFERENCES \`defense_schedules\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`berita_acara_pdfs\` ADD CONSTRAINT \`FK_47fa5248e58c8cd495384112e7e\` FOREIGN KEY (\`studentId\`) REFERENCES \`student\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE \`berita_acara_pdfs\` DROP FOREIGN KEY \`FK_47fa5248e58c8cd495384112e7e\``);
         await queryRunner.query(`ALTER TABLE \`berita_acara_penilaians\` DROP FOREIGN KEY \`FK_0c0bf408bbf1911fd7bd11782b1\``);
         await queryRunner.query(`ALTER TABLE \`penilaians\` DROP FOREIGN KEY \`FK_48d11ae012ac1a712004eb24e89\``);
         await queryRunner.query(`ALTER TABLE \`penilaians\` DROP FOREIGN KEY \`FK_e0560b8ac284b72d30ed8d0306e\``);
@@ -105,6 +108,8 @@ export class MigrationDB1763990172910 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE \`guidance_availability\` DROP FOREIGN KEY \`FK_bb08af4944c488c7f6bc4e7d36f\``);
         await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` DROP FOREIGN KEY \`FK_73a5e7f156f4e157f54c834753f\``);
         await queryRunner.query(`ALTER TABLE \`lecturer_expertise\` DROP FOREIGN KEY \`FK_6827f408cf4878d95eb6aa71fda\``);
+        await queryRunner.query(`DROP INDEX \`IDX_47fa5248e58c8cd495384112e7\` ON \`berita_acara_pdfs\``);
+        await queryRunner.query(`DROP TABLE \`berita_acara_pdfs\``);
         await queryRunner.query(`DROP TABLE \`berita_acara_penilaians\``);
         await queryRunner.query(`DROP TABLE \`penilaians\``);
         await queryRunner.query(`DROP TABLE \`jawaban_penilaians\``);

@@ -23,15 +23,7 @@ export class BapService {
     // Check if BAP already exists
     const existing = await this.bapRepo.findByJadwalId(jadwalId);
 
-    // Get rekap nilai
-    const rekap = await this.penilaianService.getRekapNilai(jadwalId);
-
-    // Jika tidak ada penilaian, tidak bisa generate BAP
-    if (!rekap) {
-      throw new Error("Belum ada penilaian untuk membuat BAP");
-    }
-
-    // Get jadwal details
+    // Get jadwal details first to extract student ID
     const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
     if (!jadwal) {
       throw new Error("Jadwal tidak ditemukan");
@@ -46,6 +38,18 @@ export class BapService {
     }
 
     const student = finalProjectMember.student;
+    const studentId = student.id;
+
+    // Get rekap nilai
+    const rekap = await this.penilaianService.getRekapNilai(
+      jadwalId,
+      studentId
+    );
+
+    // Jika tidak ada penilaian, tidak bisa generate BAP
+    if (!rekap) {
+      throw new Error("Belum ada penilaian untuk membuat BAP");
+    }
 
     // Generate filename
     const date = new Date().toISOString().split("T")[0].replace(/-/g, "");
@@ -86,7 +90,7 @@ export class BapService {
       "Detail Penilaian per Dosen:",
     ];
 
-    for (const dosen of rekap.detailDosen) {
+    for (const dosen of rekap.detailPerDosen) {
       lines.push(
         `- ${dosen.lecturerNama} (${dosen.role}): ${dosen.nilaiAkhir}`
       );
@@ -108,7 +112,39 @@ export class BapService {
    * Generate BAP HTML for preview
    */
   async generateBapHtml(jadwalId: number): Promise<string> {
-    const rekap = await this.penilaianService.getRekapNilai(jadwalId);
+    const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
+
+    if (!jadwal) {
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Berita Acara Penilaian</title>
+</head>
+<body>
+  <h2>Berita Acara Penilaian</h2>
+  <p>Belum ada penilaian untuk jadwal ini.</p>
+</body>
+</html>
+      `;
+    }
+
+    const submission = jadwal.defense_submission;
+    const finalProject = submission.final_project;
+    const finalProjectMember = finalProject.members?.[0];
+
+    if (!finalProjectMember) {
+      throw new Error("Final project member tidak ditemukan");
+    }
+
+    const student = finalProjectMember.student;
+    const studentId = student.id;
+
+    const rekap = await this.penilaianService.getRekapNilai(
+      jadwalId,
+      studentId
+    );
 
     // Jika tidak ada penilaian, return placeholder
     if (!rekap) {
@@ -126,22 +162,6 @@ export class BapService {
 </html>
       `;
     }
-
-    const jadwal = await this.scheduleRepo.findByDefenseSubmissionId(jadwalId);
-
-    if (!jadwal) {
-      throw new Error("Jadwal tidak ditemukan");
-    }
-
-    const submission = jadwal.defense_submission;
-    const finalProject = submission.final_project;
-    const finalProjectMember = finalProject.members?.[0];
-
-    if (!finalProjectMember) {
-      throw new Error("Final project member tidak ditemukan");
-    }
-
-    const student = finalProjectMember.student;
 
     // Generate HTML BAP
     const html = `
@@ -245,7 +265,7 @@ export class BapService {
       </tr>
     </thead>
     <tbody>
-      ${rekap.detailDosen
+      ${rekap.detailPerDosen
         .map(
           (d: any) => `
         <tr>
@@ -272,7 +292,7 @@ export class BapService {
   </table>
 
   <div class="signature">
-    ${rekap.detailDosen
+    ${rekap.detailPerDosen
       .map(
         (d: any) => `
       <div class="signature-box">

@@ -45,6 +45,27 @@ export class PenilaianRepository {
       .getMany();
   }
 
+  async findByJadwalAndStudent(
+    jadwalId: number,
+    studentId: number
+  ): Promise<Penilaian[]> {
+    return await this.repository
+      .createQueryBuilder("penilaian")
+      .leftJoinAndSelect("penilaian.lecturer", "lecturer")
+      .leftJoinAndSelect("lecturer.user", "lecturer_user")
+      .leftJoinAndSelect("penilaian.rubrik", "rubrik")
+      .leftJoinAndSelect("rubrik.groups", "groups")
+      .leftJoinAndSelect("groups.pertanyaans", "pertanyaans")
+      .leftJoinAndSelect("penilaian.jawabans", "jawabans")
+      .leftJoinAndSelect("jawabans.pertanyaan", "jawaban_pertanyaan")
+      .leftJoinAndSelect("jawabans.opsiJawaban", "opsiJawaban")
+      .where("penilaian.jadwalId = :jadwalId", { jadwalId })
+      .andWhere("penilaian.studentId = :studentId", { studentId })
+      .orderBy("groups.urutan", "ASC")
+      .addOrderBy("pertanyaans.urutan", "ASC")
+      .getMany();
+  }
+
   async findByJadwalAndLecturer(
     jadwalId: number,
     lecturerId: number,
@@ -91,8 +112,8 @@ export class PenilaianRepository {
 
   async finalize(
     id: string,
-    finalizedById?: number,
-    finalizedByName?: string
+    finalizedByName: string,
+    finalizedById?: number
   ): Promise<void> {
     await this.repository.update(id, {
       isFinalized: true,
@@ -105,26 +126,5 @@ export class PenilaianRepository {
   async checkAllFinalized(jadwalId: number): Promise<boolean> {
     const penilaians = await this.findByJadwalId(jadwalId);
     return penilaians.length > 0 && penilaians.every((p) => p.isFinalized);
-  }
-
-  async findByJadwalAndStudent(
-    jadwalId: number,
-    studentId: number
-  ): Promise<Penilaian[]> {
-    return await this.repository
-      .createQueryBuilder("penilaian")
-      .leftJoinAndSelect("penilaian.lecturer", "lecturer")
-      .leftJoinAndSelect("lecturer.user", "lecturer_user")
-      .leftJoinAndSelect("penilaian.rubrik", "rubrik")
-      .leftJoinAndSelect("rubrik.groups", "groups")
-      .leftJoinAndSelect("groups.pertanyaans", "pertanyaans")
-      .leftJoinAndSelect("penilaian.jawabans", "jawabans")
-      .leftJoinAndSelect("jawabans.pertanyaan", "jawaban_pertanyaan")
-      .leftJoinAndSelect("jawabans.opsiJawaban", "opsiJawaban")
-      .where("penilaian.jadwalId = :jadwalId", { jadwalId })
-      .andWhere("penilaian.studentId = :studentId", { studentId })
-      .orderBy("groups.urutan", "ASC")
-      .addOrderBy("pertanyaans.urutan", "ASC")
-      .getMany();
   }
 }

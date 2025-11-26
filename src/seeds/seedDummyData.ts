@@ -877,16 +877,6 @@ export async function seedDummyData(dataSource: DataSource) {
     expertises_group_2: expertiseGroups[2],
   });
 
-  const defenseSchedule6Hasil = await defenseScheduleRepo.save({
-    defense_submission: defenseSubmission6Hasil,
-    scheduled_date: "2025-12-04",
-    start_time: "09:00",
-    end_time: "10:30",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang A",
-    status: "scheduled",
-  });
-
   // Defense Submission Documents untuk Student 6 - Hasil
   await defenseSubmissionDocRepo.save({
     defense_submission: defenseSubmission6Hasil,

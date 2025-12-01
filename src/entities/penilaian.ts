@@ -51,7 +51,7 @@ export class Penilaian {
 
   @ManyToOne(() => DefenseSchedule, { onDelete: "CASCADE" })
   @JoinColumn({ name: "jadwalId" })
-  jadwal!: DefenseSchedule;
+  defense_schedule!: DefenseSchedule;
 
   @ManyToOne(() => Lecturer, { onDelete: "CASCADE" })
   @JoinColumn({ name: "lecturerId" })

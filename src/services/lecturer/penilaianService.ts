@@ -824,21 +824,17 @@ export class PenilaianService {
    */
   async getJadwalByLecturer(lecturerId: number): Promise<Jadwal[]> {
     try {
-      // Get all defense submissions where lecturer is supervisor or examiner
-      const submissions = await this.defenseSubmissionRepo.findByLecturerId(
-        lecturerId
-      );
+      // Get all defense schedules where lecturer is supervisor or examiner
+      const schedules = await this.scheduleRepo.findByLecturerId(lecturerId);
 
       const jadwalList: Jadwal[] = [];
       const now = new Date();
 
-      for (const submission of submissions) {
-        // Get schedule for this submission
-        const schedule = await this.scheduleRepo.findByDefenseSubmissionId(
-          submission.id
-        );
+      for (const schedule of schedules) {
+        // Get defense submission from schedule
+        const submission = schedule.defense_submission;
 
-        if (!schedule) {
+        if (!submission) {
           continue;
         }
 
@@ -849,8 +845,7 @@ export class PenilaianService {
         const member = members[0];
         const student = member?.student;
         const user = student?.user;
-        const memberTitle =
-          member?.title || submission.final_project.title || "-";
+        const memberTitle = member?.title || "-";
 
         // Get supervisors and examiners
         const supervisor1 = submission.final_project.supervisor_1;
@@ -1020,7 +1015,7 @@ export class PenilaianService {
           waktu: schedule.start_time,
           judul: memberTitle,
           lokasi: schedule.room || "Prodi",
-          capstone: submission.capstone_code || "-",
+          tipeTA: isCapstone ? "Capstone" : "Reguler",
           pembimbing1: supervisor1?.user?.name || "-",
           pembimbing2: supervisor2?.user?.name || "-",
           penguji1: examiner1?.user?.name || "-",
@@ -1051,8 +1046,7 @@ export class PenilaianService {
             const otherMember = members[i];
             const otherStudent = otherMember?.student;
             const otherUser = otherStudent?.user;
-            const otherMemberTitle =
-              otherMember?.title || submission.final_project.title || "-";
+            const otherMemberTitle = otherMember?.title || "-";
 
             // Get penilaian untuk member lain (jika ada per-student penilaian)
             const penilaianOtherMember =
@@ -1144,7 +1138,7 @@ export class PenilaianService {
               waktu: schedule.start_time,
               judul: otherMemberTitle,
               lokasi: schedule.room || "Prodi",
-              capstone: submission.capstone_code || "-",
+              tipeTA: isCapstone ? "Capstone" : "Reguler",
               pembimbing1: supervisor1?.user?.name || "-",
               pembimbing2: supervisor2?.user?.name || "-",
               penguji1: examiner1?.user?.name || "-",

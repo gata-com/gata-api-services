@@ -506,4 +506,35 @@ export class FinalProjectRepository {
       throw error;
     }
   }
+
+  /**
+   * Get all approved defense submissions for CSV export
+   * @param defense_type - Type of defense (proposal, hasil) - optional
+   * @returns Array of defense submissions with all relations needed for CSV
+   */
+  async findForCsvExport(defense_type?: string): Promise<any> {
+    const query = this.repository
+      .createQueryBuilder("fp")
+      .leftJoinAndSelect("fp.defense_submissions", "ds")
+      .leftJoinAndSelect("fp.members", "members")
+      .leftJoinAndSelect("members.student", "student")
+      .leftJoinAndSelect("student.user", "studentUser")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor1")
+      .leftJoinAndSelect("supervisor1.user", "supervisor1User")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor2")
+      .leftJoinAndSelect("supervisor2.user", "supervisor2User")
+      .leftJoinAndSelect("ds.examiner_1", "examiner1")
+      .leftJoinAndSelect("examiner1.user", "examiner1User")
+      .leftJoinAndSelect("ds.examiner_2", "examiner2")
+      .leftJoinAndSelect("examiner2.user", "examiner2User")
+      .leftJoinAndSelect("ds.expertises_group_1", "expertise1")
+      .leftJoinAndSelect("ds.expertises_group_2", "expertise2")
+      .where("ds.status = :status", { status: "approved" });
+
+    if (defense_type) {
+      query.andWhere("ds.defense_type = :defense_type", { defense_type });
+    }
+
+    return query.orderBy("ds.created_at", "ASC").getMany();
+  }
 }

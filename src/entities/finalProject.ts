@@ -148,12 +148,6 @@ export class FinalProjects {
   @ManyToOne(() => Lecturer, { onDelete: "CASCADE", nullable: true })
   supervisor_2!: Lecturer;
 
-  // @OneToOne(() => DefenseSubmission, (defense) => defense.final_project, {
-  //   onDelete: "CASCADE",
-  // })
-  // @JoinColumn({name: ""})
-  // defense_submission!: DefenseSubmission;
-
   @OneToMany(() => DefenseSubmission, (defense) => defense.final_project, {
     onDelete: "CASCADE",
   })

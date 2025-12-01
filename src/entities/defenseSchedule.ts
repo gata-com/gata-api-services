@@ -39,10 +39,6 @@ export class DefenseSchedule {
   @Column({ type: "text" })
   scheduler_status!: string;
 
-  // Original index dari scheduler (untuk tracking)
-  @Column({ type: "int", nullable: true })
-  original_idx?: number;
-
   // Room/location (opsional)
   @Column({ type: "varchar", length: 255, nullable: true, default: "Prodi" })
   room?: string;

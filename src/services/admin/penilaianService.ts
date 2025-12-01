@@ -194,7 +194,7 @@ export class PenilaianService {
   async getRekapNilai(
     jadwalId: number,
     studentId: number
-  ): Promise<RekapNilai | undefined> {
+  ): Promise<RekapNilai | any> {
     // Convert single object to array untuk konsistensi
     const penilaianList = await this.penilaianRepo.findByJadwalAndStudent(
       jadwalId,
@@ -269,13 +269,31 @@ export class PenilaianService {
     const finalizedByName = finalizedPenilaian?.finalizedByName;
 
     // Detail per dosen - sesuai interface DosenNilai
-    const detailPerDosen = penilaianList.map((p) => ({
-      lecturerId: p.lecturerId,
-      kode: p.lecturer?.lecturer_code || "",
-      nama: p.lecturer?.user?.name || "",
-      nilai: Math.round(Number(p.nilaiAkhir || 0) * 100) / 100,
-      tanggal: p.updatedAt.toISOString(),
-    }));
+    const detailPerDosen = penilaianList.map((p) => {
+      let role = "";
+
+      if (pembimbingIds[0] === p.lecturerId) {
+        role = "Pembimbing 1";
+      } else if (pembimbingIds[1] === p.lecturerId) {
+        role = "Pembimbing 2";
+      }
+
+      if (pengujiIds[0] === p.lecturerId) {
+        role = "Penguji 1";
+      } else if (pengujiIds[1] === p.lecturerId) {
+        role = "Penguji 2";
+      }
+
+      return {
+        PenilaianID: p.id,
+        lecturerId: p.lecturerId,
+        role: role,
+        kode: p.lecturer?.lecturer_code || "",
+        nama: p.lecturer?.user?.name || "",
+        nilai: Math.round(Number(p.nilaiAkhir || 0) * 100) / 100,
+        tanggal: p.updatedAt.toISOString(),
+      };
+    });
 
     return {
       rata2Pembimbing: Math.round(rata2Pembimbing * 100) / 100,

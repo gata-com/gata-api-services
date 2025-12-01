@@ -56,11 +56,9 @@ export class RentangNilaiRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const rentang = await this.findById(id);
-    if (!rentang) {
-      return false;
-    }
-    await this.repository.update(id, { isActive: false });
+    // hard delete
+    await this.repository.delete(id);
+
     return true;
   }
 
@@ -88,5 +86,22 @@ export class RentangNilaiRepository {
     }
 
     return "E"; // Default jika tidak ada yang match
+  }
+
+  /**
+   * Get minimum score to pass
+   * Ambil minScore terkecil yang lebih dari 0
+   * @returns minScore terkecil atau 0 jika tidak ada
+   */
+  async getMinScoreToPassed(): Promise<number> {
+    const rentangs = await this.repository.find({
+      where: { isActive: true },
+      order: { minScore: "ASC" },
+    });
+
+    // Filter minScore > 0 dan ambil yang pertama (terkecil)
+    const passingScore = rentangs.find((r) => Number(r.minScore) > 0);
+
+    return passingScore ? Number(passingScore.minScore) : 0;
   }
 }

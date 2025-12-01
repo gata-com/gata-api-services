@@ -31,14 +31,15 @@ export const generateBapPdf = async (
 
     return res.status(200).json({
       message: "BAP berhasil di-generate",
-      data: {
-        id: bap.id,
-        pdfName: bap.pdfName,
-        pdfUrl: bap.pdfUrl,
-        nilaiAkhir: bap.nilaiAkhir,
-        nilaiHuruf: bap.nilaiHuruf,
-        generatedAt: bap.createdAt,
-      },
+      // data: {
+      //   id: bap.id,
+      //   pdfName: bap.pdfName,
+      //   pdfUrl: bap.pdfUrl,
+      //   nilaiAkhir: bap.nilaiAkhir,
+      //   nilaiHuruf: bap.nilaiHuruf,
+      //   generatedAt: bap.createdAt,
+      // },
+      data: bap,
     });
   } catch (error) {
     console.error("Error generating BAP PDF:", error);

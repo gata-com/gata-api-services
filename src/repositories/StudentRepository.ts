@@ -45,6 +45,7 @@ export class StudentRepository {
   async findById(id: number): Promise<Student | null> {
     return await this.repository.findOne({
       where: { id },
+      relations: ["user"],
     });
   }
 

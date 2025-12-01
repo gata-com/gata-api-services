@@ -7,8 +7,6 @@ import {
   ManyToOne,
   Index,
   OneToMany,
-  JoinColumn,
-  OneToOne,
 } from "typeorm";
 import { Lecturer } from "./lecturer";
 import { FinalProjects } from "./finalProject";
@@ -94,21 +92,6 @@ export class DefenseSubmission {
     nullable: true,
   })
   processed_at?: Date;
-
-  // Kode capstone (5 huruf uppercase, unik)
-  @Column({
-    type: "varchar",
-    length: 6,
-    nullable: true,
-  })
-  capstone_code?: string;
-
-  // Jadwal sidang
-  @Column({
-    type: "datetime",
-    nullable: true,
-  })
-  defense_date?: Date;
 
   @CreateDateColumn()
   created_at!: Date;

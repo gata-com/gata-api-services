@@ -1,12 +1,23 @@
 import { DefenseSubmissionRepository } from "@/repositories/DefenseSubmissionRepository";
+import { TempExportCsvRepository } from "@/repositories/TempExportCsvRepository";
+import { FinalProjectRepository } from "@/repositories/FinalProjectRepository";
 import { generateCapstoneCode } from "@/utils/capstoneCode";
 
 export class DefenseExportService {
+  private fpRepo: FinalProjectRepository;
   private defenseRepo: DefenseSubmissionRepository;
+  private tempExportCsvRepo: TempExportCsvRepository;
 
   constructor() {
+    this.fpRepo = new FinalProjectRepository();
     this.defenseRepo = new DefenseSubmissionRepository();
+    this.tempExportCsvRepo = new TempExportCsvRepository();
   }
+
+  /**
+   * move the data into temp table
+   *
+   */
 
   /**
    * Export defense submissions to CSV format
@@ -15,7 +26,54 @@ export class DefenseExportService {
    */
   async exportToCSV(defense_type?: string): Promise<string> {
     // Get defense submissions
-    const submissions = await this.defenseRepo.findForCsvExport(defense_type);
+    const finalProjects = await this.fpRepo.findForCsvExport(defense_type);
+
+    // delete All temp data before insert new temp data
+    await this.tempExportCsvRepo.deleteAll();
+
+    // transform data to fit required scheduler format data (insert into temp_export_csv)
+    for (const fp of finalProjects) {
+      const submission = fp.defense_submissions[0];
+      const members = fp.members || [];
+
+      // Generate capstone code if fp.type is 'capstone'
+      let capstoneCode = "";
+      if (fp.type === "capstone") {
+        capstoneCode = await generateCapstoneCode();
+      }
+
+      for (const m of members) {
+        // Get supervisor codes
+        const supervisor1Code = fp.supervisor_1?.lecturer_code || "";
+        const supervisor2Code = fp.supervisor_2?.lecturer_code || "";
+
+        // Get examiner codes
+        let examiner1Code = submission.examiner_1?.lecturer_code || "";
+        let examiner2Code = submission.examiner_2?.lecturer_code || "";
+
+        // Determine defense type label
+        const defenseTypeLabel =
+          submission.defense_type === "proposal" ? "Proposal" : "Sidang Akhir";
+
+        const tempData = {
+          nama: m.student?.user?.name || "",
+          nim: m.student?.nim || "",
+          judul: m.title || "",
+          capstone_code: capstoneCode,
+          type: defenseTypeLabel,
+          field_1: submission.expertises_group_1?.name || "",
+          field_2: submission.expertises_group_2?.name || "",
+          spv_1: supervisor1Code,
+          spv_2: supervisor2Code,
+          date_time: "", // date_time must be blank for scheduler
+          examiner_1: examiner1Code,
+          examiner_2: examiner2Code,
+          status: "", // status must be blank
+        };
+
+        await this.tempExportCsvRepo.insertTempData(tempData);
+      }
+    }
 
     // CSV Headers (2 rows as per requirement)
     const headerRow1 = [
@@ -53,82 +111,23 @@ export class DefenseExportService {
     // Build CSV rows
     const csvRows: string[][] = [headerRow1, headerRow2];
 
-    for (const submission of submissions) {
-      const fp = submission.final_project;
-      const members = fp.members || [];
+    // get all temp data
+    const tempDataList = await this.tempExportCsvRepo.findAll();
 
-      // Get first member (ketua) for main data
-      const leader = members[0];
-      if (!leader) continue;
-
-      const student = leader.student;
-      const studentUser = student?.user;
-
-      // Generate capstone code if not exists
-      let capstoneCode = submission.capstone_code;
-      if (!capstoneCode) {
-        capstoneCode = await generateCapstoneCode();
-        // Update in database
-        await this.defenseRepo.updateDefenseSchedule(submission.id, {
-          capstone_code: capstoneCode,
-        });
-      }
-
-      // Get supervisor codes
-      const supervisor1Code =
-        fp.supervisor_1?.user?.name?.substring(0, 3).toUpperCase() || "";
-      const supervisor2Code = fp.supervisor_2
-        ? fp.supervisor_2.user?.name?.substring(0, 3).toUpperCase()
-        : "";
-
-      // Get examiner codes (from sidang proposal)
-      let examiner1Code = "";
-      let examiner2Code = "";
-
-      if (submission.defense_type === "hasil") {
-        // For sidang akhir, get examiners from sidang proposal
-        const proposalSubmission =
-          await this.defenseRepo.findByFinalProjectAndType(fp.id, "proposal");
-
-        if (proposalSubmission) {
-          examiner1Code = proposalSubmission.examiner_1
-            ? proposalSubmission.examiner_1.user?.name
-                ?.substring(0, 3)
-                .toUpperCase()
-            : "";
-          examiner2Code = proposalSubmission.examiner_2
-            ? proposalSubmission.examiner_2.user?.name
-                ?.substring(0, 3)
-                .toUpperCase()
-            : "";
-        }
-      } else if (submission.defense_type === "proposal") {
-        // For sidang proposal, use current examiners
-        examiner1Code = submission.examiner_1
-          ? submission.examiner_1.user?.name?.substring(0, 3).toUpperCase()
-          : "";
-        examiner2Code = submission.examiner_2
-          ? submission.examiner_2.user?.name?.substring(0, 3).toUpperCase()
-          : "";
-      }
-
-      // Determine defense type label
-      const defenseTypeLabel =
-        submission.defense_type === "proposal" ? "Proposal" : "Sidang Akhir";
-
+    for (const temp of tempDataList) {
       const row = [
-        studentUser?.name || "",
-        student?.nim || "",
-        leader.title || "",
-        capstoneCode,
-        defenseTypeLabel,
-        submission.expertises_group_1?.name || "",
-        submission.expertises_group_2?.name || "",
-        supervisor1Code,
-        supervisor2Code,
+        temp.nama,
+        temp.nim,
+        temp.judul,
+        temp.capstone_code,
+        temp.type,
+        temp.field_1,
+        temp.field_2,
+        temp.spv_1,
+        temp.spv_2,
         "", // date_time must be blank for scheduler
-        examiner1Code,
-        examiner2Code,
+        temp.examiner_1,
+        temp.examiner_2,
         "", // status must be blank
       ];
 

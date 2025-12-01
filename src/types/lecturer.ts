@@ -128,7 +128,7 @@ export interface Jadwal {
   waktu: string;
   judul: string;
   lokasi: string;
-  capstone: string;
+  tipeTA: "Capstone" | "Reguler";
   pembimbing1: string;
   pembimbing2: string;
   penguji1: string;

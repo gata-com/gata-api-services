@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { DefenseExportService } from "@/services/admin/defenseExportService";
 import { DefenseScheduleImportService } from "@/services/admin/defenseScheduleService";
 import { ApiResponse } from "@/types";
+import fs from "fs";
+import path from "path/win32";
 
 /**
  * Export defense submissions to CSV
@@ -136,7 +138,6 @@ export const importScheduleCSV = async (
     const service = new DefenseScheduleImportService();
     const result = await service.importScheduleFromCSV(req.file.path);
 
-    // Return summary of import
     return res.status(200).json({
       message: `Import selesai: ${result.success} berhasil, ${result.failed} gagal`,
       data: {

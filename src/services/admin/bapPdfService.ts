@@ -2,6 +2,7 @@ import { BeritaAcaraPDFRepository } from "@/repositories/BeritaAcaraPDFRepositor
 import { PenilaianService } from "./penilaianService";
 import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleRepository";
 import { StudentRepository } from "@/repositories/StudentRepository";
+import { RentangNilaiRepository } from "@/repositories/RentangNilaiRepository";
 import { BeritaAcaraPDF } from "@/entities/beritaAcaraPDF";
 import * as fs from "fs";
 import * as path from "path";
@@ -12,14 +13,21 @@ export class BapPdfService {
   private penilaianService: PenilaianService;
   private scheduleRepo: DefenseScheduleRepository;
   private studentRepo: StudentRepository;
+  private rentangRepo: RentangNilaiRepository;
   private storageDir: string;
+  private templatePath: string;
 
   constructor() {
     this.bapRepo = new BeritaAcaraPDFRepository();
     this.penilaianService = new PenilaianService();
     this.scheduleRepo = new DefenseScheduleRepository();
     this.studentRepo = new StudentRepository();
+    this.rentangRepo = new RentangNilaiRepository();
     this.storageDir = path.join(__dirname, "../../storages/bap-pdf");
+    this.templatePath = path.join(
+      __dirname,
+      "../../templates/bap-pdf/bap-template.html"
+    );
 
     // Pastikan storage dir exists
     if (!fs.existsSync(this.storageDir)) {
@@ -34,7 +42,7 @@ export class BapPdfService {
   async generateBapForStudent(
     jadwalId: number,
     studentId: number
-  ): Promise<BeritaAcaraPDF> {
+  ): Promise<BeritaAcaraPDF | any> {
     // Get student data
     const student = await this.studentRepo.findById(studentId);
     if (!student) {
@@ -83,6 +91,10 @@ export class BapPdfService {
       throw new Error("Final project member tidak ditemukan");
     }
 
+    const minScoreToPass = await this.rentangRepo.getMinScoreToPassed();
+
+    const isPassed = rekap.nilaiAkhir >= minScoreToPass;
+
     // Generate PDF
     const pdfFilePath = path.join(this.storageDir, pdfFileName);
 
@@ -91,7 +103,8 @@ export class BapPdfService {
       student,
       finalProjectMember,
       jadwal,
-      rekap
+      rekap,
+      isPassed
     );
 
     // Save to database
@@ -127,7 +140,8 @@ export class BapPdfService {
     student: any,
     finalProjectMember: any,
     jadwal: any,
-    rekap: any
+    rekap: any,
+    isPassed: boolean
   ) {
     try {
       // Generate HTML content
@@ -135,7 +149,8 @@ export class BapPdfService {
         student,
         finalProjectMember,
         jadwal,
-        rekap
+        rekap,
+        isPassed
       );
 
       // Convert HTML to PDF using Puppeteer
@@ -189,399 +204,96 @@ export class BapPdfService {
 
   /**
    * Generate HTML content for BAP document
-   * Creates HTML identical to the BAP form with all data filled in
+   * Loads HTML template dan inject data
    */
   private generateBapHtml(
     student: any,
     finalProjectMember: any,
     jadwal: any,
-    rekap: any
+    rekap: any,
+    isPassed: boolean
   ): string {
-    const studentName = student.user?.name || student.nim || "[nama-mahasiswa]";
-    const studentNim = student.nim || "[nim-mahasiswa]";
-    const projectTitle = finalProjectMember.title || "[judul-tugas-akhir]";
-    const supervisor1Name =
-      jadwal.defense_submission?.final_project?.supervisor_1?.user?.name ||
-      "[nama-pembimbing1]";
-    const supervisor1Nip =
-      jadwal.defense_submission?.final_project?.supervisor_1?.nip ||
-      "[nip-pembimbing1]";
-    const supervisor2Name =
-      jadwal.defense_submission?.final_project?.supervisor_2?.user?.name ||
-      "[nama-pembimbing2]";
-    const supervisor2Nip =
-      jadwal.defense_submission?.final_project?.supervisor_2?.nip ||
-      "[nip-pembimbing2]";
-    const defenseDate = jadwal.scheduled_date || "[tanggal-sidang]";
-    const defenseTime = `${jadwal.start_time || "[jam-mulai]"} - ${
-      jadwal.end_time || "[jam-selesai]"
-    }`;
+    try {
+      // Load template HTML
+      let htmlContent = fs.readFileSync(this.templatePath, "utf-8");
 
-    // Format tanggal ke format Indonesia
-    const formattedDate = new Date().toLocaleDateString("id-ID", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+      // Prepare data
+      const studentName = student.user?.name || "[nama-mahasiswa]";
+      const studentNim = student.nim || "[nim-mahasiswa]";
+      const projectTitle = (
+        finalProjectMember.title || "[judul-tugas-akhir]"
+      ).toUpperCase();
+      const supervisor1Name =
+        jadwal.defense_submission?.final_project?.supervisor_1?.user?.name ||
+        "[nama-pembimbing1]";
+      const supervisor1Nip =
+        jadwal.defense_submission?.final_project?.supervisor_1?.nip ||
+        "[nip-pembimbing1]";
+      const supervisor2Name =
+        jadwal.defense_submission?.final_project?.supervisor_2?.user?.name ||
+        "[nama-pembimbing2]";
+      const supervisor2Nip =
+        jadwal.defense_submission?.final_project?.supervisor_2?.nip ||
+        "[nip-pembimbing2]";
 
-    const html = `
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Berita Acara Sidang</title>
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Times New Roman', Times, serif;
-          line-height: 1.5;
-          color: #000;
-          background: #fff;
-          padding: 0;
-        }
-        
-        .container {
-          max-width: 210mm;
-          height: 297mm;
-          margin: 0 auto;
-          padding: 40px;
-          background: white;
-        }
-        
-        .header {
-          text-align: center;
-          margin-bottom: 20px;
-          border-bottom: 3px solid #000;
-          padding-bottom: 15px;
-        }
-        
-        .header-content {
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          gap: 20px;
-          margin-bottom: 10px;
-        }
-        
-        .logo-placeholder {
-          width: 50px;
-          height: 50px;
-          background: #d4af37;
-          border: 2px solid #8b7300;
-          flex-shrink: 0;
-          display: inline-block;
-        }
-        
-        .header-text {
-          text-align: center;
-          flex: 1;
-        }
-        
-        .header-text h1 {
-          font-size: 12pt;
-          font-weight: bold;
-          margin-bottom: 2px;
-          line-height: 1.3;
-        }
-        
-        .header-text p {
-          font-size: 10pt;
-          margin: 1px 0;
-          line-height: 1.3;
-        }
-        
-        .title {
-          text-align: center;
-          margin-bottom: 15px;
-          font-weight: bold;
-          font-size: 11pt;
-          text-transform: uppercase;
-          line-height: 1.4;
-        }
-        
-        .intro-section {
-          margin-bottom: 12px;
-          font-size: 10pt;
-          line-height: 1.6;
-          text-align: justify;
-        }
-        
-        .intro-date {
-          color: #0066cc;
-          font-weight: bold;
-        }
-        
-        .data-section {
-          margin-bottom: 10px;
-          font-size: 10pt;
-        }
-        
-        .data-row {
-          display: flex;
-          margin-bottom: 6px;
-          line-height: 1.4;
-        }
-        
-        .data-label {
-          width: 140px;
-          font-weight: normal;
-        }
-        
-        .data-value {
-          flex: 1;
-          word-break: break-word;
-        }
-        
-        .section-title {
-          font-weight: bold;
-          font-size: 10pt;
-          margin-top: 8px;
-          margin-bottom: 6px;
-          border-bottom: 1px solid #000;
-          padding-bottom: 2px;
-        }
-        
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 12px;
-          font-size: 10pt;
-        }
-        
-        th, td {
-          border: 1px solid #000;
-          padding: 6px;
-          text-align: left;
-        }
-        
-        th {
-          background-color: #f5f5f5;
-          font-weight: bold;
-          text-align: center;
-          font-size: 10pt;
-        }
-        
-        td {
-          height: 25px;
-          vertical-align: middle;
-        }
-        
-        .nilai-column {
-          text-align: center;
-        }
-        
-        .result-section {
-          margin-top: 12px;
-          font-size: 10pt;
-        }
-        
-        .result-item {
-          margin-bottom: 4px;
-          text-align: justify;
-        }
-        
-        .result-value {
-          color: #0066cc;
-          font-weight: bold;
-        }
-        
-        .signature-section {
-          margin-top: 20px;
-          font-size: 10pt;
-        }
-        
-        .signature-intro {
-          margin-bottom: 8px;
-          text-align: justify;
-        }
-        
-        .signature-date {
-          margin-bottom: 15px;
-          margin-top: 8px;
-        }
-        
-        .supervisor-sig {
-          margin-top: 20px;
-        }
-        
-        .sig-item {
-          display: inline-block;
-          width: 48%;
-          margin-right: 4%;
-          margin-bottom: 20px;
-          vertical-align: top;
-        }
-        
-        .sig-item:nth-child(even) {
-          margin-right: 0;
-        }
-        
-        .sig-name {
-          margin-top: 40px;
-          font-weight: bold;
-          font-size: 9pt;
-        }
-        
-        .footer {
-          text-align: center;
-          margin-top: 15px;
-          font-size: 8pt;
-          color: #666;
-          padding-top: 8px;
-          border-top: 1px solid #ccc;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <!-- Header -->
-        <div class="header">
-          <div class="header-content">
-            <div class="logo-placeholder"></div>
-            <div class="header-text">
-              <h1>KEMENTERIAN PENDIDIKAN TINGGI,<br>SAINS, DAN TEKNOLOGI</h1>
-              <p>INSTITUT TEKNOLOGI SUMATERA</p>
-              <p>FAKULTAS TEKNOLOGI INDUSTRI</p>
-              <p>Jalan Terusan Ryacudu Way Halu, Kecamatan Jati Agung, Lampung Selatan 35365</p>
-              <p>Telepon: (0721) 8030188 Website: fti.itera.ac.id, Email: fti@itera.ac.id</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Title -->
-        <div class="title">
-          BERITA ACARA SIDANG<br>
-          PROGRAM STUDI TEKNIK INFORMATIKA<br>
-          FAKULTAS TEKNOLOGI INDUSTRI<br>
-          INSTITUT TEKNOLOGI SUMATERA
-        </div>
-        
-        <!-- Introduction -->
-        <div class="intro-section">
-          Pada hari <span class="intro-date">${formattedDate}</span> telah diaksanakan Ujian Sidang [jenis-sidang] mahasiswa:
-        </div>
-        
-        <!-- Student Data -->
-        <div class="data-section">
-          <div class="data-row">
-            <div class="data-label">Nama</div>
-            <div class="data-value">: ${studentName}</div>
-          </div>
-          <div class="data-row">
-            <div class="data-label">NIM</div>
-            <div class="data-value">: ${studentNim}</div>
-          </div>
-          <div class="data-row">
-            <div class="data-label">Judul Tugas Akhir</div>
-            <div class="data-value">: ${projectTitle}</div>
-          </div>
-        </div>
-        
-        <!-- Supervisors -->
-        <div class="data-section">
-          Setelah melihat, mendengar dan memperhatikan jalannya Ujian Sidang [jenis-sidang], maka tim penguji:
-        </div>
-        
-        <div class="data-section">
-          <div class="section-title">Pembimbing Utama:</div>
-          <div class="data-row">
-            <div class="data-label">Nama</div>
-            <div class="data-value">: ${supervisor1Name}</div>
-          </div>
-          <div class="data-row">
-            <div class="data-label">NIP</div>
-            <div class="data-value">: ${supervisor1Nip}</div>
-          </div>
-        </div>
-        
-        <div class="data-section">
-          <div class="section-title">Pembimbing Pendamping:</div>
-          <div class="data-row">
-            <div class="data-label">Nama</div>
-            <div class="data-value">: ${supervisor2Name}</div>
-          </div>
-          <div class="data-row">
-            <div class="data-label">NIP</div>
-            <div class="data-value">: ${supervisor2Nip}</div>
-          </div>
-        </div>
-        
-        <!-- Grades Table -->
-        <div class="section-title">Hasil Penilaian:</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Nama Dosen</th>
-              <th>Keterangan</th>
-              <th>Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(rekap.detailPerDosen || [])
-              .map((dosen: any) => {
-                return `<tr><td>${dosen.lecturerNama || "-"}</td><td>${
-                  dosen.role || "-"
-                }</td><td class="nilai-column">${
-                  dosen.nilaiAkhir || "-"
-                }</td></tr>`;
-              })
-              .join("")}
-          </tbody>
-        </table>
-        
-        <!-- Final Result -->
-        <div class="result-section">
-          <div class="result-item">
-            Berdasarkan nilai yang diperoleh, maka diputuskan bahwa mahasiswa tersebut dinyatakan <span class="result-value">[status-sidang]</span> dengan nilai <span class="result-value">[nilai-sidang]</span>
-          </div>
-        </div>
-        
-        <!-- Signature Section -->
-        <div class="signature-section">
-          <div class="signature-intro">
-            Demikian berita acara ini dibuat untuk dipergunakan sebagaimana perlunya.
-          </div>
-          
-          <div class="signature-date">
-            Lampung Selatan, ${formattedDate}
-          </div>
-          
-          <div class="supervisor-sig">
-            <div class="sig-item">
-              <p>Pembimbing Utama,</p>
-              <div class="sig-name">
-                ${supervisor1Name}<br>
-                NIP: ${supervisor1Nip}
-              </div>
-            </div>
-            
-            <div class="sig-item">
-              <p>Pembimbing Pendamping,</p>
-              <div class="sig-name">
-                ${supervisor2Name}<br>
-                NIP: ${supervisor2Nip}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-          <p>Dokumen ini digenerate otomatis oleh Sistem Informasi GATA pada ${formattedDate}</p>
-        </div>
-      </div>
-    </body>
-    </html>
-    `;
+      // Format tanggal ke format Indonesia
+      const formattedDate = new Date().toLocaleDateString(
+        "id-ID",
+        jadwal.scheduled_date
+      );
 
-    return html;
+      // start and end time
+      const startTime = jadwal.start_time || "[start-time]";
+      const endTime = jadwal.end_time || "[end-time]";
+
+      // UPPERCASE jenis sidang
+      const jenisSidang = (
+        jadwal.defense_submission.defense_type || "[jenis-sidang]"
+      ).toUpperCase();
+
+      // Generate table rows
+      const tabelPenilaian = (rekap.detailPerDosen || [])
+        .map((dosen: any) => {
+          return `<tr><td>${dosen.nama || "-"}</td><td>${
+            dosen.role || "-"
+          }</td><td class="nilai-column">${dosen.nilai || "-"}</td></tr>`;
+        })
+        .join("");
+
+      const statusSidang = isPassed ? "LULUS" : "TIDAK LULUS";
+      const nilaiSidang = rekap.nilaiAkhir || "-";
+
+      // Replace placeholders dengan data
+      htmlContent = htmlContent.replace(/{{formattedDate}}/g, formattedDate);
+      htmlContent = htmlContent.replace(/{{jenisSidang}}/g, jenisSidang);
+      htmlContent = htmlContent.replace(/{{startTime}}/g, startTime);
+      htmlContent = htmlContent.replace(/{{endTime}}/g, endTime);
+      htmlContent = htmlContent.replace(/{{studentName}}/g, studentName);
+      htmlContent = htmlContent.replace(/{{studentNim}}/g, studentNim);
+      htmlContent = htmlContent.replace(/{{projectTitle}}/g, projectTitle);
+      htmlContent = htmlContent.replace(
+        /{{supervisor1Name}}/g,
+        supervisor1Name
+      );
+      htmlContent = htmlContent.replace(/{{supervisor1Nip}}/g, supervisor1Nip);
+      htmlContent = htmlContent.replace(
+        /{{supervisor2Name}}/g,
+        supervisor2Name
+      );
+      htmlContent = htmlContent.replace(/{{supervisor2Nip}}/g, supervisor2Nip);
+      htmlContent = htmlContent.replace(/{{tabelPenilaian}}/g, tabelPenilaian);
+      htmlContent = htmlContent.replace(/{{statusSidang}}/g, statusSidang);
+      htmlContent = htmlContent.replace(/{{nilaiSidang}}/g, nilaiSidang);
+
+      return htmlContent;
+    } catch (error) {
+      console.error("Error generating BAP HTML:", error);
+      throw new Error(
+        `Gagal generate HTML BAP: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
   /**

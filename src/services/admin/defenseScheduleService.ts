@@ -2,7 +2,6 @@ import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleReposit
 import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { DefenseSubmissionRepository } from "@/repositories/DefenseSubmissionRepository";
 import fs from "fs";
-import path from "path";
 
 interface ScheduleRow {
   original_idx: string;
@@ -90,9 +89,26 @@ export class DefenseScheduleImportService {
       // Skip header row
       const dataLines = lines.slice(1);
 
-      for (let i = 0; i < dataLines.length; i++) {
+      // filter if columns[3] (capstone_code) is same delete duplicate rows
+      const uniqueLinesMap: { [key: string]: string } = {};
+      for (const line of dataLines) {
+        const columns = this.parseCSVLine(line);
+        const capstone_code = columns[3];
+
+        // jika capstone_code kosong atau "" (reguler), tambahkan data ke uniqueLinesMap dengan key random
+        if (!capstone_code) {
+          const randomKey = Math.random().toString(36).substring(2, 15);
+          uniqueLinesMap[randomKey] = line;
+          continue;
+        }
+        uniqueLinesMap[capstone_code] = line;
+      }
+
+      const uniqueLines = Object.values(uniqueLinesMap);
+
+      for (let i = 0; i < uniqueLines.length; i++) {
         try {
-          const line = dataLines[i];
+          const line = uniqueLines[i];
           const columns = this.parseCSVLine(line);
 
           if (columns.length < 15) {
@@ -124,12 +140,11 @@ export class DefenseScheduleImportService {
 
           // Upsert schedule
           const schedule = await this.scheduleRepo.upsertSchedule({
-            capstone_code: row.capstone_code,
+            nim: row.nim,
             scheduled_date: scheduledDate,
             start_time: row["Start Time"],
             end_time: row["End Time"],
             scheduler_status: row.status,
-            original_idx: parseInt(row.original_idx) || undefined,
           });
 
           if (schedule) {
@@ -249,7 +264,6 @@ export class DefenseScheduleImportService {
         nim: student?.nim || "-",
         name: user?.name || "-",
         judul: member?.title || "-",
-        capstone_code: schedule.defense_submission.capstone_code || "-",
         type: schedule.defense_submission.defense_type || "-",
         date: schedule.scheduled_date || "-",
         startTime: schedule.start_time || "-",
@@ -297,7 +311,6 @@ export class DefenseScheduleImportService {
       judul: member?.title || "-",
       nim: student?.nim || "-",
       namaMahasiswa: user?.name || "-",
-      capstone: schedule.defense_submission.capstone_code ? true : false,
       pembimbing1: supervisor1?.user?.name || "-",
       pembimbing2: supervisor2?.user?.name || "-",
       penguji1: examiner1?.user?.name || "-",

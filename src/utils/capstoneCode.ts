@@ -1,5 +1,5 @@
 import AppDataSource from "@/config/database";
-import { DefenseSubmission } from "@/entities/defenses";
+import { TempExportCsv } from "@/entities/tempExportCsv";
 
 /**
  * Generate unique 5-letter uppercase capstone code
@@ -7,7 +7,7 @@ import { DefenseSubmission } from "@/entities/defenses";
  * @returns Promise<string> - Unique capstone code
  */
 export async function generateCapstoneCode(): Promise<string> {
-  const defenseRepo = AppDataSource.getRepository(DefenseSubmission);
+  const tempExportCsvRepo = AppDataSource.getRepository(TempExportCsv);
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let code = "";
   let isUnique = false;
@@ -23,7 +23,7 @@ export async function generateCapstoneCode(): Promise<string> {
     }
 
     // Check if code already exists
-    const existing = await defenseRepo.findOne({
+    const existing = await tempExportCsvRepo.findOne({
       where: { capstone_code: code },
     });
 

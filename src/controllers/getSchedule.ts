@@ -5,7 +5,6 @@ import { ApiResponse } from "@/types";
 interface ScheduleResponse {
   nim: string;
   name: string;
-  capstone_code: string;
   type: string;
   date: string;
   startTime: string;

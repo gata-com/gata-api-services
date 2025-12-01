@@ -18,24 +18,23 @@ export class DefenseScheduleRepository {
    * @returns DefenseSchedule
    */
   async upsertSchedule(data: {
-    capstone_code: string;
+    nim: string;
     scheduled_date: string;
     start_time: string;
     end_time: string;
     scheduler_status: string;
-    original_idx?: number;
-    room?: string;
-    notes?: string;
   }): Promise<DefenseSchedule | null> {
-    // Find defense submission by capstone_code
-    const defenseSubmission = await this.defenseRepo.findOne({
-      where: { capstone_code: data.capstone_code },
-    });
+    // Find defense submission by nim student
+    const defenseSubmission = await this.defenseRepo
+      .createQueryBuilder("def")
+      .leftJoinAndSelect("def.final_project", "fp")
+      .leftJoinAndSelect("fp.members", "members")
+      .leftJoinAndSelect("members.student", "student")
+      .where("student.nim = :nim", { nim: data.nim })
+      .getOne();
 
     if (!defenseSubmission) {
-      console.warn(
-        `Defense submission not found for capstone_code: ${data.capstone_code}`
-      );
+      console.warn(`Defense submission not found for nim: ${data.nim}`);
       return null;
     }
 
@@ -50,9 +49,6 @@ export class DefenseScheduleRepository {
       schedule.start_time = data.start_time;
       schedule.end_time = data.end_time;
       schedule.scheduler_status = data.scheduler_status;
-      schedule.original_idx = data.original_idx;
-      schedule.room = data.room;
-      schedule.notes = data.notes;
       schedule.status = "rescheduled";
     } else {
       // Create new
@@ -62,17 +58,9 @@ export class DefenseScheduleRepository {
         start_time: data.start_time,
         end_time: data.end_time,
         scheduler_status: data.scheduler_status,
-        original_idx: data.original_idx,
-        room: data.room,
-        notes: data.notes,
         status: "scheduled",
       });
     }
-
-    // Update defense_date di defense_submission juga
-    await this.defenseRepo.update(defenseSubmission.id, {
-      defense_date: new Date(`${data.scheduled_date} ${data.start_time}`),
-    });
 
     return this.repository.save(schedule);
   }
@@ -112,11 +100,6 @@ export class DefenseScheduleRepository {
       notes: data.notes,
       scheduler_status: "manual",
       status: "scheduled",
-    });
-
-    // Update defense_date di defense_submission
-    await this.defenseRepo.update(defenseSubmissionId, {
-      defense_date: new Date(`${data.scheduled_date} ${data.start_time}`),
     });
 
     return this.repository.save(schedule);
@@ -268,16 +251,6 @@ export class DefenseScheduleRepository {
 
     await this.repository.update(id, updateData);
 
-    // Update defense_date di defense_submission jika ada scheduled_date dan start_time
-    if (data.scheduled_date && data.start_time) {
-      const schedule = await this.findById(id);
-      if (schedule) {
-        await this.defenseRepo.update(schedule.defense_submission.id, {
-          defense_date: new Date(`${data.scheduled_date} ${data.start_time}`),
-        });
-      }
-    }
-
     return this.findById(id);
   }
 
@@ -287,5 +260,36 @@ export class DefenseScheduleRepository {
    */
   async deleteSchedule(id: number): Promise<void> {
     await this.repository.delete(id);
+  }
+
+  /**
+   * Find defense schedules where lecturer is supervisor or examiner
+   * @param lecturerId Lecturer ID
+   * @returns Array of DefenseSchedule
+   */
+  async findByLecturerId(lecturerId: number): Promise<DefenseSchedule[]> {
+    return this.repository
+      .createQueryBuilder("ds")
+      .leftJoinAndSelect("ds.defense_submission", "def")
+      .leftJoinAndSelect("def.final_project", "fp")
+      .leftJoinAndSelect("fp.supervisor_1", "supervisor_1")
+      .leftJoinAndSelect("supervisor_1.user", "supervisor_1_user")
+      .leftJoinAndSelect("fp.supervisor_2", "supervisor_2")
+      .leftJoinAndSelect("supervisor_2.user", "supervisor_2_user")
+      .leftJoinAndSelect("def.examiner_1", "examiner_1")
+      .leftJoinAndSelect("examiner_1.user", "examiner_1_user")
+      .leftJoinAndSelect("def.examiner_2", "examiner_2")
+      .leftJoinAndSelect("examiner_2.user", "examiner_2_user")
+      .leftJoinAndSelect("fp.members", "members")
+      .leftJoinAndSelect("members.student", "student")
+      .leftJoinAndSelect("student.user", "student_user")
+      .leftJoinAndSelect("def.documents", "documents")
+      .where("supervisor_1.id = :lecturerId", { lecturerId })
+      .orWhere("supervisor_2.id = :lecturerId", { lecturerId })
+      .orWhere("examiner_1.id = :lecturerId", { lecturerId })
+      .orWhere("examiner_2.id = :lecturerId", { lecturerId })
+      .orderBy("ds.scheduled_date", "ASC")
+      .addOrderBy("ds.start_time", "ASC")
+      .getMany();
   }
 }

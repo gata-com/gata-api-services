@@ -55,6 +55,12 @@ export class StudentRepository {
     });
   }
 
+  async findAll(): Promise<Student[]> {
+    return await this.repository.find({
+      relations: ["user"],
+    });
+  }
+
   async update(id: number, data: any): Promise<void> {
     await this.repository.update(id, data);
   }

@@ -13,6 +13,7 @@ import User from "./user";
 import { LecturerExpertise } from "./lecturerExpertise";
 import { FinalProjects } from "./finalProject";
 import { GuidanceAvailability } from "./guidance";
+import { Signature } from "./signature";
 
 // Lecturer
 @Entity("lecturer")
@@ -65,6 +66,12 @@ export class Lecturer {
 
   @OneToMany(() => GuidanceAvailability, (ga) => ga.lecturer)
   guidance_availability!: GuidanceAvailability[];
+
+  @OneToOne(() => Signature, (signature) => signature.lecturer, {
+    cascade: true,
+    eager: true,
+  })
+  signature?: Signature;
 
   // *** Method ***
 }

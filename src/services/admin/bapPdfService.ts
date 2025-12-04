@@ -311,7 +311,9 @@ export class BapPdfService {
 
       // UPPERCASE jenis sidang
       const jenisSidang = (
-        jadwal.defense_submission.defense_type || "[jenis-sidang]"
+        jadwal.defense_submission.defense_type === "proposal"
+          ? "PROPOSAL"
+          : "AKHIR"
       ).toUpperCase();
 
       // reorder detailPerDosen dengan urutan detailPerDosen.role = Penguji 1, Penguji 2, Pembimbing 1, Pembimbing 2

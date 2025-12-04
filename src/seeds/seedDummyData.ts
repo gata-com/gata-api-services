@@ -1845,59 +1845,6 @@ export async function seedDummyData(dataSource: DataSource) {
       status: "completed",
     });
 
-    // Penilaian lengkap untuk lecturer 2 student
-    await penilaianRepo.save({
-      jadwalId: scheduleL2_1.id,
-      lecturerId: lecturer2.id,
-      studentId: students[19].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "E-commerce implementation bagus",
-      nilaiAkhir: 85.0,
-      isFinalized: true,
-      finalizedById: lecturer2.id,
-      finalizedByName: lecturer2.user?.name,
-      finalizedAt: new Date(2025, 10, 20, 15, 0),
-    });
-
-    await penilaianRepo.save({
-      jadwalId: scheduleL2_1.id,
-      lecturerId: lecturer4.id,
-      studentId: students[19].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "Chatbot integration excellent",
-      nilaiAkhir: 87.0,
-      isFinalized: true,
-      finalizedById: lecturer4.id,
-      finalizedByName: lecturer4.user?.name,
-      finalizedAt: new Date(2025, 10, 20, 15, 0),
-    });
-
-    await penilaianRepo.save({
-      jadwalId: scheduleL2_1.id,
-      lecturerId: lecturer1.id,
-      studentId: students[19].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "System architecture well designed",
-      nilaiAkhir: 86.0,
-      isFinalized: true,
-      finalizedById: lecturer1.id,
-      finalizedByName: lecturer1.user?.name,
-      finalizedAt: new Date(2025, 10, 20, 15, 0),
-    });
-
-    await penilaianRepo.save({
-      jadwalId: scheduleL2_1.id,
-      lecturerId: lecturer5.id,
-      studentId: students[19].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "Good presentation and demo",
-      nilaiAkhir: 84.0,
-      isFinalized: true,
-      finalizedById: lecturer5.id,
-      finalizedByName: lecturer5.user?.name,
-      finalizedAt: new Date(2025, 10, 20, 15, 0),
-    });
-
     // LECTURER 3 - Data mahasiswa sebagai pembimbing utama
     console.log("Creating data for Lecturer 3...");
 
@@ -2087,59 +2034,6 @@ export async function seedDummyData(dataSource: DataSource) {
       scheduler_status: "scheduled",
       room: "Ruang Sidang F",
       status: "completed",
-    });
-
-    // Penilaian lengkap
-    await penilaianRepo.save({
-      jadwalId: scheduleL4_1.id,
-      lecturerId: lecturer4.id,
-      studentId: students[13].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "Blockchain implementation excellent",
-      nilaiAkhir: 90.0,
-      isFinalized: true,
-      finalizedById: lecturer4.id,
-      finalizedByName: lecturer4.user?.name,
-      finalizedAt: new Date(2025, 10, 18, 14, 0),
-    });
-
-    await penilaianRepo.save({
-      jadwalId: scheduleL4_1.id,
-      lecturerId: lecturer2.id,
-      studentId: students[13].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "Very good understanding of distributed systems",
-      nilaiAkhir: 88.0,
-      isFinalized: true,
-      finalizedById: lecturer2.id,
-      finalizedByName: lecturer2.user?.name,
-      finalizedAt: new Date(2025, 10, 18, 14, 0),
-    });
-
-    await penilaianRepo.save({
-      jadwalId: scheduleL4_1.id,
-      lecturerId: lecturer3.id,
-      studentId: students[13].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "Smart contract implementation impressive",
-      nilaiAkhir: 89.0,
-      isFinalized: true,
-      finalizedById: lecturer3.id,
-      finalizedByName: lecturer3.user?.name,
-      finalizedAt: new Date(2025, 10, 18, 14, 0),
-    });
-
-    await penilaianRepo.save({
-      jadwalId: scheduleL4_1.id,
-      lecturerId: lecturer1.id,
-      studentId: students[13].id,
-      rubrikId: rubrikSeminar.id,
-      catatan: "Excellent work on supply chain integration",
-      nilaiAkhir: 91.0,
-      isFinalized: true,
-      finalizedById: lecturer1.id,
-      finalizedByName: lecturer1.user?.name,
-      finalizedAt: new Date(2025, 10, 18, 14, 0),
     });
 
     // LECTURER 5 - Data mahasiswa

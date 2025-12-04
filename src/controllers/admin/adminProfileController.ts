@@ -28,7 +28,7 @@ export const getAdminProfile = async (
     const profile = await adminProfileService.getAdminProfile(userId);
 
     return res.status(200).json({
-      message: "Admin profile retrieved successfully",
+      message: "Data profil berhasil diambil",
       data: profile,
     });
   } catch (error) {
@@ -36,7 +36,7 @@ export const getAdminProfile = async (
 
     if (error instanceof Error && error.message === "USER_NOT_FOUND") {
       return res.status(404).json({
-        message: "User tidak ditemukan",
+        message: "Profil admin tidak ditemukan",
         errors: { path: "userId", msg: "User not found" },
       });
     }
@@ -68,7 +68,19 @@ export const updateAdminProfile = async (
 ): Promise<Response> => {
   try {
     const userId = (req as any).user?.id;
-    const { name, email, whatsapp_number, password } = req.body;
+    const {
+      name,
+      email,
+      nip,
+      initials,
+      whatsapp_number,
+      password,
+      expertise_group_1,
+      expertise_group_2,
+      expertise_group_3,
+      expertise_group_4,
+      signature_data,
+    } = req.body;
 
     if (!userId) {
       return res.status(401).json({
@@ -80,20 +92,46 @@ export const updateAdminProfile = async (
       });
     }
 
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (whatsapp_number !== undefined)
-      updateData.whatsapp_number = whatsapp_number;
-    if (password !== undefined) updateData.password = password;
-
-    // Check if any data is provided
-    if (Object.keys(updateData).length === 0) {
+    // Validate required fields
+    if (!name || !email || !nip || !initials) {
       return res.status(400).json({
-        message: "Tidak ada data yang akan diupdate",
-        errors: { path: "body", msg: "No data provided" },
+        message: "Validasi gagal",
+        errors: {
+          path: "body",
+          msg: "name, email, nip, and initials are required",
+        },
       });
     }
+
+    // Validate expertise groups (must provide all 4 fields)
+    if (
+      expertise_group_1 === undefined ||
+      expertise_group_2 === undefined ||
+      expertise_group_3 === undefined ||
+      expertise_group_4 === undefined
+    ) {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: {
+          path: "body",
+          msg: "All 4 expertise group fields are required (use null for empty slots)",
+        },
+      });
+    }
+
+    const updateData = {
+      name,
+      email,
+      nip,
+      initials,
+      whatsapp_number,
+      password,
+      expertise_group_1,
+      expertise_group_2,
+      expertise_group_3,
+      expertise_group_4,
+      signature_data,
+    };
 
     const updatedProfile = await adminProfileService.updateAdminProfile(
       userId,
@@ -101,7 +139,7 @@ export const updateAdminProfile = async (
     );
 
     return res.status(200).json({
-      message: "Admin profile berhasil diupdate",
+      message: "Profil berhasil diperbarui",
       data: updatedProfile,
     });
   } catch (error) {
@@ -114,6 +152,13 @@ export const updateAdminProfile = async (
       });
     }
 
+    if (error instanceof Error && error.message === "LECTURER_NOT_FOUND") {
+      return res.status(404).json({
+        message: "Data dosen tidak ditemukan",
+        errors: { path: "lecturer", msg: "Lecturer not found" },
+      });
+    }
+
     if (error instanceof Error && error.message === "USER_IS_NOT_ADMIN") {
       return res.status(403).json({
         message: "User bukan admin",
@@ -122,9 +167,16 @@ export const updateAdminProfile = async (
     }
 
     if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
-      return res.status(400).json({
-        message: "Email sudah terdaftar",
+      return res.status(409).json({
+        message: "Email atau NIP sudah terdaftar",
         errors: { path: "email", msg: "Email already exists" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "NIP_ALREADY_EXISTS") {
+      return res.status(409).json({
+        message: "Email atau NIP sudah terdaftar",
+        errors: { path: "nip", msg: "NIP already exists" },
       });
     }
 

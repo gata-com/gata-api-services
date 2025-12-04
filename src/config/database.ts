@@ -37,6 +37,7 @@ import { JawabanPenilaian } from "../entities/jawabanPenilaian";
 import { BeritaAcaraPenilaian } from "../entities/beritaAcaraPenilaian";
 import { BeritaAcaraPDF } from "@/entities/beritaAcaraPDF";
 import { TempExportCsv } from "@/entities/tempExportCsv";
+import { Signature } from "@/entities/signature";
 
 // Create data source configuration based on database type
 const createDataSourceConfig = (): DataSourceOptions => {
@@ -70,6 +71,7 @@ const createDataSourceConfig = (): DataSourceOptions => {
       BeritaAcaraPenilaian,
       BeritaAcaraPDF,
       TempExportCsv,
+      Signature,
     ],
     migrations: [__dirname + "/../migrations/*.{ts,js}"],
     subscribers: [__dirname + "/../subscribers/*.{ts,js}"],

@@ -217,6 +217,22 @@ export class BapPdfService {
       // Load template HTML
       let htmlContent = fs.readFileSync(this.templatePath, "utf-8");
 
+      // Load logo as base64
+      const logoPath = path.join(
+        __dirname,
+        "../../templates/bap-pdf/logo_itera.png"
+      );
+      let logoBase64 = "";
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        logoBase64 = logoBuffer.toString("base64");
+        const logoDataUrl = `data:image/png;base64,${logoBase64}`;
+        htmlContent = htmlContent.replace(
+          /src=["']\.\/logo_itera\.png["']/g,
+          `src="${logoDataUrl}"`
+        );
+      }
+
       // Prepare data
       const studentName = student.user?.name || "[nama-mahasiswa]";
       const studentNim = student.nim || "[nim-mahasiswa]";
@@ -236,10 +252,10 @@ export class BapPdfService {
         jadwal.defense_submission?.final_project?.supervisor_2?.nip ||
         "[nip-pembimbing2]";
 
-      // Format tanggal ke format Indonesia
-      const formattedDate = new Date().toLocaleDateString(
+      // Format tanggal sidang
+      const formattedDate = new Date(jadwal.scheduled_date).toLocaleDateString(
         "id-ID",
-        jadwal.scheduled_date
+        { weekday: "long", year: "numeric", month: "long", day: "numeric" }
       );
 
       // start and end time
@@ -250,6 +266,17 @@ export class BapPdfService {
       const jenisSidang = (
         jadwal.defense_submission.defense_type || "[jenis-sidang]"
       ).toUpperCase();
+
+      // reorder detailPerDosen dengan urutan detailPerDosen.role = Penguji 1, Penguji 2, Pembimbing 1, Pembimbing 2
+      rekap.detailPerDosen.sort((a: any, b: any) => {
+        const order = [
+          "Pembimbing 1",
+          "Pembimbing 2",
+          "Penguji 1",
+          "Penguji 2",
+        ];
+        return order.indexOf(a.role) - order.indexOf(b.role);
+      });
 
       // Generate table rows
       const tabelPenilaian = (rekap.detailPerDosen || [])

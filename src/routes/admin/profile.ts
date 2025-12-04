@@ -21,12 +21,12 @@ router.get("/", getAdminProfile);
 /**
  * PUT /admin/profile
  * Update admin profile
- * Body: name?, email?, whatsapp_number?, password?
+ * Body: name, email, nip, initials, whatsapp_number?, password?, expertise_group_1, expertise_group_2, expertise_group_3, expertise_group_4, signature_data?
  */
 router.put("/", updateAdminProfile);
 
 /**
- * GET /admin/profile/expertises-groups
+ * GET /admin/profile/kelompok-keahlian
  * Get all expertises groups (for input selection)
  */
 router.get("/kelompok-keahlian", getAllExpertisesGroups);

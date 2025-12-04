@@ -76,3 +76,43 @@ export interface DefenseDocumentRequest {
   email: string;
   studentId?: number;
 }
+
+// ============ Hasil Sidang Types ============
+
+export interface StudentInfo {
+  id: string;
+  nama: string;
+  nim: string;
+  tanggalSidang: string;
+  judulTA?: string;
+  programStudi?: string;
+}
+
+export interface DosenPenguji {
+  no: number;
+  id: string;
+  nama: string;
+  peran: "Pembimbing 1" | "Pembimbing 2" | "Penguji 1" | "Penguji 2";
+  nilai: number; // Score given by this assessor
+  status: "Lulus" | "Tidak Lulus" | "Menunggu"; // Assessment status
+}
+
+export interface HasilSidang {
+  id: string;
+  studentId: string;
+  studentInfo: StudentInfo;
+  dosenList: DosenPenguji[];
+  hasilAkhir: "LULUS" | "TIDAK LULUS" | "MENUNGGU"; // Overall result
+  nilaiAkhir?: number; // Final score
+  nilaiHuruf?: string; // Letter grade (A, B, C, D, E)
+  bapUrl?: string; // URL to download signed BAP document
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BAPFile {
+  bapUrl: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+}

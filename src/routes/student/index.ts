@@ -3,6 +3,7 @@ import tugasAkhir from "./finalProject";
 import profileRoutes from "./profile";
 import bimbingan from "./guidance";
 import dashboard from "./dashboard";
+import hasilSidang from "./hasilsidang";
 import { requireStudent } from "@/middleware/role";
 import { auth } from "@/middleware/auth";
 
@@ -16,5 +17,6 @@ router.use("/tugas-akhir", requireStudent, tugasAkhir);
 router.use("/bimbingan", requireStudent, bimbingan);
 
 router.use("/profile", requireStudent, profileRoutes);
+router.use("/hasil-sidang", requireStudent, hasilSidang);
 
 export default router;

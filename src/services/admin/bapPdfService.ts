@@ -23,10 +23,13 @@ export class BapPdfService {
     this.scheduleRepo = new DefenseScheduleRepository();
     this.studentRepo = new StudentRepository();
     this.rentangRepo = new RentangNilaiRepository();
-    this.storageDir = path.join(__dirname, "../../storages/bap-pdf");
+
+    // Use process.cwd() for consistent path resolution in both dev and production
+    const basePath = process.cwd();
+    this.storageDir = path.join(basePath, "src/storages/bap-pdf");
     this.templatePath = path.join(
-      __dirname,
-      "../../templates/bap-pdf/bap-template.html"
+      basePath,
+      "src/templates/bap-pdf/bap-template.html"
     );
 
     // Pastikan storage dir exists
@@ -218,9 +221,10 @@ export class BapPdfService {
       let htmlContent = fs.readFileSync(this.templatePath, "utf-8");
 
       // Load logo as base64
+      const basePath = process.cwd();
       const logoPath = path.join(
-        __dirname,
-        "../../templates/bap-pdf/logo_itera.png"
+        basePath,
+        "src/templates/bap-pdf/logo_itera.png"
       );
       let logoBase64 = "";
       if (fs.existsSync(logoPath)) {

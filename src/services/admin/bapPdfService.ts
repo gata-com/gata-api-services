@@ -26,11 +26,25 @@ export class BapPdfService {
 
     // Use process.cwd() for consistent path resolution in both dev and production
     const basePath = process.cwd();
-    this.storageDir = path.join(basePath, "src/storages/bap-pdf");
-    this.templatePath = path.join(
-      basePath,
-      "src/templates/bap-pdf/bap-template.html"
-    );
+    // Check if running from dist (production) or src (development)
+    const isProduction =
+      basePath.includes("dist") || !fs.existsSync(path.join(basePath, "src"));
+
+    if (isProduction) {
+      // In production: storages and templates are at root level
+      this.storageDir = path.join(basePath, "storages/bap-pdf");
+      this.templatePath = path.join(
+        basePath,
+        "templates/bap-pdf/bap-template.html"
+      );
+    } else {
+      // In development: storages and templates are in src/
+      this.storageDir = path.join(basePath, "src/storages/bap-pdf");
+      this.templatePath = path.join(
+        basePath,
+        "src/templates/bap-pdf/bap-template.html"
+      );
+    }
 
     // Pastikan storage dir exists
     if (!fs.existsSync(this.storageDir)) {
@@ -136,7 +150,7 @@ export class BapPdfService {
 
   /**
    * Create BAP PDF from HTML template
-   * Generates professional BAP document using HTML and converts to PDF
+   * Generates professional BAP document using Puppeteer with proper HTML rendering
    */
   private async createPdfFromTemplate(
     outputPath: string,
@@ -146,6 +160,7 @@ export class BapPdfService {
     rekap: any,
     isPassed: boolean
   ) {
+    let browser = null;
     try {
       // Generate HTML content
       const htmlContent = this.generateBapHtml(
@@ -156,23 +171,47 @@ export class BapPdfService {
         isPassed
       );
 
-      // Convert HTML to PDF using Puppeteer
-      const browser = await puppeteer.launch({
+      // Launch browser with proper configuration for production
+      const launchOptions: any = {
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--disable-dev-tools",
+          "--no-first-run",
+          "--no-default-browser-check",
+        ],
+      };
+
+      // If executablePath is provided (for custom Chrome installation), use it
+      if (process.env.CHROME_EXECUTABLE_PATH) {
+        launchOptions.executablePath = process.env.CHROME_EXECUTABLE_PATH;
+      }
+
+      browser = await puppeteer.launch(launchOptions);
 
       const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
-      // Generate PDF
+      // Set viewport
+      await page.setViewport({
+        width: 210,
+        height: 297,
+        deviceScaleFactor: 1,
+      });
+
+      // Set content and wait for all resources to load
+      await page.setContent(htmlContent, { waitUntil: "networkidle2" });
+
+      // Generate PDF with proper formatting to match the HTML template style
       await page.pdf({
         path: outputPath,
         format: "A4",
-        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+        printBackground: true,
+        preferCSSPageSize: true,
       });
 
-      await browser.close();
       console.log(`BAP PDF berhasil di-generate: ${outputPath}`);
     } catch (error) {
       console.error("Error creating BAP PDF:", error);
@@ -181,6 +220,10 @@ export class BapPdfService {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
     }
   }
 

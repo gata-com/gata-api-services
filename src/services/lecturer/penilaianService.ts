@@ -383,6 +383,8 @@ export class PenilaianService {
     penilaianId: string,
     jadwalId: number,
     nilaiPertanyaan: { [pertanyaanId: string]: number },
+    nilaiAkhir: number,
+    nilaiHuruf: string,
     catatan: string,
     userId: number,
     studentId: number
@@ -489,12 +491,6 @@ export class PenilaianService {
         pertanyaanNilaiMap[pertanyaan.id] = nilaiForPertanyaan;
       }
     }
-
-    // Calculate final score from rubrik
-    const nilaiAkhir = this.hitungNilaiAkhirFromRubrik(rubrik, nilaiPertanyaan);
-
-    // Get grade letter
-    const nilaiHuruf = await this.rentangRepo.getGradeByScore(nilaiAkhir);
 
     // Convert nilaiPertanyaan to jawaban format
     const jawabanList: Array<{

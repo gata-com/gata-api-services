@@ -48,17 +48,31 @@ app.use(
 );
 
 // CORS configuration
-// Backend: localhost:5000 | Frontend: localhost:3000
 const corsOptions = {
   origin: (
     origin: string | undefined,
     callback: (err: Error | null, allow?: boolean) => void
   ) => {
-    // Define allowed origins
-    const allowedOrigins =
-      process.env.NODE_ENV === "production"
-        ? [process.env.FRONTEND_URL || "https://your-production-domain.com"]
-        : [process.env.FRONTEND_URL || "http://localhost:3000"];
+    // Define allowed origins for different environments
+    let allowedOrigins: string[] = [];
+
+    if (process.env.NODE_ENV === "production") {
+      // Production: Allow frontend domain
+      allowedOrigins = [
+        process.env.FRONTEND_URL || "https://gata.web.id",
+        "https://gata.web.id",
+        "https://www.gata.web.id",
+      ];
+    } else {
+      // Development: Allow localhost variants
+      allowedOrigins = [
+        process.env.FRONTEND_URL || "http://localhost:3000",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+      ];
+    }
 
     // Allow requests with no origin (like mobile apps, Postman, curl requests)
     if (!origin) {

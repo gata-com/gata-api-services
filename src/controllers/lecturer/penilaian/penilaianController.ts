@@ -197,6 +197,8 @@ export const updateNilai = async (
       userId,
       studentId,
       nilaiPertanyaan,
+      nilaiAkhir,
+      nilaiHuruf,
       catatan,
     } = req.body;
 
@@ -205,6 +207,8 @@ export const updateNilai = async (
       penilaianId,
       jadwalId,
       nilaiPertanyaan,
+      nilaiAkhir,
+      nilaiHuruf,
       catatan,
       userId,
       studentId

@@ -174,6 +174,24 @@ export const validateUpdateNilai = [
       }
       return true;
     }),
+  body("nilaiAkhir")
+    .notEmpty()
+    .withMessage("Nilai akhir wajib diisi")
+    .isNumeric()
+    .withMessage("Nilai akhir harus berupa angka")
+    .custom((value) => {
+      const numValue = parseFloat(value);
+      if (isNaN(numValue) || numValue < 0 || numValue > 100) {
+        throw new Error("Nilai akhir harus antara 0-100");
+      }
+      return true;
+    }),
+  body("nilaiHuruf")
+    .notEmpty()
+    .withMessage("Nilai huruf wajib diisi")
+    .trim()
+    .isLength({ min: 1, max: 5 })
+    .withMessage("Nilai huruf harus 1-5 karakter"),
   body("catatan")
     .notEmpty()
     .withMessage("Catatan tidak boleh kosong")

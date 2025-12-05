@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { BapPdfService } from "@/services/admin/bapPdfService";
-import { ApiResponse } from "@/types";
-import * as path from "path";
+import { ApiResponse, AuthRequest } from "@/types";
 
 const bapPdfService = new BapPdfService();
 
@@ -10,12 +9,13 @@ const bapPdfService = new BapPdfService();
  * POST /admin/penilaian/jadwal/:jadwalId/student/:studentId/generate-bap
  */
 export const generateBapPdf = async (
-  req: Request,
+  req: AuthRequest,
   res: Response<ApiResponse>
 ): Promise<Response> => {
   try {
     const jadwalId = parseInt(req.params.jadwalId);
     const studentId = parseInt(req.params.studentId);
+    const userId = req.user?.id;
 
     if (isNaN(jadwalId) || isNaN(studentId)) {
       return res.status(400).json({
@@ -27,18 +27,24 @@ export const generateBapPdf = async (
       });
     }
 
-    const bap = await bapPdfService.generateBapForStudent(jadwalId, studentId);
+    const bap = await bapPdfService.generateBapForStudent(
+      userId,
+      jadwalId,
+      studentId
+    );
+
+    if (bap === "ttd missing") {
+      return res.status(400).json({
+        message: "Belum ada tanda tangan.",
+        errors: {
+          path: "ttd",
+          msg: "Belum ada tanda tangan.",
+        },
+      });
+    }
 
     return res.status(200).json({
       message: "BAP berhasil di-generate",
-      // data: {
-      //   id: bap.id,
-      //   pdfName: bap.pdfName,
-      //   pdfUrl: bap.pdfUrl,
-      //   nilaiAkhir: bap.nilaiAkhir,
-      //   nilaiHuruf: bap.nilaiHuruf,
-      //   generatedAt: bap.createdAt,
-      // },
       data: bap,
     });
   } catch (error) {

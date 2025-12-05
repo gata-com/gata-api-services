@@ -3,6 +3,8 @@ import { PenilaianService } from "./penilaianService";
 import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleRepository";
 import { StudentRepository } from "@/repositories/StudentRepository";
 import { RentangNilaiRepository } from "@/repositories/RentangNilaiRepository";
+import { LecturerRepository } from "@/repositories/LecturerRepository";
+import { SignatureRepository } from "@/repositories/SignatureRepository";
 import { BeritaAcaraPDF } from "@/entities/beritaAcaraPDF";
 import * as fs from "fs";
 import * as path from "path";
@@ -14,8 +16,11 @@ export class BapPdfService {
   private scheduleRepo: DefenseScheduleRepository;
   private studentRepo: StudentRepository;
   private rentangRepo: RentangNilaiRepository;
-  private storageDir: string;
+  private lecturerRepo: LecturerRepository;
+  private signatureRepo: SignatureRepository;
+  private BAPDir: string;
   private templatePath: string;
+  private storageDir: string;
 
   constructor() {
     this.bapRepo = new BeritaAcaraPDFRepository();
@@ -23,33 +28,35 @@ export class BapPdfService {
     this.scheduleRepo = new DefenseScheduleRepository();
     this.studentRepo = new StudentRepository();
     this.rentangRepo = new RentangNilaiRepository();
+    this.lecturerRepo = new LecturerRepository();
+    this.signatureRepo = new SignatureRepository();
 
     // Use process.cwd() for consistent path resolution in both dev and production
     const basePath = process.cwd();
-    // Check if running from dist (production) or src (development)
-    const isProduction =
-      basePath.includes("dist") || !fs.existsSync(path.join(basePath, "src"));
+    this.storageDir = path.join(basePath, "src/storages");
+    this.BAPDir = path.join(this.storageDir, "bap-pdf");
 
-    if (isProduction) {
-      // In production: storages and templates are at root level
-      this.storageDir = path.join(basePath, "storages/bap-pdf");
-      this.templatePath = path.join(
-        basePath,
-        "templates/bap-pdf/bap-template.html"
-      );
-    } else {
-      // In development: storages and templates are in src/
-      this.storageDir = path.join(basePath, "src/storages/bap-pdf");
-      this.templatePath = path.join(
-        basePath,
-        "src/templates/bap-pdf/bap-template.html"
-      );
-    }
+    this.templatePath = path.join(
+      basePath,
+      "src/templates/bap-pdf/bap-template.html"
+    );
 
     // Pastikan storage dir exists
-    if (!fs.existsSync(this.storageDir)) {
-      fs.mkdirSync(this.storageDir, { recursive: true });
+    if (!fs.existsSync(this.BAPDir)) {
+      fs.mkdirSync(this.BAPDir, { recursive: true });
     }
+  }
+
+  /**
+   * Generate random text untuk nama file unik
+   */
+  private generateRandomText(length: number = 8): string {
+    const chars = "abcdefghijklmnopqrs-tuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   }
 
   /**
@@ -57,6 +64,7 @@ export class BapPdfService {
    * Jika PDF sudah ada, akan di-update dengan data terbaru (bukan ditimpa)
    */
   async generateBapForStudent(
+    userId: number,
     jadwalId: number,
     studentId: number
   ): Promise<BeritaAcaraPDF | any> {
@@ -66,8 +74,21 @@ export class BapPdfService {
       throw new Error("Student tidak ditemukan");
     }
 
-    // Format: BAP_121140044
-    const pdfName = `BAP_${student.nim}`;
+    // cek dosen
+    const lecturer = await this.lecturerRepo.findByUserId(userId);
+    if (!lecturer) {
+      throw new Error("Lecturer tidak ditemukan");
+    }
+
+    // Cek apakah dosen sudah punya tanda tangan
+    const signature = await this.signatureRepo.findByLecturerId(lecturer.id);
+    if (!signature || !signature.signature_url) {
+      return "ttd missing";
+    }
+
+    // Format: BAP_121140044_RANDOM8CHARS
+    const randomText = this.generateRandomText(30);
+    const pdfName = `BAP_${randomText}`;
     const pdfFileName = `${pdfName}.pdf`;
 
     // Check apakah PDF sudah ada di database
@@ -86,7 +107,9 @@ export class BapPdfService {
 
     // Check apakah semua nilai sudah di-finalisasi
     const allFinalized = await this.penilaianService.checkAllFinalized(
-      jadwalId
+      lecturer.id,
+      jadwalId,
+      studentId
     );
     if (!allFinalized) {
       throw new Error(
@@ -113,7 +136,7 @@ export class BapPdfService {
     const isPassed = rekap.nilaiAkhir >= minScoreToPass;
 
     // Generate PDF
-    const pdfFilePath = path.join(this.storageDir, pdfFileName);
+    const pdfFilePath = path.join(this.BAPDir, pdfFileName);
 
     await this.createPdfFromTemplate(
       pdfFilePath,
@@ -121,7 +144,8 @@ export class BapPdfService {
       finalProjectMember,
       jadwal,
       rekap,
-      isPassed
+      isPassed,
+      signature
     );
 
     // Save to database
@@ -158,7 +182,8 @@ export class BapPdfService {
     finalProjectMember: any,
     jadwal: any,
     rekap: any,
-    isPassed: boolean
+    isPassed: boolean,
+    signature: any
   ) {
     let browser = null;
     try {
@@ -168,7 +193,8 @@ export class BapPdfService {
         finalProjectMember,
         jadwal,
         rekap,
-        isPassed
+        isPassed,
+        signature
       );
 
       // Launch browser with proper configuration for production
@@ -257,7 +283,8 @@ export class BapPdfService {
     finalProjectMember: any,
     jadwal: any,
     rekap: any,
-    isPassed: boolean
+    isPassed: boolean,
+    signature: any
   ): string {
     try {
       // Load template HTML
@@ -332,12 +359,13 @@ export class BapPdfService {
         .map((dosen: any) => {
           return `<tr><td>${dosen.nama || "-"}</td><td>${
             dosen.role || "-"
-          }</td><td class="nilai-column">${dosen.nilai || "-"}</td></tr>`;
+          }</td>`;
         })
         .join("");
 
       const statusSidang = isPassed ? "LULUS" : "TIDAK LULUS";
       const nilaiSidang = rekap.nilaiAkhir || "-";
+      const nilaiHuruf = rekap.nilaiHuruf || "-";
 
       // Replace placeholders dengan data
       htmlContent = htmlContent.replace(/{{formattedDate}}/g, formattedDate);
@@ -360,6 +388,32 @@ export class BapPdfService {
       htmlContent = htmlContent.replace(/{{tabelPenilaian}}/g, tabelPenilaian);
       htmlContent = htmlContent.replace(/{{statusSidang}}/g, statusSidang);
       htmlContent = htmlContent.replace(/{{nilaiSidang}}/g, nilaiSidang);
+      htmlContent = htmlContent.replace(/{{nilaiHuruf}}/g, nilaiHuruf);
+
+      // Load signature image as base64
+      let signatureDataUrl = "";
+      if (signature && signature.signature_url) {
+        // signature_url format: /signatures/SIGNATURE_199111272022031007_1764853778518.png
+        const signaturePath = path.join(
+          this.storageDir,
+          signature.signature_url.replace(/^\//, "")
+        );
+        if (fs.existsSync(signaturePath)) {
+          const signatureBuffer = fs.readFileSync(signaturePath);
+          const signatureBase64 = signatureBuffer.toString("base64");
+          signatureDataUrl = `data:image/png;base64,${signatureBase64}`;
+        }
+      }
+
+      // Inject signature image into HTML
+      if (signatureDataUrl) {
+        htmlContent = htmlContent.replace(
+          /{{signatureImage}}/g,
+          `<img src="${signatureDataUrl}" alt="Tanda Tangan" style="width: 120px; height: auto; border: none; outline: none; box-shadow: none; display: block; margin: 0; padding: 0;" />`
+        );
+      } else {
+        htmlContent = htmlContent.replace(/{{signatureImage}}/g, "");
+      }
 
       return htmlContent;
     } catch (error) {
@@ -390,7 +444,7 @@ export class BapPdfService {
    * Get file path for download
    */
   getFilePath(pdfName: string): string {
-    return path.join(this.storageDir, pdfName);
+    return path.join(this.BAPDir, pdfName);
   }
 
   /**

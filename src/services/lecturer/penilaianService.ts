@@ -120,18 +120,6 @@ export class PenilaianService {
     const examiner1Id = submission.examiner_1?.id;
     const examiner2Id = submission.examiner_2?.id;
 
-    // const isAuthorized = [
-    //   supervisor1Id,
-    //   supervisor2Id,
-    //   examiner1Id,
-    //   examiner2Id,
-    // ].includes(lecturerId);
-    // if (!isAuthorized) {
-    //   throw new Error(
-    //     "Anda tidak memiliki akses untuk memberikan nilai pada jadwal ini"
-    //   );
-    // }
-
     // Get default rubrik based on defense type (untuk validasi pertanyaan)
     const rubrikType = submission.defense_type === "proposal" ? "SEM" : "SID";
     const rubrik = await this.rubrikRepo.findDefaultByType(rubrikType);
@@ -237,6 +225,7 @@ export class PenilaianService {
         rubrikId: rubrik.id,
         catatan,
         nilaiAkhir, // Gunakan nilai dari frontend
+        nilaiHuruf, // Gunakan nilai huruf dari frontend
       });
 
       // Create jawaban entities with the penilaianId
@@ -535,6 +524,7 @@ export class PenilaianService {
     await this.penilaianRepo.update(existing.id, {
       catatan,
       nilaiAkhir,
+      nilaiHuruf,
     });
 
     // Delete old jawabans and create new ones
@@ -1029,6 +1019,8 @@ export class PenilaianService {
           isCanFinalize,
           rekap,
           catatan: penilaian?.catatan,
+          nilaiAkhirDosenini: penilaian?.nilaiAkhir,
+          nilaiHurufDosenini: penilaian?.nilaiHuruf,
           komentar: komenta.length > 0 ? komenta : undefined,
           rubrik: rubrikResponse,
           rentangNilai: rentangNilaiData,
@@ -1152,6 +1144,8 @@ export class PenilaianService {
               isCanFinalize: isCanFinalizeOther,
               rekap: rekapOther,
               catatan: penilaianOtherMember?.catatan,
+              nilaiAkhirDosenini: penilaianOtherMember?.nilaiAkhir,
+              nilaiHurufDosenini: penilaianOtherMember?.nilaiHuruf,
               komentar: komentaOther.length > 0 ? komentaOther : undefined,
               rubrik: rubrikResponse,
               rentangNilai: rentangNilaiData,

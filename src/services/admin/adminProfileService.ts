@@ -3,9 +3,10 @@ import { ExpertisesGroupRepository } from "@/repositories/ExpertisesGroupReposit
 import { LecturerRepository } from "@/repositories/LecturerRepository";
 import { SignatureRepository } from "@/repositories/SignatureRepository";
 import { LecturerExpertiseRepository } from "@/repositories/LecturerExpertiseRepository";
+import { SignatureService } from "./signatureService";
 import bcryptjs from "bcryptjs";
 import { config } from "@/config/config";
-import { AdminProfileUpdateRequest } from "@/types/profile";
+import { ProfileUpdateRequest } from "@/types/profile";
 
 export class AdminProfileService {
   private userRepository: UserRepository;
@@ -13,6 +14,7 @@ export class AdminProfileService {
   private lecturerRepository: LecturerRepository;
   private signatureRepository: SignatureRepository;
   private lecturerExpertiseRepository: LecturerExpertiseRepository;
+  private signatureService: SignatureService;
 
   constructor() {
     this.userRepository = new UserRepository();
@@ -20,6 +22,7 @@ export class AdminProfileService {
     this.lecturerRepository = new LecturerRepository();
     this.signatureRepository = new SignatureRepository();
     this.lecturerExpertiseRepository = new LecturerExpertiseRepository();
+    this.signatureService = new SignatureService();
   }
 
   /**
@@ -44,15 +47,19 @@ export class AdminProfileService {
     let expertise_group_3: number | null = null;
     let expertise_group_4: number | null = null;
     let signature_url: string | null = null;
-    let signature_data: string | null = null;
 
     if (user.lecturer) {
       nip = user.lecturer.nip || null;
       initials = user.lecturer.lecturer_code || null;
 
-      // Get expertise groups from lecturer's expertises
+      // Get expertise groups from lecturer's expertises (sorted by position)
       if (user.lecturer.expertises && user.lecturer.expertises.length > 0) {
-        user.lecturer.expertises.forEach((exp, index) => {
+        // Sort by position to maintain order
+        const sortedExpertises = [...user.lecturer.expertises].sort(
+          (a, b) => ((a as any).position || 0) - ((b as any).position || 0)
+        );
+
+        sortedExpertises.forEach((exp, index) => {
           if (index === 0) expertise_group_1 = exp.expertises_group?.id || null;
           else if (index === 1)
             expertise_group_2 = exp.expertises_group?.id || null;
@@ -63,10 +70,9 @@ export class AdminProfileService {
         });
       }
 
-      // Get signature data
+      // Get signature URL (file path only, not base64)
       if (user.lecturer.signature) {
         signature_url = user.lecturer.signature.signature_url || null;
-        signature_data = user.lecturer.signature.signature_data || null;
       }
     }
 
@@ -83,7 +89,6 @@ export class AdminProfileService {
       expertise_group_3,
       expertise_group_4,
       signature_url,
-      signature_data,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -96,7 +101,7 @@ export class AdminProfileService {
    */
   async updateAdminProfile(
     userId: number,
-    data: AdminProfileUpdateRequest
+    data: ProfileUpdateRequest
   ): Promise<any> {
     const user = await this.userRepository.findById(userId);
 
@@ -181,7 +186,7 @@ export class AdminProfileService {
   }
 
   /**
-   * Update lecturer expertise groups
+   * Update lecturer expertise groups with explicit order to prevent mixing
    */
   private async updateExpertiseGroups(
     lecturerId: number,
@@ -190,42 +195,71 @@ export class AdminProfileService {
     // Delete all existing expertises
     await this.lecturerExpertiseRepository.deleteByLecturerId(lecturerId);
 
-    // Add new expertises
-    for (const expertiseGroupId of expertiseGroupIds) {
+    // Add new expertises with explicit position/order
+    // Position: 1 = expertise_group_1, 2 = expertise_group_2, etc
+    for (let index = 0; index < expertiseGroupIds.length; index++) {
+      const expertiseGroupId = expertiseGroupIds[index];
       if (expertiseGroupId !== null) {
-        await this.lecturerExpertiseRepository.create({
+        // position = index + 1 (1-based indexing)
+        const position = index + 1;
+
+        const lecturerExpertiseData = {
           lecturer: { id: lecturerId } as any,
           expertises_group: { id: expertiseGroupId } as any,
-        });
+        };
+
+        // Add position field jika repository support
+        (lecturerExpertiseData as any).position = position;
+
+        await this.lecturerExpertiseRepository.create(lecturerExpertiseData);
+
+        console.log(
+          `✓ Added expertise group ${expertiseGroupId} at position ${position} for lecturer ${lecturerId}`
+        );
       }
     }
   }
 
   /**
    * Update lecturer signature
+   * Handle both: base64 data (new signature) atau URL (existing signature, no change)
    */
   private async updateSignature(
     lecturerId: number,
     signatureData: string
   ): Promise<void> {
-    // Check if signature already exists
-    const existingSignature = await this.signatureRepository.findByLecturerId(
-      lecturerId
-    );
+    if (!signatureData || signatureData.trim() === "") {
+      return; // Skip jika kosong
+    }
 
-    if (existingSignature) {
-      // Update existing signature
-      await this.signatureRepository.update(existingSignature.id, {
-        signature_data: signatureData,
-        signature_url: signatureData, // Store the same data as URL for now
-      });
-    } else {
-      // Create new signature
-      await this.signatureRepository.create({
-        lecturer: { id: lecturerId } as any,
-        signature_data: signatureData,
-        signature_url: signatureData, // Store the same data as URL for now
-      });
+    try {
+      // Check if signatureData is a URL (already exists in database)
+      // URL format: /signatures/SIGNATURE_NIP_TIMESTAMP.png
+      const isUrl = signatureData.startsWith("/signatures/");
+
+      if (isUrl) {
+        return;
+      }
+
+      // Check if it's base64 data URL format (new signature to upload)
+      // Format: data:image/(png|jpg|jpeg);base64,...
+      const isBase64 = signatureData.startsWith("data:image/");
+
+      if (!isBase64) {
+        throw new Error(
+          "Invalid signature format. Expected URL (/signatures/...) or base64 (data:image/...)"
+        );
+      }
+
+      // Update with new base64 signature
+      await this.signatureService.updateSignature(lecturerId, signatureData);
+    } catch (error) {
+      console.error("Error updating signature:", error);
+      throw new Error(
+        `Gagal update signature: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 

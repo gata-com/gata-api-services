@@ -5,7 +5,6 @@ import {
   getAllExpertisesGroups,
 } from "@/controllers/admin/adminProfileController";
 import { auth } from "@/middleware/auth";
-import { requireAdmin } from "@/middleware/role";
 
 const router = Router();
 

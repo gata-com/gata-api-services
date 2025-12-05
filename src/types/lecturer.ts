@@ -145,6 +145,8 @@ export interface Jadwal {
   isCanFinalize: boolean; // Penanda apakah dosen bisa finalisasi penilaian
   rekap?: JadwalRekap;
   catatan?: string;
+  nilaiAkhirDosenini?: number;
+  nilaiHurufDosenini?: string;
   komentar?: JadwalKomentar[];
   rubrik?: RubrikResponse;
   rentangNilai?: Array<{

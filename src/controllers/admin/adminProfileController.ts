@@ -133,6 +133,36 @@ export const updateAdminProfile = async (
       signature_data,
     };
 
+    // Validate signature_data format if provided
+    if (signature_data && signature_data.trim() !== "") {
+      const isUrl = signature_data.startsWith("/signatures/");
+      const isBase64 = signature_data.startsWith("data:image/");
+
+      if (!isUrl && !isBase64) {
+        return res.status(400).json({
+          message: "Validasi gagal",
+          errors: {
+            path: "signature_data",
+            msg: "Invalid signature format. Expected URL (/signatures/...) or base64 (data:image/png;base64,... or data:image/jpg;base64,...)",
+          },
+        });
+      }
+
+      // If base64, validate format more strictly
+      if (isBase64) {
+        const dataUrlRegex = /^data:image\/(png|jpg|jpeg);base64,/;
+        if (!dataUrlRegex.test(signature_data)) {
+          return res.status(400).json({
+            message: "Validasi gagal",
+            errors: {
+              path: "signature_data",
+              msg: "Invalid base64 format. Expected: data:image/png;base64,... or data:image/jpg;base64,...",
+            },
+          });
+        }
+      }
+    }
+
     const updatedProfile = await adminProfileService.updateAdminProfile(
       userId,
       updateData
@@ -177,6 +207,16 @@ export const updateAdminProfile = async (
       return res.status(409).json({
         message: "Email atau NIP sudah terdaftar",
         errors: { path: "nip", msg: "NIP already exists" },
+      });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Gagal menyimpan file signature")
+    ) {
+      return res.status(400).json({
+        message: "Upload signature gagal",
+        errors: { path: "signature_data", msg: error.message },
       });
     }
 

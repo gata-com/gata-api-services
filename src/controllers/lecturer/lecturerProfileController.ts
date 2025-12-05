@@ -18,15 +18,15 @@ export const getLecturerProfile = async (
     const profile = await lecturerProfileService.getLecturerProfile(userId);
 
     return res.status(200).json({
-      message: "Lecturer profile retrieved successfully",
+      message: "Data profil berhasil diambil",
       data: profile,
     });
   } catch (error) {
-    console.error("Error getting lecturer profile:", error);
+    console.error("Error getting admin profile:", error);
 
     if (error instanceof Error && error.message === "USER_NOT_FOUND") {
       return res.status(404).json({
-        message: "User tidak ditemukan",
+        message: "Profil admin tidak ditemukan",
         errors: { path: "userId", msg: "User not found" },
       });
     }
@@ -35,13 +35,6 @@ export const getLecturerProfile = async (
       return res.status(403).json({
         message: "User bukan dosen",
         errors: { path: "role", msg: "User is not a lecturer" },
-      });
-    }
-
-    if (error instanceof Error && error.message === "LECTURER_DATA_NOT_FOUND") {
-      return res.status(404).json({
-        message: "Data dosen tidak ditemukan",
-        errors: { path: "lecturer", msg: "Lecturer data not found" },
       });
     }
 
@@ -71,38 +64,93 @@ export const updateLecturerProfile = async (
       nip,
       initials,
       whatsapp_number,
+      password,
       expertise_group_1,
       expertise_group_2,
       expertise_group_3,
       expertise_group_4,
-      password,
+      signature_data,
     } = req.body;
 
-
-    const updateData: any = {};
-
-    if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (nip !== undefined) updateData.nip = nip;
-    if (initials !== undefined) updateData.initials = initials;
-    if (whatsapp_number !== undefined)
-      updateData.whatsapp_number = whatsapp_number;
-    if (expertise_group_1 !== undefined)
-      updateData.expertise_group_1 = expertise_group_1;
-    if (expertise_group_2 !== undefined)
-      updateData.expertise_group_2 = expertise_group_2;
-    if (expertise_group_3 !== undefined)
-      updateData.expertise_group_3 = expertise_group_3;
-    if (expertise_group_4 !== undefined)
-      updateData.expertise_group_4 = expertise_group_4;
-    if (password !== undefined) updateData.password = password;
-
-    // Check if any data is provided
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({
-        message: "Tidak ada data yang akan diupdate",
-        errors: { path: "body", msg: "No data provided" },
+    if (!userId) {
+      return res.status(401).json({
+        message: "Tidak terautentikasi",
+        errors: {
+          path: "auth",
+          msg: "User ID not found in token",
+        },
       });
+    }
+
+    // Validate required fields
+    if (!name || !email || !nip || !initials) {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: {
+          path: "body",
+          msg: "name, email, nip, and initials are required",
+        },
+      });
+    }
+
+    // Validate expertise groups (must provide all 4 fields)
+    if (
+      expertise_group_1 === undefined ||
+      expertise_group_2 === undefined ||
+      expertise_group_3 === undefined ||
+      expertise_group_4 === undefined
+    ) {
+      return res.status(400).json({
+        message: "Validasi gagal",
+        errors: {
+          path: "body",
+          msg: "All 4 expertise group fields are required (use null for empty slots)",
+        },
+      });
+    }
+
+    const updateData = {
+      name,
+      email,
+      nip,
+      initials,
+      whatsapp_number,
+      password,
+      expertise_group_1,
+      expertise_group_2,
+      expertise_group_3,
+      expertise_group_4,
+      signature_data,
+    };
+
+    // Validate signature_data format if provided
+    if (signature_data && signature_data.trim() !== "") {
+      const isUrl = signature_data.startsWith("/signatures/");
+      const isBase64 = signature_data.startsWith("data:image/");
+
+      if (!isUrl && !isBase64) {
+        return res.status(400).json({
+          message: "Validasi gagal",
+          errors: {
+            path: "signature_data",
+            msg: "Invalid signature format. Expected URL (/signatures/...) or base64 (data:image/png;base64,... or data:image/jpg;base64,...)",
+          },
+        });
+      }
+
+      // If base64, validate format more strictly
+      if (isBase64) {
+        const dataUrlRegex = /^data:image\/(png|jpg|jpeg);base64,/;
+        if (!dataUrlRegex.test(signature_data)) {
+          return res.status(400).json({
+            message: "Validasi gagal",
+            errors: {
+              path: "signature_data",
+              msg: "Invalid base64 format. Expected: data:image/png;base64,... or data:image/jpg;base64,...",
+            },
+          });
+        }
+      }
     }
 
     const updatedProfile = await lecturerProfileService.updateLecturerProfile(
@@ -111,16 +159,23 @@ export const updateLecturerProfile = async (
     );
 
     return res.status(200).json({
-      message: "Lecturer profile berhasil diupdate",
+      message: "Profil berhasil diperbarui",
       data: updatedProfile,
     });
   } catch (error) {
-    console.error("Error updating lecturer profile:", error);
+    console.error("Error updating admin profile:", error);
 
     if (error instanceof Error && error.message === "USER_NOT_FOUND") {
       return res.status(404).json({
         message: "User tidak ditemukan",
         errors: { path: "userId", msg: "User not found" },
+      });
+    }
+
+    if (error instanceof Error && error.message === "LECTURER_NOT_FOUND") {
+      return res.status(404).json({
+        message: "Data dosen tidak ditemukan",
+        errors: { path: "lecturer", msg: "Lecturer not found" },
       });
     }
 
@@ -131,34 +186,27 @@ export const updateLecturerProfile = async (
       });
     }
 
-    if (error instanceof Error && error.message === "LECTURER_DATA_NOT_FOUND") {
-      return res.status(404).json({
-        message: "Data dosen tidak ditemukan",
-        errors: { path: "lecturer", msg: "Lecturer data not found" },
-      });
-    }
-
     if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
-      return res.status(400).json({
-        message: "Email sudah terdaftar",
+      return res.status(409).json({
+        message: "Email atau NIP sudah terdaftar",
         errors: { path: "email", msg: "Email already exists" },
       });
     }
 
     if (error instanceof Error && error.message === "NIP_ALREADY_EXISTS") {
-      return res.status(400).json({
-        message: "NIP sudah terdaftar",
+      return res.status(409).json({
+        message: "Email atau NIP sudah terdaftar",
         errors: { path: "nip", msg: "NIP already exists" },
       });
     }
 
     if (
       error instanceof Error &&
-      error.message.startsWith("EXPERTISE_GROUP_NOT_FOUND")
+      error.message.includes("Gagal menyimpan file signature")
     ) {
       return res.status(400).json({
-        message: "Kelompok keahlian tidak ditemukan",
-        errors: { path: "expertise_group", msg: "Expertise group not found" },
+        message: "Upload signature gagal",
+        errors: { path: "signature_data", msg: error.message },
       });
     }
 
@@ -174,7 +222,7 @@ export const updateLecturerProfile = async (
 
 /**
  * Get all expertises groups
- * GET /lecturer/profile/expertises-groups
+ * GET /admin/profile/expertises-groups
  */
 export const getAllExpertisesGroups = async (
   req: Request,

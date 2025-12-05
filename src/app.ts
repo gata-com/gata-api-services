@@ -40,24 +40,45 @@ app.use(
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
+        imgSrc: ["'self'", "data:", "https:", "http://localhost:*"],
+        mediaSrc: ["'self'", "http://localhost:*"],
       },
     },
   })
 );
 
 // CORS configuration
-app.use(
-  cors({
-    origin:
+// Backend: localhost:5000 | Frontend: localhost:3000
+const corsOptions = {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
+    // Define allowed origins
+    const allowedOrigins =
       process.env.NODE_ENV === "production"
         ? [process.env.FRONTEND_URL || "https://your-production-domain.com"]
-        : [process.env.FRONTEND_URL || "http://localhost:3000"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  })
-);
+        : [process.env.FRONTEND_URL || "http://localhost:3000"];
+
+    // Allow requests with no origin (like mobile apps, Postman, curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS not allowed for origin: ${origin}`));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  exposedHeaders: ["Content-Disposition", "Content-Type"],
+  maxAge: 86400, // 24 hours
+};
+
+app.use(cors(corsOptions));
 
 // Logging middleware
 if (config.nodeEnv === "development") {
@@ -112,8 +133,41 @@ const finalProjectsPath = path.join(
 
 const BAPPath = path.join(process.cwd(), "src", "storages", "bap-pdf");
 
-app.use("/final-projects", express.static(finalProjectsPath));
-app.use("/bap", express.static(BAPPath));
+const signaturesPath = path.join(
+  process.cwd(),
+  "src",
+  "storages",
+  "signatures"
+);
+
+// Middleware for setting CORS headers on static files
+const staticCorsMiddleware = (
+  req: Request,
+  res: Response,
+  next: Function
+): void => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Max-Age", "86400");
+  res.header("Cross-Origin-Resource-Policy", "cross-origin");
+
+  // Handle OPTIONS requests
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+
+  next();
+};
+
+app.use(
+  "/final-projects",
+  staticCorsMiddleware,
+  express.static(finalProjectsPath)
+);
+app.use("/bap", staticCorsMiddleware, express.static(BAPPath));
+app.use("/signatures", staticCorsMiddleware, express.static(signaturesPath));
 
 // ======================
 // Routes

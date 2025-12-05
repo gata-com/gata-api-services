@@ -197,7 +197,6 @@
       }
 
       .sig-name {
-        margin-top: 40px;
         font-weight: bold;
         font-size: 9pt;
       }
@@ -209,6 +208,12 @@
         color: #666;
         padding-top: 8px;
         border-top: 1px solid #ccc;
+      }
+
+      img {
+        border: none;
+        outline: none;
+        box-shadow: none;
       }
     </style>
   </head>
@@ -225,8 +230,8 @@
           />
           <div class="header-text">
             <h1>KEMENTERIAN PENDIDIKAN TINGGI,<br />SAINS, DAN TEKNOLOGI</h1>
-            <p>INSTITUT TEKNOLOGI SUMATERA</p>
-            <p>FAKULTAS TEKNOLOGI INDUSTRI</p>
+            <h1>INSTITUT TEKNOLOGI SUMATERA</h1>
+            <h1>FAKULTAS TEKNOLOGI INDUSTRI</h1>
             <p>
               Jalan Terusan Ryacudu Way Halu, Kecamatan Jati Agung, Lampung
               Selatan 35365
@@ -283,7 +288,6 @@
           <tr>
             <th>Nama Dosen</th>
             <th>Keterangan</th>
-            <th>Nilai</th>
           </tr>
         </thead>
         <tbody>
@@ -298,21 +302,18 @@
           tersebut dinyatakan
           <span>{{statusSidang}}</span> dengan nilai
           <span>{{nilaiSidang}}</span>
+
+          <p>Nilai Huruf : <span>{{nilaiHuruf}}</span></p>
         </div>
       </div>
 
       <!-- Signature Section -->
       <div class="signature-section">
-        <div class="signature-intro">
-          Demikian berita acara ini dibuat untuk dipergunakan sebagaimana
-          perlunya.
-        </div>
-
-        <div class="signature-date">Lampung Selatan, {{formattedDate}}</div>
-
         <div class="supervisor-sig">
           <div class="sig-item">
+            <p>Lampung Selatan, {{formattedDate}}</p>
             <p>Pembimbing Utama,</p>
+            <div>{{signatureImage}}</div>
             <div class="sig-name">
               {{supervisor1Name}}<br />
               NIP: {{supervisor1Nip}}

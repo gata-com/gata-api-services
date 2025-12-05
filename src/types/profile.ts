@@ -1,11 +1,4 @@
 // types/profile.ts
-export interface ProfileUpdateRequest {
-  nama?: string;
-  nim?: string;
-  nomorWhatsapp?: string;
-  email?: string;
-}
-
 export interface PasswordChangeRequest {
   currentPassword: string;
   newPassword: string;
@@ -22,7 +15,7 @@ export interface JudulTAUpdateRequest {
   judul: string;
 }
 
-export interface AdminProfileUpdateRequest {
+export interface ProfileUpdateRequest {
   name: string;
   email: string;
   nip: string;

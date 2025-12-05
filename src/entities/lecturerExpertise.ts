@@ -1,6 +1,7 @@
 import {
   Entity,
   PrimaryGeneratedColumn,
+  Column,
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
@@ -28,6 +29,9 @@ export class LecturerExpertise {
   })
   @JoinColumn({ name: "expertise_id" })
   expertises_group!: ExpertisesGroup;
+
+  @Column({ type: "int", nullable: true, default: 0 })
+  position?: number; // Order position (1, 2, 3, 4)
 
   @CreateDateColumn()
   created_at!: Date;

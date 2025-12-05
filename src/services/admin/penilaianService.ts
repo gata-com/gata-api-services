@@ -417,7 +417,7 @@ export class PenilaianService {
   /**
    * Check if all penilaian for jadwal are finalized
    */
-  async checkAllFinalized(jadwalId: number): Promise<boolean> {
-    return await this.penilaianRepo.checkAllFinalized(jadwalId);
+  async checkAllFinalized(lecturerId: number, jadwalId: number, studentId: number): Promise<boolean> {
+    return await this.penilaianRepo.checkAllFinalized(lecturerId, jadwalId, studentId);
   }
 }

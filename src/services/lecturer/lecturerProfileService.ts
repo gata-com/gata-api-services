@@ -4,20 +4,23 @@ import { LecturerExpertiseRepository } from "@/repositories/LecturerExpertiseRep
 import { ExpertisesGroupRepository } from "@/repositories/ExpertisesGroupRepository";
 import bcryptjs from "bcryptjs";
 import { config } from "@/config/config";
+import { ProfileUpdateRequest } from "@/types/profile";
+import { SignatureService } from "@/services/admin/signatureService";
 
 export class LecturerProfileService {
   private userRepository: UserRepository;
   private lecturerRepository: LecturerRepository;
   private lecturerExpertiseRepository: LecturerExpertiseRepository;
   private expertisesGroupRepository: ExpertisesGroupRepository;
+  private signatureService: SignatureService;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.lecturerRepository = new LecturerRepository();
     this.lecturerExpertiseRepository = new LecturerExpertiseRepository();
     this.expertisesGroupRepository = new ExpertisesGroupRepository();
+    this.signatureService = new SignatureService();
   }
-
   /**
    * Get lecturer profile by user ID
    */
@@ -28,46 +31,60 @@ export class LecturerProfileService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (!user.lecturer) {
-      throw new Error("LECTURER_DATA_NOT_FOUND");
+    if (user.role !== "lecturer") {
+      throw new Error("USER_IS_NOT_LECTURER");
     }
 
-    // Get expertise groups from lecturer's expertises
+    // Get lecturer data if admin is also a lecturer
+    let nip: string | null = null;
+    let initials: string | null = null;
     let expertise_group_1: number | null = null;
     let expertise_group_2: number | null = null;
     let expertise_group_3: number | null = null;
     let expertise_group_4: number | null = null;
+    let signature_url: string | null = null;
 
-    if (user.lecturer.expertises && user.lecturer.expertises.length > 0) {
-      user.lecturer.expertises.forEach((exp, index) => {
-        if (index === 0) expertise_group_1 = exp.expertises_group?.id || null;
-        else if (index === 1)
-          expertise_group_2 = exp.expertises_group?.id || null;
-        else if (index === 2)
-          expertise_group_3 = exp.expertises_group?.id || null;
-        else if (index === 3)
-          expertise_group_4 = exp.expertises_group?.id || null;
-      });
+    if (user.lecturer) {
+      nip = user.lecturer.nip || null;
+      initials = user.lecturer.lecturer_code || null;
+
+      // Get expertise groups from lecturer's expertises (sorted by position)
+      if (user.lecturer.expertises && user.lecturer.expertises.length > 0) {
+        // Sort by position to maintain order
+        const sortedExpertises = [...user.lecturer.expertises].sort(
+          (a, b) => ((a as any).position || 0) - ((b as any).position || 0)
+        );
+
+        sortedExpertises.forEach((exp, index) => {
+          if (index === 0) expertise_group_1 = exp.expertises_group?.id || null;
+          else if (index === 1)
+            expertise_group_2 = exp.expertises_group?.id || null;
+          else if (index === 2)
+            expertise_group_3 = exp.expertises_group?.id || null;
+          else if (index === 3)
+            expertise_group_4 = exp.expertises_group?.id || null;
+        });
+      }
+
+      // Get signature URL (file path only, not base64)
+      if (user.lecturer.signature) {
+        signature_url = user.lecturer.signature.signature_url || null;
+      }
     }
 
-    // Return lecturer profile data
+    // Return admin profile data
     const profileData = {
       id: user.id,
       name: user.name,
       email: user.email,
-      nip: user.lecturer.nip,
-      initials: user.lecturer.lecturer_code,
+      nip,
+      initials,
       whatsapp_number: user.whatsapp_number,
       expertise_group_1,
       expertise_group_2,
       expertise_group_3,
       expertise_group_4,
-      current_supervised_1: user.lecturer.current_supervised_1,
-      current_supervised_2: user.lecturer.current_supervised_2,
-      max_supervised_1: user.lecturer.max_supervised_1,
-      max_supervised_2: user.lecturer.max_supervised_2,
-      is_active: user.is_active,
-      last_login: user.last_login,
+      signature_url,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -80,18 +97,7 @@ export class LecturerProfileService {
    */
   async updateLecturerProfile(
     userId: number,
-    data: {
-      name?: string;
-      email?: string;
-      nip?: string;
-      initials?: string;
-      whatsapp_number?: string;
-      expertise_group_1?: number | null;
-      expertise_group_2?: number | null;
-      expertise_group_3?: number | null;
-      expertise_group_4?: number | null;
-      password?: string;
-    }
+    data: ProfileUpdateRequest
   ): Promise<any> {
     const user = await this.userRepository.findById(userId);
 
@@ -99,8 +105,12 @@ export class LecturerProfileService {
       throw new Error("USER_NOT_FOUND");
     }
 
+    if (user.role !== "lecturer") {
+      throw new Error("USER_IS_NOT_LECTURER");
+    }
+
     if (!user.lecturer) {
-      throw new Error("LECTURER_DATA_NOT_FOUND");
+      throw new Error("LECTURER_NOT_FOUND");
     }
 
     // Check email uniqueness if email is being changed
@@ -134,18 +144,16 @@ export class LecturerProfileService {
       );
     }
 
-    // Update lecturer data (NIP, initials)
+    if (Object.keys(updateUserData).length > 0) {
+      await this.userRepository.update(userId, updateUserData);
+    }
+
+    // Update lecturer data (NIP and initials)
     const updateLecturerData: any = {};
     if (data.nip !== undefined) updateLecturerData.nip = data.nip;
     if (data.initials !== undefined)
       updateLecturerData.lecturer_code = data.initials;
 
-    // Update user in database
-    if (Object.keys(updateUserData).length > 0) {
-      await this.userRepository.update(userId, updateUserData);
-    }
-
-    // Update lecturer in database
     if (Object.keys(updateLecturerData).length > 0) {
       await this.lecturerRepository.update(
         user.lecturer.id,
@@ -153,91 +161,102 @@ export class LecturerProfileService {
       );
     }
 
-    // Handle expertise groups update
-    const expertiseGroupIds = [
+    // Update expertise groups
+    await this.updateExpertiseGroups(user.lecturer.id, [
       data.expertise_group_1,
       data.expertise_group_2,
       data.expertise_group_3,
       data.expertise_group_4,
-    ].filter((id) => id !== undefined && id !== null);
+    ]);
 
-    if (expertiseGroupIds.length > 0) {
-      // Delete all existing expertise records for this lecturer
-      await this.lecturerExpertiseRepository.deleteByLecturerId(
-        user.lecturer.id
-      );
-
-      // Create new expertise records
-      for (const expertiseGroupId of expertiseGroupIds) {
-        const expertiseGroup = await this.expertisesGroupRepository.findById(
-          expertiseGroupId
-        );
-
-        if (!expertiseGroup) {
-          throw new Error(`EXPERTISE_GROUP_NOT_FOUND_${expertiseGroupId}`);
-        }
-
-        await this.lecturerExpertiseRepository.create({
-          lecturer: user.lecturer,
-          expertises_group: expertiseGroup,
-        });
-      }
+    // Update signature if provided
+    if (
+      data.signature_data !== undefined &&
+      data.signature_data.trim() !== ""
+    ) {
+      await this.updateSignature(user.lecturer.id, data.signature_data);
     }
 
     // Return updated profile
-    const updatedUser = await this.userRepository.findById(userId);
-    if (!updatedUser || !updatedUser.lecturer) {
-      throw new Error("FAILED_TO_RETRIEVE_UPDATED_DATA");
-    }
-
-    return this.formatProfileData(updatedUser);
+    return await this.getLecturerProfile(userId);
   }
 
   /**
-   * Format profile data
+   * Update lecturer expertise groups with explicit order to prevent mixing
    */
-  private formatProfileData(user: any): any {
-    let expertise_group_1: number | null = null;
-    let expertise_group_2: number | null = null;
-    let expertise_group_3: number | null = null;
-    let expertise_group_4: number | null = null;
+  private async updateExpertiseGroups(
+    lecturerId: number,
+    expertiseGroupIds: (number | null)[]
+  ): Promise<void> {
+    // Delete all existing expertises
+    await this.lecturerExpertiseRepository.deleteByLecturerId(lecturerId);
 
-    if (
-      user.lecturer &&
-      user.lecturer.expertises &&
-      user.lecturer.expertises.length > 0
-    ) {
-      user.lecturer.expertises.forEach((exp: any, index: number) => {
-        if (index === 0) expertise_group_1 = exp.expertises_group?.id || null;
-        else if (index === 1)
-          expertise_group_2 = exp.expertises_group?.id || null;
-        else if (index === 2)
-          expertise_group_3 = exp.expertises_group?.id || null;
-        else if (index === 3)
-          expertise_group_4 = exp.expertises_group?.id || null;
-      });
+    // Add new expertises with explicit position/order
+    // Position: 1 = expertise_group_1, 2 = expertise_group_2, etc
+    for (let index = 0; index < expertiseGroupIds.length; index++) {
+      const expertiseGroupId = expertiseGroupIds[index];
+      if (expertiseGroupId !== null) {
+        // position = index + 1 (1-based indexing)
+        const position = index + 1;
+
+        const lecturerExpertiseData = {
+          lecturer: { id: lecturerId } as any,
+          expertises_group: { id: expertiseGroupId } as any,
+        };
+
+        // Add position field jika repository support
+        (lecturerExpertiseData as any).position = position;
+
+        await this.lecturerExpertiseRepository.create(lecturerExpertiseData);
+
+        console.log(
+          `✓ Added expertise group ${expertiseGroupId} at position ${position} for lecturer ${lecturerId}`
+        );
+      }
+    }
+  }
+
+  /**
+   * Update lecturer signature
+   * Handle both: base64 data (new signature) atau URL (existing signature, no change)
+   */
+  private async updateSignature(
+    lecturerId: number,
+    signatureData: string
+  ): Promise<void> {
+    if (!signatureData || signatureData.trim() === "") {
+      return; // Skip jika kosong
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      nip: user.lecturer?.nip || null,
-      initials: user.lecturer?.lecturer_code || null,
-      whatsapp_number: user.whatsapp_number,
-      expertise_group_1,
-      expertise_group_2,
-      expertise_group_3,
-      expertise_group_4,
-      current_supervised_1: user.lecturer?.current_supervised_1 || 0,
-      current_supervised_2: user.lecturer?.current_supervised_2 || 0,
-      max_supervised_1: user.lecturer?.max_supervised_1 || 15,
-      max_supervised_2: user.lecturer?.max_supervised_2 || 15,
-      is_active: user.is_active,
-      last_login: user.last_login,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-    };
+    try {
+      // Check if signatureData is a URL (already exists in database)
+      // URL format: /signatures/SIGNATURE_NIP_TIMESTAMP.png
+      const isUrl = signatureData.startsWith("/signatures/");
+
+      if (isUrl) {
+        return;
+      }
+
+      // Check if it's base64 data URL format (new signature to upload)
+      // Format: data:image/(png|jpg|jpeg);base64,...
+      const isBase64 = signatureData.startsWith("data:image/");
+
+      if (!isBase64) {
+        throw new Error(
+          "Invalid signature format. Expected URL (/signatures/...) or base64 (data:image/...)"
+        );
+      }
+
+      // Update with new base64 signature
+      await this.signatureService.updateSignature(lecturerId, signatureData);
+    } catch (error) {
+      console.error("Error updating signature:", error);
+      throw new Error(
+        `Gagal update signature: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
   /**

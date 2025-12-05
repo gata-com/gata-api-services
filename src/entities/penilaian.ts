@@ -37,6 +37,9 @@ export class Penilaian {
   @Column({ type: "decimal", precision: 5, scale: 2, nullable: true })
   nilaiAkhir?: number;
 
+  @Column({ type: "varchar", length: 5, nullable: true })
+  nilaiHuruf?: string;
+
   @Column({ type: "boolean", default: false })
   isFinalized!: boolean;
 

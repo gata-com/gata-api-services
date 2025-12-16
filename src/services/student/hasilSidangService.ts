@@ -3,24 +3,31 @@ import { StudentRepository } from "@/repositories/StudentRepository";
 import { BeritaAcaraPDFRepository } from "@/repositories/BeritaAcaraPDFRepository";
 import { DefenseScheduleRepository } from "@/repositories/DefenseScheduleRepository";
 import { PenilaianRepository } from "@/repositories/PenilaianRepository";
-import { LecturerRepository } from "@/repositories/LecturerRepository";
-import { FinalProjectRepository } from "@/repositories/FinalProjectRepository";
+import { RentangNilaiRepository } from "@/repositories/RentangNilaiRepository";
+import { PenilaianService } from "@/services/admin/penilaianService";
+
+interface JadwalKomentar {
+  kode: string;
+  nama: string;
+  komentar: string;
+  tanggal: string;
+}
 
 export class HasilSidangService {
   private studentRepo: StudentRepository;
   private bapRepo: BeritaAcaraPDFRepository;
   private defenseScheduleRepo: DefenseScheduleRepository;
   private penilaianRepo: PenilaianRepository;
-  private lecturerRepo: LecturerRepository;
-  private finalProjectRepo: FinalProjectRepository;
+  private penilaianService: PenilaianService;
+  private rentangRepo: RentangNilaiRepository;
 
   constructor() {
     this.studentRepo = new StudentRepository();
     this.bapRepo = new BeritaAcaraPDFRepository();
     this.defenseScheduleRepo = new DefenseScheduleRepository();
     this.penilaianRepo = new PenilaianRepository();
-    this.lecturerRepo = new LecturerRepository();
-    this.finalProjectRepo = new FinalProjectRepository();
+    this.penilaianService = new PenilaianService();
+    this.rentangRepo = new RentangNilaiRepository();
   }
 
   /**
@@ -55,8 +62,9 @@ export class HasilSidangService {
 
       // Get defense schedule dan penilaian jika BAP ada
       let defenseSchedule = null;
-      let penilaianList: any[] = [];
+      let rekap = [];
       let judulTA = "-";
+      let komentarDosen: JadwalKomentar[] = [];
 
       if (bap) {
         // Get defense schedule by jadwalId dari BAP untuk mendapatkan tanggal sidang
@@ -64,7 +72,34 @@ export class HasilSidangService {
 
         // Get penilaian (assessment) data by jadwalId untuk mendapatkan nilai per dosen
         // Query: SELECT lecturerId, nilaiAkhir, isFinalized FROM penilaians WHERE jadwalId = ?
-        penilaianList = await this.penilaianRepo.findByJadwalId(bap.jadwalId);
+        const rekapTemp = await this.penilaianService.getRekapNilai(
+          bap.jadwalId,
+          student.id
+        );
+
+        if (rekapTemp) {
+          // reorder detailPerDosen dengan urutan detailPerDosen.role = Penguji 1, Penguji 2, Pembimbing 1, Pembimbing 2
+          rekapTemp.detailPerDosen.sort((a: any, b: any) => {
+            const order = [
+              "Pembimbing 1",
+              "Pembimbing 2",
+              "Penguji 1",
+              "Penguji 2",
+            ];
+            return order.indexOf(a.role) - order.indexOf(b.role);
+          });
+
+          rekap = rekapTemp.detailPerDosen.map((dosen: any, index: number) => ({
+            no: index + 1,
+            id: String(dosen.lecturerId || "-"),
+            nama: dosen.nama || "-",
+            peran: dosen.role,
+            nilai: dosen.nilai || 0,
+          }));
+        }
+
+        // komentar dosen dari penilaians
+        komentarDosen = await this.getKomentarDosen(bap.jadwalId, studentId);
       }
 
       // Ambil judul TA dari final_project_members
@@ -84,29 +119,15 @@ export class HasilSidangService {
           judulTA: judulTA,
           programStudi: "Teknik Informatika", // Default atau bisa diambil dari config
         },
-        dosenList: penilaianList.map((penilaian, index) => ({
-          no: index + 1,
-          id: String(penilaian.lecturer?.id || "-"),
-          nama: penilaian.lecturer?.user?.name || "-",
-          peran: this.determineLecturerRole(
-            penilaian.lecturer?.id,
-            penilaianList
-          ),
-          nilai: Number(penilaian.nilaiAkhir) || 0,
-          status: this.determineStatus(
-            penilaian.nilaiAkhir,
-            penilaian.isFinalized
-          ),
-        })),
-        hasilAkhir: bap
-          ? Number(bap.nilaiAkhir) >= 60
-            ? "LULUS"
-            : "TIDAK LULUS"
-          : "MENUNGGU",
+        dosenList: rekap,
+        hasilAkhir: await this.determineStatus(
+          rekap?.nilaiAkhir,
+          rekap?.isFinalized
+        ),
         nilaiAkhir: bap ? Number(bap.nilaiAkhir) : undefined,
         nilaiHuruf: bap?.nilaiHuruf || undefined,
-        // Ambil pdfUrl dari berita_acara_pdfs table
         bapUrl: bap?.pdfUrl || undefined,
+        komentar: komentarDosen,
         createdAt: bap?.createdAt?.toISOString() || undefined,
         updatedAt: bap?.updatedAt?.toISOString() || undefined,
       };
@@ -202,6 +223,54 @@ export class HasilSidangService {
   }
 
   /**
+   * Get list komentar/catatan dosen (per student untuk capstone team)
+   * @param jadwalId - ID jadwal sidang
+   * @param studentId - Optional: ID student (untuk per-student komentar pada capstone team)
+   */
+  async getKomentarDosen(
+    jadwalId: number,
+    studentId?: number
+  ): Promise<JadwalKomentar[]> {
+    let penilaians: any[];
+
+    if (studentId) {
+      // Get komentar untuk student tertentu (per-student)
+      penilaians = await this.penilaianRepo.findByJadwalAndStudent(
+        jadwalId,
+        studentId
+      );
+    } else {
+      // Get semua komentar untuk jadwal (backward compatibility)
+      penilaians = await this.penilaianRepo.findByJadwalId(jadwalId);
+      // Filter yang tidak punya studentId
+      penilaians = penilaians.filter((p) => !p.studentId);
+    }
+
+    const jadwal = await this.defenseScheduleRepo.findByDefenseSubmissionId(
+      jadwalId
+    );
+    if (!jadwal) {
+      return [];
+    }
+
+    const submission = jadwal.defense_submission;
+    const pembimbingIds = [
+      submission.final_project.supervisor_1?.id,
+      submission.final_project.supervisor_2?.id,
+    ].filter(Boolean) as number[];
+
+    return penilaians
+      .filter((p) => p.catatan)
+      .map((p) => ({
+        kode: p.lecturer.lecturer_code,
+        nama: p.lecturer?.user?.name || "",
+        role: pembimbingIds.includes(p.lecturerId) ? "Pembimbing" : "Penguji",
+        komentar: p.catatan || "",
+        tanggal: p.updatedAt.toISOString(),
+      }));
+  }
+
+  /**
    * Get BAP PDF file dari berita_acara_pdfs table
    * Query: SELECT pdfUrl, pdfName FROM berita_acara_pdfs WHERE studentId = ?
    */
@@ -237,36 +306,18 @@ export class HasilSidangService {
   }
 
   /**
-   * Helper function untuk menentukan peran dosen
-   * Didasarkan pada urutan dalam list penilaian
-   */
-  private determineLecturerRole(
-    lecturerId: number | undefined,
-    penilaianList: any[]
-  ): "Pembimbing 1" | "Pembimbing 2" | "Penguji 1" | "Penguji 2" {
-    // Bisa disesuaikan sesuai dengan logika bisnis
-    // Contoh: Pembimbing 1, Pembimbing 2, Penguji 1, Penguji 2
-    const roles: (
-      | "Pembimbing 1"
-      | "Pembimbing 2"
-      | "Penguji 1"
-      | "Penguji 2"
-    )[] = ["Pembimbing 1", "Pembimbing 2", "Penguji 1", "Penguji 2"];
-    const index = penilaianList.findIndex((p) => p.lecturer?.id === lecturerId);
-    return roles[index] || "Penguji 1";
-  }
-
-  /**
    * Helper function untuk menentukan status penilaian
    * Berdasarkan nilaiAkhir dan isFinalized
    */
-  private determineStatus(
-    nilaiAkhir: number | null | undefined,
-    isFinalized: boolean
-  ): "Lulus" | "Tidak Lulus" | "Menunggu" {
+  private async determineStatus(
+    nilaiAkhir?: number | null | undefined,
+    isFinalized?: boolean
+  ): Promise<"LULUS" | "TIDAK LULUS" | "MENUNGGU"> {
     if (!isFinalized || nilaiAkhir === null || nilaiAkhir === undefined) {
-      return "Menunggu";
+      return "MENUNGGU";
     }
-    return nilaiAkhir >= 60 ? "Lulus" : "Tidak Lulus";
+
+    const minScoreToPass = await this.rentangRepo.getMinScoreToPassed();
+    return nilaiAkhir >= minScoreToPass ? "LULUS" : "TIDAK LULUS";
   }
 }

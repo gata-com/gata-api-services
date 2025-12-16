@@ -759,14 +759,7 @@ export class PenilaianService {
   async getKomentarDosen(
     jadwalId: number,
     studentId?: number
-  ): Promise<
-    Array<{
-      code: string;
-      lecturerNama: string;
-      role: string;
-      catatan: string;
-    }>
-  > {
+  ): Promise<JadwalKomentar[]> {
     let penilaians: Penilaian[];
 
     if (studentId) {
@@ -796,10 +789,11 @@ export class PenilaianService {
     return penilaians
       .filter((p) => p.catatan)
       .map((p) => ({
-        code: p.lecturer.lecturer_code,
-        lecturerNama: p.lecturer?.user?.name || "",
+        kode: p.lecturer.lecturer_code,
+        nama: p.lecturer?.user?.name || "",
         role: pembimbingIds.includes(p.lecturerId) ? "Pembimbing" : "Penguji",
-        catatan: p.catatan || "",
+        komentar: p.catatan || "",
+        tanggal: p.updatedAt.toISOString(),
       }));
   }
 
@@ -964,16 +958,10 @@ export class PenilaianService {
             : undefined;
 
         // Get komentars
-        const komentarDosens = await this.getKomentarDosen(
+        const komentarDosens: JadwalKomentar[] = await this.getKomentarDosen(
           schedule.id,
           student?.id
         );
-        const komenta: JadwalKomentar[] = komentarDosens.map((k) => ({
-          kode: k.code,
-          nama: k.lecturerNama,
-          komentar: k.catatan,
-          tanggal: new Date().toISOString(),
-        }));
 
         // Get dokumen untuk member pertama (laporan TA dan slide presentasi)
         const allDocsForSubmission = submission.documents || [];
@@ -1017,7 +1005,7 @@ export class PenilaianService {
           catatan: penilaian?.catatan,
           nilaiAkhirDosenini: penilaian?.nilaiAkhir,
           nilaiHurufDosenini: penilaian?.nilaiHuruf,
-          komentar: komenta.length > 0 ? komenta : undefined,
+          komentar: komentarDosens.length > 0 ? komentarDosens : undefined,
           rubrik: rubrikResponse,
           rentangNilai: rentangNilaiData,
           BAPUrl: {
@@ -1086,18 +1074,8 @@ export class PenilaianService {
             }
 
             // Get komentar untuk member lain
-            const komentarDosensOther = await this.getKomentarDosen(
-              schedule.id,
-              otherStudent?.id
-            );
-            const komentaOther: JadwalKomentar[] = komentarDosensOther.map(
-              (k) => ({
-                kode: k.code,
-                nama: k.lecturerNama,
-                komentar: k.catatan,
-                tanggal: new Date().toISOString(),
-              })
-            );
+            const komentarDosensOther: JadwalKomentar[] =
+              await this.getKomentarDosen(schedule.id, otherStudent?.id);
 
             // Get dokumen untuk member lain (laporan TA dan slide presentasi)
             const draftDocForOtherStudent = allDocsForSubmission.find(
@@ -1142,7 +1120,10 @@ export class PenilaianService {
               catatan: penilaianOtherMember?.catatan,
               nilaiAkhirDosenini: penilaianOtherMember?.nilaiAkhir,
               nilaiHurufDosenini: penilaianOtherMember?.nilaiHuruf,
-              komentar: komentaOther.length > 0 ? komentaOther : undefined,
+              komentar:
+                komentarDosensOther.length > 0
+                  ? komentarDosensOther
+                  : undefined,
               rubrik: rubrikResponse,
               rentangNilai: rentangNilaiData,
               BAPUrl: {

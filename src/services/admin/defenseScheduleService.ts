@@ -145,6 +145,8 @@ export class DefenseScheduleImportService {
             start_time: row["Start Time"],
             end_time: row["End Time"],
             scheduler_status: row.status,
+            examiner_1: row.examiner_1,
+            examiner_2: row.examiner_2,
           });
 
           if (schedule) {

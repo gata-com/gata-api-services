@@ -1,5 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
+import fs from "fs";
+import path from "path";
 import {
   exportDefenseToCSV,
   assignExaminers,
@@ -22,6 +24,12 @@ router.post("/tambah", addSchedule);
 router.put("/edit/:id", editSchedule);
 
 router.delete("/hapus/:id", deleteSchedule);
+
+// Ensure schedules directory exists
+const schedulesDir = path.join(process.cwd(), "src/storages/schedules");
+if (!fs.existsSync(schedulesDir)) {
+  fs.mkdirSync(schedulesDir, { recursive: true });
+}
 
 // Configure multer for CSV file uploads
 const csvStorage = multer.diskStorage({

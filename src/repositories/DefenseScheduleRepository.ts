@@ -2,14 +2,17 @@ import { Repository } from "typeorm";
 import AppDataSource from "../config/database";
 import { DefenseSchedule } from "@/entities/defenseSchedule";
 import { DefenseSubmission } from "@/entities/defenses";
+import { Lecturer } from "@/entities/lecturer";
 
 export class DefenseScheduleRepository {
   public repository: Repository<DefenseSchedule>;
   private defenseRepo: Repository<DefenseSubmission>;
+  private lecturerRepo: Repository<Lecturer>;
 
   constructor() {
     this.repository = AppDataSource.getRepository(DefenseSchedule);
     this.defenseRepo = AppDataSource.getRepository(DefenseSubmission);
+    this.lecturerRepo = AppDataSource.getRepository(Lecturer);
   }
 
   /**
@@ -23,6 +26,8 @@ export class DefenseScheduleRepository {
     start_time: string;
     end_time: string;
     scheduler_status: string;
+    examiner_1: string;
+    examiner_2: string;
   }): Promise<DefenseSchedule | null> {
     // Find defense submission by nim student
     const defenseSubmission = await this.defenseRepo
@@ -43,6 +48,14 @@ export class DefenseScheduleRepository {
       where: { defense_submission: { id: defenseSubmission.id } },
     });
 
+    let examiner1 = await this.lecturerRepo.findOne({
+      where: { lecturer_code: data.examiner_1 },
+    });
+
+    let examiner2 = await this.lecturerRepo.findOne({
+      where: { lecturer_code: data.examiner_2 },
+    });
+
     if (schedule) {
       // Update existing
       schedule.scheduled_date = data.scheduled_date;
@@ -60,6 +73,12 @@ export class DefenseScheduleRepository {
         scheduler_status: data.scheduler_status,
         status: "scheduled",
       });
+    }
+
+    if(examiner1 && examiner2) {
+      defenseSubmission.examiner_1 = examiner1;
+      defenseSubmission.examiner_2 = examiner2;
+      await this.defenseRepo.save(defenseSubmission);
     }
 
     return this.repository.save(schedule);

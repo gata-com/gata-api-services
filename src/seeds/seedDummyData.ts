@@ -25,8 +25,6 @@ import { RubrikGroup } from "../entities/rubrikGroup";
 import { Pertanyaan } from "../entities/pertanyaan";
 import { OpsiJawaban } from "../entities/opsiJawaban";
 import { RentangNilai } from "../entities/rentangNilai";
-import { Penilaian } from "../entities/penilaian";
-import { JawabanPenilaian } from "../entities/jawabanPenilaian";
 
 export async function seedDummyData(dataSource: DataSource) {
   console.log("🌱 Seeding dummy data...");
@@ -43,25 +41,25 @@ export async function seedDummyData(dataSource: DataSource) {
     dataSource.getRepository(GuidanceAvailability);
   const guidanceSessionRepo = dataSource.getRepository(GuidanceSession);
   const guidanceDraftLinkRepo = dataSource.getRepository(GuidanceDraftLink);
+
   const defenseSubmissionRepo = dataSource.getRepository(DefenseSubmission);
   const defenseSubmissionDocRepo = dataSource.getRepository(
     DefenseSubmissionDocument
   );
   const defenseScheduleRepo = dataSource.getRepository(DefenseSchedule);
+
   const rubrikRepo = dataSource.getRepository(Rubrik);
   const rubrikGroupRepo = dataSource.getRepository(RubrikGroup);
   const pertanyaanRepo = dataSource.getRepository(Pertanyaan);
   const opsiJawabanRepo = dataSource.getRepository(OpsiJawaban);
   const rentangNilaiRepo = dataSource.getRepository(RentangNilai);
-  const penilaianRepo = dataSource.getRepository(Penilaian);
-  const jawabanPenilaianRepo = dataSource.getRepository(JawabanPenilaian);
 
   function pad(n: number, width = 3) {
     return n.toString().padStart(width, "0");
   }
 
-  // 4) Buat 100 students (User + Student) - untuk distribusi ke semua 25 dosen (4 per dosen)
-  for (let i = 1; i <= 100; i++) {
+  // Create 20 students (User + Student)
+  for (let i = 1; i <= 20; i++) {
     const email = `student${i}@example.com`;
     let user = await userRepo.findOne({ where: { email } });
     if (!user) {
@@ -145,784 +143,149 @@ export async function seedDummyData(dataSource: DataSource) {
   // ==================== GET EXISTING USERS ====================
   console.log("Fetching existing users...");
   const students = await studentRepo.find({ relations: ["user"] });
-  const lecturers = await lecturerRepo.find({ relations: ["user"] });
+  const allLecturers = await lecturerRepo.find({ relations: ["user"] });
 
-  if (students.length < 40 || lecturers.length < 10) {
+  if (students.length < 20) {
+    console.error("❌ Not enough students. Please seed users first!");
+    return;
+  }
+
+  // Get 4 specific lecturers with codes ANS, HBF, LIA, MCT
+  const lecturer1 = allLecturers.find((l) => l.lecturer_code === "ANS");
+  const lecturer2 = allLecturers.find((l) => l.lecturer_code === "HBF");
+  const lecturer3 = allLecturers.find((l) => l.lecturer_code === "LIA");
+  const lecturer4 = allLecturers.find((l) => l.lecturer_code === "MCT");
+
+  if (!lecturer1 || !lecturer2 || !lecturer3 || !lecturer4) {
     console.error(
-      "❌ Not enough students or lecturers. Please seed users first!"
+      "❌ Required lecturers (ANS, HBF, LIA, MCT) not found. Please seed lecturers first!"
     );
     return;
   }
 
-  // Ambil beberapa mahasiswa dan dosen untuk dummy data - use first 5 for main scenarios
-  const student1 = students[0];
-  const student2 = students[1];
-  const student3 = students[2];
-  const student4 = students[3];
-  const student5 = students[4];
-  const student6 = students[5];
+  const targetLecturers = [lecturer1, lecturer2, lecturer3, lecturer4];
 
-  const lecturer1 = lecturers[0]; // AAF
-  const lecturer2 = lecturers[1]; // AIQ
-  const lecturer3 = lecturers[2]; // ANS
-  const lecturer4 = lecturers[3]; // AFO
-  const lecturer5 = lecturers[4]; // AWJ
+  // Get lecturer5 for capstone scenarios
+  const lecturer5 =
+    allLecturers.find((l) => l.lecturer_code === "AWJ") || allLecturers[4];
 
-  // Get ALL lecturers for distribution - used later for comprehensive data
-  const allLecturers = lecturers;
+  // Today variable for date calculations
+  const today = new Date();
 
   // ==================== GUIDANCE AVAILABILITY ====================
   console.log("Creating guidance availability...");
 
-  // Lecturer 1 availability
-  const availability1 = await guidanceAvailabilityRepo.save({
-    lecturer: lecturer1,
-    day_of_week: 1, // Senin
-    start_time: "09:00",
-    end_time: "12:00",
-    location: "Ruang Dosen 101",
-  });
+  const availabilities = [];
+  for (let i = 0; i < targetLecturers.length; i++) {
+    const availability = await guidanceAvailabilityRepo.save({
+      lecturer: targetLecturers[i],
+      day_of_week: (i % 5) + 1, // Distribute across weekdays
+      start_time: i % 2 === 0 ? "09:00" : "13:00",
+      end_time: i % 2 === 0 ? "12:00" : "16:00",
+      location: `Ruang Dosen ${101 + i}`,
+    });
+    availabilities.push(availability);
+  }
 
-  // Lecturer 2 availability
-  const availability2 = await guidanceAvailabilityRepo.save({
-    lecturer: lecturer2,
-    day_of_week: 2, // Selasa
-    start_time: "13:00",
-    end_time: "16:00",
-    location: "Ruang Dosen 102",
-  });
+  // Create additional availabilities for scenarios
+  const availability1 = availabilities[0];
+  const availability2 = availabilities[1];
 
-  // Lecturer 3 availability
-  const availability3 = await guidanceAvailabilityRepo.save({
-    lecturer: lecturer3,
-    day_of_week: 3, // Rabu
-    start_time: "09:00",
-    end_time: "12:00",
-    location: "Ruang Dosen 103",
-  });
+  // ==================== CREATE 20 STUDENTS WITH FINAL PROJECTS ====================
+  console.log("Creating final projects for 20 students...");
 
-  // Lecturer 4 availability
-  const availability4 = await guidanceAvailabilityRepo.save({
-    lecturer: lecturer4,
-    day_of_week: 4, // Kamis
-    start_time: "13:00",
-    end_time: "16:00",
-    location: "Ruang Dosen 104",
-  });
+  // Distribute 20 students to 4 lecturers:
+  // Each lecturer supervises 10 projects (5 as supervisor_1, 5 as supervisor_2)
+  for (let i = 0; i < 20; i++) {
+    const student = students[i];
 
-  // Lecturer 5 availability
-  const availability5 = await guidanceAvailabilityRepo.save({
-    lecturer: lecturer5,
-    day_of_week: 5, // Jumat
-    start_time: "09:00",
-    end_time: "12:00",
-    location: "Ruang Dosen 105",
-  });
+    // Determine supervisors (rotate to ensure even distribution)
+    // Pattern: Each lecturer gets 5 as sup1 and 5 as sup2
+    const sup1Index = Math.floor(i / 5) % 4;
+    const sup2Index = (Math.floor(i / 5) + 1 + Math.floor((i % 5) / 2.5)) % 4;
 
-  // ==================== SCENARIO 1: MAHASISWA 1 - SUDAH SELESAI SEMINAR PROPOSAL, BIMBINGAN SIDANG HASIL ====================
+    const supervisor1 = targetLecturers[sup1Index];
+    const supervisor2 = targetLecturers[sup2Index];
+
+    // Get two different expertise groups
+    const [exp1, exp2] = getTwoDifferentExpertises();
+
+    // Create final project
+    const finalProject = await finalProjectRepo.save({
+      type: i % 3 === 0 ? "capstone" : "regular",
+      status: "baru",
+      source_topic: ["dosen", "perusahaan", "mandiri"][i % 3],
+      description: `Tugas Akhir ${i + 1} - ${student.user.name}`,
+      max_members: i % 3 === 0 ? 3 : 1,
+      supervisor_1_status: "approved",
+      supervisor_2_status: "approved",
+      admin_status: "approved",
+      is_only_sup_1: false,
+      expertises_group_1: exp1,
+      expertises_group_2: exp2,
+      supervisor_1: supervisor1,
+      supervisor_2: supervisor2,
+      final_project_period: period,
+    });
+
+    // Create final project member
+    await finalProjectMemberRepo.save({
+      final_project: finalProject,
+      student: student,
+      title: `Penelitian ${i + 1} - ${student.user.name}`,
+      resume: `Resume penelitian tugas akhir mahasiswa ${student.user.name}`,
+      draft_path: `/storages/final-projects/proposal-student${i + 1}.pdf`,
+      draft_filename: `proposal-student${i + 1}.pdf`,
+      draft_size: "2.5MB",
+    });
+
+    // Create 5 guidance sessions with supervisor 1
+    for (let j = 1; j <= 5; j++) {
+      const session = await guidanceSessionRepo.save({
+        final_project: finalProject,
+        lecturer: supervisor1,
+        guidance_availability: availabilities[sup1Index],
+        supervisor_type: 1,
+        defense_type: "proposal",
+        topic: `Bimbingan Proposal ${j} - Review`,
+        lecturer_feedback: `Feedback bimbingan ${j}`,
+        status: "completed",
+        session_date: new Date(2024, 10, j * 2 + i),
+        completed_at: new Date(2024, 10, j * 2 + i, 10, 0),
+      });
+
+      // Add draft link for each session
+      await guidanceDraftLinkRepo.save({
+        guidance_session: session,
+        name: `Draft Bimbingan ${j}`,
+        url: `https://drive.google.com/file/draft-${i + 1}-${j}`,
+      });
+    }
+
+    // Create 5 guidance sessions with supervisor 2
+    for (let j = 1; j <= 5; j++) {
+      await guidanceSessionRepo.save({
+        final_project: finalProject,
+        lecturer: supervisor2,
+        guidance_availability: availabilities[sup2Index],
+        supervisor_type: 2,
+        defense_type: "proposal",
+        topic: `Bimbingan Proposal ${j} - Review`,
+        lecturer_feedback: `Feedback bimbingan ${j}`,
+        status: "completed",
+        session_date: new Date(2024, 10, j * 2 + i + 1),
+        completed_at: new Date(2024, 10, j * 2 + i + 1, 14, 0),
+      });
+    }
+
+    console.log(
+      `✓ Created final project for ${student.user.name} with supervisors ${supervisor1.lecturer_code} and ${supervisor2.lecturer_code}`
+    );
+  }
+
   console.log(
-    "Scenario 1: Student 1 - Completed proposal defense, now doing hasil guidance..."
+    "✅ Successfully created 20 students with final projects and guidance sessions"
   );
-
-  // Final Project 1
-  const finalProject1 = await finalProjectRepo.save({
-    type: "regular",
-    status: "baru",
-    source_topic: "dosen",
-    description: "Sistem Rekomendasi Buku menggunakan Collaborative Filtering",
-    max_members: 1,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[0], // AI
-    expertises_group_2: expertiseGroups[2], // Data Science
-    supervisor_1: lecturer1,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  const member1 = await finalProjectMemberRepo.save({
-    final_project: finalProject1,
-    student: student1,
-    title: "Sistem Rekomendasi Buku menggunakan Collaborative Filtering",
-    resume:
-      "Penelitian ini mengembangkan sistem rekomendasi buku berbasis collaborative filtering untuk meningkatkan pengalaman pengguna.",
-    draft_path: "/storages/final-projects/proposal-student1.pdf",
-    draft_filename: "proposal-student1.pdf",
-    draft_size: "2.5MB",
-  });
-
-  // Bimbingan Proposal (Completed)
-  for (let i = 1; i <= 6; i++) {
-    const session = await guidanceSessionRepo.save({
-      final_project: finalProject1,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i} - Review Bab ${i}`,
-      lecturer_feedback: `Bab ${i} sudah bagus, lanjutkan ke bab berikutnya`,
-      status: "completed",
-      session_date: new Date(2024, 9, i * 3), // Oktober 2024
-      completed_at: new Date(2024, 9, i * 3, 10, 0),
-    });
-
-    await guidanceDraftLinkRepo.save({
-      guidance_session: session,
-      name: `Draft Bab ${i}`,
-      url: `https://drive.google.com/file/draft-bab-${i}`,
-    });
-  }
-
-  for (let i = 1; i <= 3; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject1,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i} - Review Metodologi`,
-      lecturer_feedback: `Metodologi sudah sesuai`,
-      status: "completed",
-      session_date: new Date(2024, 9, i * 4), // Oktober 2024
-      completed_at: new Date(2024, 9, i * 4, 14, 0),
-    });
-  }
-
-  // Defense Submission Proposal (Approved & Scheduled)
-  const defenseSubmission1Proposal = await defenseSubmissionRepo.save({
-    final_project: finalProject1,
-    lecturer: lecturer1,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 6,
-    guidance_sup_2_count: 3,
-    min_guidance_sup_1_proposal: 5,
-    min_guidance_sup_2_proposal: 2,
-    student_notes: "Siap untuk seminar proposal",
-    processed_at: new Date(2024, 10, 1),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[0],
-    expertises_group_2: expertiseGroups[2],
-  });
-
-  // Defense Submission Documents untuk Proposal (Draft + PPT)
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission1Proposal,
-    name: "Proposal Final - Draft",
-    url: "https://www.google.com/search?q=proposal-final-student1-draft",
-    type: "draft",
-    email: student1.user.email,
-    student: student1,
-  });
-
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission1Proposal,
-    name: "Presentasi Proposal - PPT",
-    url: "https://www.google.com/search?q=presentasi-proposal-student1-ppt",
-    type: "ppt",
-    email: student1.user.email,
-    student: student1,
-  });
-
-  // Defense Schedule Proposal (Completed)
-  const defenseSchedule1Proposal = await defenseScheduleRepo.save({
-    defense_submission: defenseSubmission1Proposal,
-    scheduled_date: "2025-12-03",
-    start_time: "09:00",
-    end_time: "10:30",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang A",
-    status: "completed",
-  });
-
-  // Bimbingan Sidang Hasil (In Progress)
-  for (let i = 1; i <= 3; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject1,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "hasil",
-      topic: `Bimbingan Hasil ${i} - Review Implementasi`,
-      lecturer_feedback: `Implementasi sudah baik`,
-      status: "completed",
-      session_date: new Date(2024, 11, i * 3), // Desember 2024
-      completed_at: new Date(2024, 11, i * 3, 10, 0),
-    });
-  }
-
-  await guidanceSessionRepo.save({
-    final_project: finalProject1,
-    lecturer: lecturer2,
-    guidance_availability: availability2,
-    supervisor_type: 2,
-    defense_type: "hasil",
-    topic: `Bimbingan Hasil 1 - Review Hasil`,
-    lecturer_feedback: `Hasil sudah sesuai`,
-    status: "completed",
-    session_date: new Date(2024, 11, 10),
-    completed_at: new Date(2024, 11, 10, 14, 0),
-  });
-
-  // ==================== SCENARIO 2: MAHASISWA 2 - SEDANG MENUNGGU PENJADWALAN SEMINAR PROPOSAL ====================
-  console.log(
-    "Scenario 2: Student 2 - Waiting for proposal defense scheduling..."
-  );
-
-  const finalProject2 = await finalProjectRepo.save({
-    type: "capstone",
-    status: "baru",
-    source_topic: "perusahaan",
-    description: "Aplikasi E-Commerce Mobile dengan Flutter",
-    max_members: 3,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[1], // Software Engineering
-    expertises_group_2: expertiseGroups[1],
-    supervisor_1: lecturer1,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: finalProject2,
-    student: student2,
-    title: "Aplikasi E-Commerce Mobile dengan Flutter",
-    resume: "Pengembangan aplikasi e-commerce menggunakan Flutter dan Firebase",
-    draft_path: "/storages/final-projects/proposal-student2.pdf",
-    draft_filename: "proposal-student2.pdf",
-    draft_size: "3.1MB",
-  });
-
-  // Bimbingan Proposal (Completed - memenuhi minimal)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject2,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Progress bagus, lanjutkan`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 2),
-      completed_at: new Date(2024, 10, i * 2, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject2,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Sudah sesuai`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 5),
-      completed_at: new Date(2024, 10, i * 5, 14, 0),
-    });
-  }
-
-  // Defense Submission (Approved, waiting for scheduling)
-  const defenseSubmission2 = await defenseSubmissionRepo.save({
-    final_project: finalProject2,
-    lecturer: lecturer1,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    min_guidance_sup_1_proposal: 5,
-    min_guidance_sup_2_proposal: 2,
-    student_notes: "Mohon dijadwalkan seminar proposal",
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    processed_at: new Date(2024, 11, 1),
-    expertises_group_1: expertiseGroups[1],
-    expertises_group_2: expertiseGroups[1],
-  });
-
-  // Defense Submission Documents untuk Student 2 (Capstone - Multiple Members)
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission2,
-    name: "Proposal E-Commerce - Draft",
-    url: "https://www.google.com/search?q=proposal-ecommerce-draft",
-    type: "draft",
-    email: student2.user.email,
-    student: student2,
-  });
-
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission2,
-    name: "Presentasi E-Commerce - PPT",
-    url: "https://www.google.com/search?q=presentasi-ecommerce-ppt",
-    type: "ppt",
-    email: student2.user.email,
-    student: student2,
-  });
-
-  // ==================== SCENARIO 3: MAHASISWA 3 - SEDANG BIMBINGAN PROPOSAL ====================
-  console.log("Scenario 3: Student 3 - Currently doing proposal guidance...");
-
-  const finalProject3 = await finalProjectRepo.save({
-    type: "regular",
-    status: "baru",
-    source_topic: "dosen",
-    description: "Deteksi Penyakit Tanaman menggunakan Deep Learning",
-    max_members: 1,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[0], // AI
-    expertises_group_2: expertiseGroups[0],
-    supervisor_1: lecturer5,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: finalProject3,
-    student: student3,
-    title: "Deteksi Penyakit Tanaman menggunakan Deep Learning",
-    resume: "Sistem deteksi penyakit tanaman menggunakan CNN",
-    draft_path: "/storages/final-projects/proposal-student3.pdf",
-    draft_filename: "proposal-student3.pdf",
-    draft_size: "2.8MB",
-  });
-
-  // Bimbingan Proposal (In Progress - belum memenuhi minimal)
-  for (let i = 1; i <= 3; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject3,
-      lecturer: lecturer5,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Perlu revisi lagi`,
-      status: "completed",
-      session_date: new Date(2024, 11, i * 3),
-      completed_at: new Date(2024, 11, i * 3, 10, 0),
-    });
-  }
-
-  await guidanceSessionRepo.save({
-    final_project: finalProject3,
-    lecturer: lecturer2,
-    guidance_availability: availability2,
-    supervisor_type: 2,
-    defense_type: "proposal",
-    topic: `Bimbingan Proposal 1`,
-    lecturer_feedback: `Metodologi perlu diperbaiki`,
-    status: "completed",
-    session_date: new Date(2024, 11, 5),
-    completed_at: new Date(2024, 11, 5, 14, 0),
-  });
-
-  // ==================== SCENARIO 4: MAHASISWA 4 - SUDAH DIJADWALKAN SEMINAR PROPOSAL (H-10) ====================
-  console.log(
-    "Scenario 4: Student 4 - Scheduled for proposal defense (H-10)..."
-  );
-
-  const finalProject4 = await finalProjectRepo.save({
-    type: "regular",
-    status: "baru",
-    source_topic: "mandiri",
-    description: "Sistem Monitoring Kualitas Udara IoT",
-    max_members: 2,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[1], // Software Engineering
-    expertises_group_2: expertiseGroups[3], // Cybersecurity
-    supervisor_1: lecturer1,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: finalProject4,
-    student: student4,
-    title: "Sistem Monitoring Kualitas Udara IoT",
-    resume: "Sistem monitoring real-time menggunakan IoT dan cloud computing",
-    draft_path: "/storages/final-projects/proposal-student4.pdf",
-    draft_filename: "proposal-student4.pdf",
-    draft_size: "3.5MB",
-  });
-
-  // Bimbingan Proposal (Completed)
-  for (let i = 1; i <= 6; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject4,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Bagus, sudah siap seminar`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 2),
-      completed_at: new Date(2024, 10, i * 2, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 3; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject4,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Siap seminar`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 3),
-      completed_at: new Date(2024, 10, i * 3, 14, 0),
-    });
-  }
-
-  // Defense Submission & Schedule (H-10 dari sekarang)
-
-  const defenseSubmission4 = await defenseSubmissionRepo.save({
-    final_project: finalProject4,
-    lecturer: lecturer1,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 6,
-    guidance_sup_2_count: 3,
-    min_guidance_sup_1_proposal: 5,
-    min_guidance_sup_2_proposal: 2,
-    student_notes: "Siap seminar proposal",
-    defense_date: "2025-12-03",
-    processed_at: new Date(2024, 11, 1),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[1],
-    expertises_group_2: expertiseGroups[3],
-  });
-
-  const defenseSchedule4 = await defenseScheduleRepo.save({
-    defense_submission: defenseSubmission4,
-    scheduled_date: "2025-12-03",
-    start_time: "10:30",
-    end_time: "12:00",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang B",
-    status: "scheduled",
-  });
-
-  // Defense Submission Documents untuk Student 4
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission4,
-    name: "Proposal IoT - Draft",
-    url: "https://www.google.com/search?q=proposal-iot-draft",
-    type: "draft",
-    email: student4.user.email,
-    student: student4,
-  });
-
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission4,
-    name: "Presentasi IoT - PPT",
-    url: "https://www.google.com/search?q=presentasi-iot-ppt",
-    type: "ppt",
-    email: student4.user.email,
-    student: student4,
-  });
-
-  // ==================== SCENARIO 5: MAHASISWA 5 - SUDAH DIJADWALKAN SEMINAR PROPOSAL (H+5) ====================
-  console.log(
-    "Scenario 5: Student 5 - Completed proposal defense (H+5), ready for assessment..."
-  );
-
-  const finalProject5 = await finalProjectRepo.save({
-    type: "regular",
-    status: "baru",
-    source_topic: "dosen",
-    description: "Chatbot Customer Service menggunakan NLP",
-    max_members: 1,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[0], // AI
-    expertises_group_2: expertiseGroups[1], // Software Engineering
-    supervisor_1: lecturer1,
-    supervisor_2: lecturer5,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: finalProject5,
-    student: student5,
-    title: "Chatbot Customer Service menggunakan NLP",
-    resume:
-      "Pengembangan chatbot intelligent untuk layanan customer service otomatis",
-    draft_path: "/storages/final-projects/proposal-student5.pdf",
-    draft_filename: "proposal-student5.pdf",
-    draft_size: "2.9MB",
-  });
-
-  // Bimbingan Proposal (Completed)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject5,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Sudah bagus`,
-      status: "completed",
-      session_date: new Date(2024, 9, i * 3),
-      completed_at: new Date(2024, 9, i * 3, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject5,
-      lecturer: lecturer5,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `OK`,
-      status: "completed",
-      session_date: new Date(2024, 9, i * 5),
-      completed_at: new Date(2024, 9, i * 5, 14, 0),
-    });
-  }
-
-  // Defense Submission & Schedule (H+5 dari sekarang - sudah selesai sidang)
-  const today = new Date();
-
-  const defenseSubmission5 = await defenseSubmissionRepo.save({
-    final_project: finalProject5,
-    lecturer: lecturer1,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    min_guidance_sup_1_proposal: 5,
-    min_guidance_sup_2_proposal: 2,
-    student_notes: "Siap seminar",
-    defense_date: "2025-12-03",
-    processed_at: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[0],
-    expertises_group_2: expertiseGroups[1],
-  });
-
-  const defenseSchedule5 = await defenseScheduleRepo.save({
-    defense_submission: defenseSubmission5,
-    scheduled_date: "2025-12-03",
-    start_time: "13:00",
-    end_time: "14:30",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang A",
-    status: "completed",
-  });
-
-  // Defense Submission Documents untuk Student 5
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission5,
-    name: "Proposal Chatbot - Draft",
-    url: "https://www.google.com/search?q=proposal-chatbot-draft",
-    type: "draft",
-    email: student5.user.email,
-    student: student5,
-  });
-
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission5,
-    name: "Presentasi Chatbot - PPT",
-    url: "https://www.google.com/search?q=presentasi-chatbot-ppt",
-    type: "ppt",
-    email: student5.user.email,
-    student: student5,
-  });
-
-  // ==================== SCENARIO 6: MAHASISWA 6 - DIJADWALKAN SIDANG HASIL (H+15) ====================
-  console.log("Scenario 6: Student 6 - Scheduled for hasil defense (H+15)...");
-
-  const finalProject6 = await finalProjectRepo.save({
-    type: "regular",
-    status: "baru",
-    source_topic: "dosen",
-    description: "Analisis Sentimen Media Sosial",
-    max_members: 1,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[0], // AI
-    expertises_group_2: expertiseGroups[2], // Data Science
-    supervisor_1: lecturer5,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: finalProject6,
-    student: student6,
-    title: "Analisis Sentimen Media Sosial",
-    resume: "Analisis sentimen tweet menggunakan machine learning",
-    draft_path: "/storages/final-projects/proposal-student6.pdf",
-    draft_filename: "proposal-student6.pdf",
-    draft_size: "2.7MB",
-  });
-
-  // Bimbingan Proposal (Completed)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject6,
-      lecturer: lecturer5,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `Bagus`,
-      status: "completed",
-      session_date: new Date(2024, 8, i * 3),
-      completed_at: new Date(2024, 8, i * 3, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject6,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal ${i}`,
-      lecturer_feedback: `OK`,
-      status: "completed",
-      session_date: new Date(2024, 8, i * 5),
-      completed_at: new Date(2024, 8, i * 5, 14, 0),
-    });
-  }
-
-  const defenseSubmission6Proposal = await defenseSubmissionRepo.save({
-    final_project: finalProject6,
-    lecturer: lecturer5,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    student_notes: "Proposal selesai",
-    processed_at: new Date(2024, 10, 20),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[0],
-    expertises_group_2: expertiseGroups[2],
-  });
-
-  await defenseScheduleRepo.save({
-    defense_submission: defenseSubmission6Proposal,
-    scheduled_date: "2025-12-04",
-    start_time: "14:30",
-    end_time: "16:00",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang C",
-    status: "completed",
-  });
-
-  // Defense Submission Documents untuk Student 6 - Proposal
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission6Proposal,
-    name: "Proposal Sentimen - Draft",
-    url: "https://www.google.com/search?q=proposal-sentimen-draft",
-    type: "draft",
-    email: student6.user.email,
-    student: student6,
-  });
-
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission6Proposal,
-    name: "Presentasi Sentimen - PPT",
-    url: "https://www.google.com/search?q=presentasi-sentimen-ppt",
-    type: "ppt",
-    email: student6.user.email,
-    student: student6,
-  });
-
-  // Bimbingan Hasil (Completed)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject6,
-      lecturer: lecturer5,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "hasil",
-      topic: `Bimbingan Hasil ${i}`,
-      lecturer_feedback: `Hasil implementasi bagus`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 4),
-      completed_at: new Date(2024, 10, i * 4, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: finalProject6,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "hasil",
-      topic: `Bimbingan Hasil ${i}`,
-      lecturer_feedback: `Siap sidang`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 6),
-      completed_at: new Date(2024, 10, i * 6, 14, 0),
-    });
-  }
-
-  // Sidang Hasil dijadwalkan H+15
-
-  const defenseSubmission6Hasil = await defenseSubmissionRepo.save({
-    final_project: finalProject6,
-    lecturer: lecturer5,
-    defense_type: "hasil",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    student_notes: "Siap sidang hasil",
-    processed_at: new Date(2024, 10, 20),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: expertiseGroups[0],
-    expertises_group_2: expertiseGroups[2],
-  });
-
-  // Defense Submission Documents untuk Student 6 - Hasil
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission6Hasil,
-    name: "Implementasi Sentimen - Draft",
-    url: "https://www.google.com/search?q=implementasi-sentimen-draft",
-    type: "draft",
-    email: student6.user.email,
-    student: student6,
-  });
-
-  await defenseSubmissionDocRepo.save({
-    defense_submission: defenseSubmission6Hasil,
-    name: "Presentasi Hasil - PPT",
-    url: "https://www.google.com/search?q=presentasi-hasil-sentimen-ppt",
-    type: "ppt",
-    email: student6.user.email,
-    student: student6,
-  });
 
   // ==================== RUBRIK & PENILAIAN ====================
   console.log("Creating assessment rubrics...");
@@ -1317,765 +680,48 @@ export async function seedDummyData(dataSource: DataSource) {
 
   // Skip: Penilaian data has been removed
 
-  // ==================== CAPSTONE SCENARIOS ====================
-  console.log("\n🎓 Creating CAPSTONE project scenarios...\n");
-
-  // Get more students for capstone projects
-  const capstoneStudents = students.slice(6, 12); // Students 7-12 untuk capstone
-
-  // ==================== SCENARIO 7: CAPSTONE - SEDANG BIMBINGAN PROPOSAL (3 MEMBERS) ====================
-  console.log("Scenario 7: Capstone - 3 members doing proposal guidance...");
-
-  const capstoneFinalProject1 = await finalProjectRepo.save({
-    type: "capstone",
-    status: "baru",
-    source_topic: "perusahaan",
-    description: "Platform E-Learning Adaptif dengan AI Personalisasi",
-    max_members: 3,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[0], // AI
-    expertises_group_2: expertiseGroups[1], // Software Engineering
-    supervisor_1: lecturer1,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  // Member 1 - dengan judul spesifik
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject1,
-    student: capstoneStudents[0],
-    title: "Modul Backend dan AI Engine untuk Platform E-Learning",
-    resume:
-      "Mengembangkan backend API dan machine learning engine untuk personalisasi konten pembelajaran",
-    draft_path: "/storages/final-projects/capstone1-member1.pdf",
-    draft_filename: "capstone1-member1.pdf",
-    draft_size: "2.8MB",
-  });
-
-  // Member 2 - dengan judul spesifik
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject1,
-    student: capstoneStudents[1],
-    title: "Frontend Mobile dan UI/UX Design untuk Platform E-Learning",
-    resume:
-      "Mengembangkan aplikasi mobile Flutter dengan desain UX yang intuitif dan responsif",
-    draft_path: "/storages/final-projects/capstone1-member2.pdf",
-    draft_filename: "capstone1-member2.pdf",
-    draft_size: "3.1MB",
-  });
-
-  // Member 3 - dengan judul spesifik
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject1,
-    student: capstoneStudents[2],
-    title: "Database Architecture dan Analytics Dashboard untuk E-Learning",
-    resume:
-      "Merancang database scalable dan dashboard analytics untuk monitoring pembelajaran",
-    draft_path: "/storages/final-projects/capstone1-member3.pdf",
-    draft_filename: "capstone1-member3.pdf",
-    draft_size: "2.5MB",
-  });
-
-  // Bimbingan Proposal (In Progress)
-  for (let i = 1; i <= 3; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject1,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i} - Review Architecture`,
-      lecturer_feedback: `Progress tim bagus, koordinasi antar modul sudah baik`,
-      status: "completed",
-      session_date: new Date(2024, 11, i * 4),
-      completed_at: new Date(2024, 11, i * 4, 10, 0),
-    });
-  }
-
-  await guidanceSessionRepo.save({
-    final_project: capstoneFinalProject1,
-    lecturer: lecturer2,
-    guidance_availability: availability2,
-    supervisor_type: 2,
-    defense_type: "proposal",
-    topic: `Bimbingan Proposal Capstone 1 - Review Design`,
-    lecturer_feedback: `UI/UX design sudah baik`,
-    status: "completed",
-    session_date: new Date(2024, 11, 10),
-    completed_at: new Date(2024, 11, 10, 14, 0),
-  });
-
-  // ==================== SCENARIO 8: CAPSTONE - APPROVED, WAITING FOR SCHEDULING (2 MEMBERS) ====================
+  // ==================== SUMMARY ====================
   console.log(
-    "Scenario 8: Capstone - 2 members approved, waiting for scheduling..."
-  );
-
-  const capstoneFinalProject2 = await finalProjectRepo.save({
-    type: "capstone",
-    status: "baru",
-    source_topic: "mandiri",
-    description: "Sistem Manajemen Inventaris Berbasis IoT & Cloud Computing",
-    max_members: 2,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[1], // Software Engineering
-    expertises_group_2: expertiseGroups[3], // Cybersecurity
-    supervisor_1: lecturer5,
-    supervisor_2: lecturer2,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject2,
-    student: capstoneStudents[3],
-    title: "IoT Device Integration dan Cloud Backend untuk Sistem Inventaris",
-    resume:
-      "Mengintegrasikan sensor IoT dan backend cloud untuk real-time inventory tracking",
-    draft_path: "/storages/final-projects/capstone2-member1.pdf",
-    draft_filename: "capstone2-member1.pdf",
-    draft_size: "2.9MB",
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject2,
-    student: capstoneStudents[4],
-    title: "Web Dashboard dan Mobile App untuk Sistem Inventaris",
-    resume:
-      "Mengembangkan web dashboard admin dan mobile app untuk pengguna inventory",
-    draft_path: "/storages/final-projects/capstone2-member2.pdf",
-    draft_filename: "capstone2-member2.pdf",
-    draft_size: "3.2MB",
-  });
-
-  // Bimbingan Proposal (Completed)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject2,
-      lecturer: lecturer5,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i}`,
-      lecturer_feedback: `Progress bagus`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 2),
-      completed_at: new Date(2024, 10, i * 2, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject2,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i}`,
-      lecturer_feedback: `Sudah sesuai`,
-      status: "completed",
-      session_date: new Date(2024, 10, i * 5),
-      completed_at: new Date(2024, 10, i * 5, 14, 0),
-    });
-  }
-
-  // Defense Submission
-  const capstoneCode2 = generateCapstoneCode();
-  const capstoneDefenseSubmission2 = await defenseSubmissionRepo.save({
-    final_project: capstoneFinalProject2,
-    lecturer: lecturer5,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    min_guidance_sup_1_proposal: 5,
-    min_guidance_sup_2_proposal: 2,
-    student_notes: "Tim capstone siap untuk seminar proposal",
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    processed_at: new Date(2024, 11, 1),
-    capstone_code: capstoneCode2,
-    expertises_group_1: getRandomItem(expertiseGroups),
-    expertises_group_2: getRandomItem(expertiseGroups),
-  });
-
-  // ==================== SCENARIO 9: CAPSTONE - COMPLETED PROPOSAL DEFENSE (3 MEMBERS) WITH ASSESSMENTS ====================
-  console.log("Scenario 9: Capstone - 3 members with completed assessment...");
-
-  const capstoneFinalProject3 = await finalProjectRepo.save({
-    type: "capstone",
-    status: "baru",
-    source_topic: "dosen",
-    description: "Smart Campus Management System dengan IoT & Analytics",
-    max_members: 3,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[1], // Software Engineering
-    expertises_group_2: expertiseGroups[2], // Data Science
-    supervisor_1: lecturer1,
-    supervisor_2: lecturer5,
-    final_project_period: period,
-  });
-
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject3,
-    student: capstoneStudents[5],
-    title: "Backend Infrastructure dan Data Pipeline untuk Smart Campus",
-    resume:
-      "Membangun backend infrastructure scalable dengan data pipeline untuk analytics",
-    draft_path: "/storages/final-projects/capstone3-member1.pdf",
-    draft_filename: "capstone3-member1.pdf",
-    draft_size: "3.0MB",
-  });
-
-  // Member 2 - dengan judul spesifik
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject3,
-    student: students[16],
-    title: "IoT Integration dan Sensor Management untuk Smart Campus",
-    resume:
-      "Mengintegrasikan sensor IoT dan real-time monitoring system untuk campus facilities",
-    draft_path: "/storages/final-projects/capstone3-member2.pdf",
-    draft_filename: "capstone3-member2.pdf",
-    draft_size: "2.9MB",
-  });
-
-  // Member 3 - dengan judul spesifik
-  await finalProjectMemberRepo.save({
-    final_project: capstoneFinalProject3,
-    student: students[17],
-    title: "Analytics Dashboard dan Reporting System untuk Smart Campus",
-    resume:
-      "Mengembangkan dashboard analytics dengan visualization dan reporting untuk decision making",
-    draft_path: "/storages/final-projects/capstone3-member3.pdf",
-    draft_filename: "capstone3-member3.pdf",
-    draft_size: "2.6MB",
-  });
-
-  // Bimbingan Proposal
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject3,
-      lecturer: lecturer1,
-      guidance_availability: availability1,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i}`,
-      lecturer_feedback: `Arsitektur sudah solid`,
-      status: "completed",
-      session_date: new Date(2024, 9, i * 3),
-      completed_at: new Date(2024, 9, i * 3, 10, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject3,
-      lecturer: lecturer5,
-      guidance_availability: availability2,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i}`,
-      lecturer_feedback: `Analytics sudah komprehensif`,
-      status: "completed",
-      session_date: new Date(2024, 9, i * 5),
-      completed_at: new Date(2024, 9, i * 5, 14, 0),
-    });
-  }
-
-  // Defense Submission & Schedule
-  const capstoneDefenseSubmission3 = await defenseSubmissionRepo.save({
-    final_project: capstoneFinalProject3,
-    lecturer: lecturer1,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    student_notes: "Capstone siap seminar",
-    processed_at: new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: getRandomItem(expertiseGroups),
-    expertises_group_2: getRandomItem(expertiseGroups),
-  });
-
-  const capstoneDefenseSchedule3 = await defenseScheduleRepo.save({
-    defense_submission: capstoneDefenseSubmission3,
-    scheduled_date: "2025-12-03",
-    start_time: "15:00",
-    end_time: "16:30",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang B",
-    status: "completed",
-  });
-
-  // ==================== SCENARIO 10: CAPSTONE - SCHEDULED UNTUK HASIL DEFENSE (3 MEMBERS) ====================
-  console.log(
-    "Scenario 10: Capstone - 3 members scheduled for hasil defense..."
-  );
-
-  const capstoneFinalProject4 = await finalProjectRepo.save({
-    type: "capstone",
-    status: "baru",
-    source_topic: "perusahaan",
-    description:
-      "Mobile Banking Application dengan Biometric Security dan Blockchain",
-    max_members: 3,
-    supervisor_1_status: "approved",
-    supervisor_2_status: "approved",
-    admin_status: "approved",
-    is_only_sup_1: false,
-    expertises_group_1: expertiseGroups[3], // Cybersecurity
-    expertises_group_2: expertiseGroups[1], // Software Engineering
-    supervisor_1: lecturer2,
-    supervisor_2: lecturer5,
-    final_project_period: period,
-  });
-
-  // 3 members dengan judul berbeda untuk capstone
-  for (let i = 0; i < 3; i++) {
-    const titles = [
-      "Biometric Authentication System dengan Multi-Modal Verification",
-      "Mobile App Development dengan Blockchain Integration",
-      "Security Infrastructure dan Compliance Management",
-    ];
-
-    const resumes = [
-      "Implementasi sistem autentikasi biometrik dengan teknologi multi-modal untuk keamanan berlapis",
-      "Pengembangan aplikasi mobile banking dengan integrasi blockchain untuk transaksi aman",
-      "Merancang infrastruktur security dan memastikan compliance dengan standar industry",
-    ];
-
-    await finalProjectMemberRepo.save({
-      final_project: capstoneFinalProject4,
-      student: students[12 + i], // Use students 13, 14, 15
-      title: titles[i],
-      resume: resumes[i],
-      draft_path: `/storages/final-projects/capstone4-member${i + 1}.pdf`,
-      draft_filename: `capstone4-member${i + 1}.pdf`,
-      draft_size: (2.7 + i * 0.2).toFixed(1) + "MB",
-    });
-  }
-
-  // Bimbingan Proposal (Completed)
-  for (let i = 1; i <= 5; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject4,
-      lecturer: lecturer2,
-      guidance_availability: availability2,
-      supervisor_type: 1,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i}`,
-      lecturer_feedback: `Progress bagus, security considerations sudah covered`,
-      status: "completed",
-      session_date: new Date(2024, 8, i * 3),
-      completed_at: new Date(2024, 8, i * 3, 14, 0),
-    });
-  }
-
-  for (let i = 1; i <= 2; i++) {
-    await guidanceSessionRepo.save({
-      final_project: capstoneFinalProject4,
-      lecturer: lecturer5,
-      guidance_availability: availability1,
-      supervisor_type: 2,
-      defense_type: "proposal",
-      topic: `Bimbingan Proposal Capstone ${i}`,
-      lecturer_feedback: `Sudah ready`,
-      status: "completed",
-      session_date: new Date(2024, 8, i * 5),
-      completed_at: new Date(2024, 8, i * 5, 10, 0),
-    });
-  }
-
-  // Seminar Proposal sudah selesai
-  const capstoneDefenseSubmission4Proposal = await defenseSubmissionRepo.save({
-    final_project: capstoneFinalProject4,
-    lecturer: lecturer2,
-    defense_type: "proposal",
-    status: "approved",
-    guidance_sup_1_count: 5,
-    guidance_sup_2_count: 2,
-    student_notes: "Capstone proposal selesai",
-    processed_at: new Date(2024, 8, 20),
-    examiner_1: lecturer3,
-    examiner_2: lecturer4,
-    expertises_group_1: getRandomItem(expertiseGroups),
-    expertises_group_2: getRandomItem(expertiseGroups),
-  });
-
-  await defenseScheduleRepo.save({
-    defense_submission: capstoneDefenseSubmission4Proposal,
-    scheduled_date: "2025-11-28",
-    start_time: "10:00",
-    end_time: "11:30",
-    scheduler_status: "scheduled",
-    room: "Ruang Sidang C",
-    status: "completed",
-  });
-
-  // ==================== COMPREHENSIVE DATA FOR ALL LECTURERS ====================
-  console.log("\n📚 Creating comprehensive data for ALL 25 lecturers...\n");
-
-  // Helper function untuk create project dengan guidance dan assessment lengkap
-  async function createProjectWithFullData(
-    supervisor1: Lecturer,
-    supervisor2: Lecturer,
-    examiner1: Lecturer,
-    examiner2: Lecturer,
-    studentIndex: number,
-    title: string,
-    description: string,
-    resume: string,
-    expertiseGroup1: any,
-    expertiseGroup2: any,
-    availability_sup1: GuidanceAvailability,
-    availability_sup2: GuidanceAvailability,
-    defenseType: "completed" | "scheduled" | "guidance"
-  ) {
-    if (studentIndex >= students.length) {
-      console.warn(
-        `Not enough students, skipping project for student index ${studentIndex}`
-      );
-      return;
-    }
-
-    const student = students[studentIndex];
-    const project = await finalProjectRepo.save({
-      type: "regular",
-      status: "baru",
-      source_topic: "dosen",
-      description,
-      max_members: 1,
-      supervisor_1_status: "approved",
-      supervisor_2_status: "approved",
-      admin_status: "approved",
-      is_only_sup_1: false,
-      expertises_group_1: expertiseGroup1,
-      expertises_group_2: expertiseGroup2,
-      supervisor_1: supervisor1,
-      supervisor_2: supervisor2,
-      final_project_period: period,
-    });
-
-    await finalProjectMemberRepo.save({
-      final_project: project,
-      student: student,
-      title: title,
-      resume: resume,
-      draft_path: `/storages/final-projects/${title
-        .toLowerCase()
-        .replace(/\s+/g, "-")}.pdf`,
-      draft_filename: `${title.toLowerCase().replace(/\s+/g, "-")}.pdf`,
-      draft_size: "2.8MB",
-    });
-
-    // Bimbingan Proposal (Completed)
-    for (let i = 1; i <= 5; i++) {
-      await guidanceSessionRepo.save({
-        final_project: project,
-        lecturer: supervisor1,
-        guidance_availability: availability_sup1,
-        supervisor_type: 1,
-        defense_type: "proposal",
-        topic: `Bimbingan Proposal ${i}`,
-        lecturer_feedback: `Progress bagus`,
-        status: "completed",
-        session_date: new Date(2024, 10, i * 2),
-        completed_at: new Date(2024, 10, i * 2, 10, 0),
-      });
-    }
-
-    for (let i = 1; i <= 2; i++) {
-      await guidanceSessionRepo.save({
-        final_project: project,
-        lecturer: supervisor2,
-        guidance_availability: availability_sup2,
-        supervisor_type: 2,
-        defense_type: "proposal",
-        topic: `Bimbingan Proposal ${i}`,
-        lecturer_feedback: `Sudah sesuai`,
-        status: "completed",
-        session_date: new Date(2024, 10, i * 5),
-        completed_at: new Date(2024, 10, i * 5, 14, 0),
-      });
-    }
-
-    if (defenseType === "completed" || defenseType === "scheduled") {
-      const defenseSubmission = await defenseSubmissionRepo.save({
-        final_project: project,
-        lecturer: supervisor1,
-        defense_type: "proposal",
-        status: "approved",
-        guidance_sup_1_count: 5,
-        guidance_sup_2_count: 2,
-        min_guidance_sup_1_proposal: 5,
-        min_guidance_sup_2_proposal: 2,
-        student_notes: "Siap untuk seminar proposal",
-        defense_date: "2025-12-03",
-        processed_at: new Date(2024, 11, 1),
-        examiner_1: examiner1,
-        examiner_2: examiner2,
-        expertises_group_1: expertiseGroup1,
-        expertises_group_2: expertiseGroup2,
-      });
-
-      const status = defenseType === "completed" ? "completed" : "scheduled";
-      const defenseSchedule = await defenseScheduleRepo.save({
-        defense_submission: defenseSubmission,
-        scheduled_date: "2025-12-03",
-        start_time: "10:00",
-        end_time: "11:30",
-        scheduler_status: "scheduled",
-        room: "Ruang Sidang A",
-        status: status,
-      });
-    }
-  }
-
-  // Create data for ALL 25 lecturers - 4 projects per lecturer (100 students / 25 lecturers)
-  console.log(
-    "\n📚 Creating comprehensive data for ALL 25 lecturers with 4 projects each...\n"
-  );
-
-  // Project titles for distribution (will cycle)
-  const projectTitleTemplates = [
-    {
-      title: "IoT Monitoring System",
-      description: "Sistem monitoring IoT real-time",
-    },
-    { title: "E-Commerce Platform", description: "Platform e-commerce modern" },
-    {
-      title: "Mobile App Development",
-      description: "Aplikasi mobile cross-platform",
-    },
-    {
-      title: "AI-Powered Analytics",
-      description: "Sistem analytics berbasis AI",
-    },
-    { title: "Web Dashboard", description: "Dashboard management web" },
-    {
-      title: "Cloud Infrastructure",
-      description: "Infrastruktur cloud computing",
-    },
-    { title: "Machine Learning Model", description: "Model ML untuk prediksi" },
-    { title: "Computer Vision System", description: "Sistem computer vision" },
-    { title: "Blockchain Solution", description: "Solusi blockchain aplikasi" },
-    {
-      title: "Security Framework",
-      description: "Framework keamanan enterprise",
-    },
-    {
-      title: "Database Optimization",
-      description: "Optimasi database besar scale",
-    },
-    { title: "Data Warehouse", description: "Sistem data warehouse" },
-    { title: "API Gateway", description: "Gateway API microservices" },
-    { title: "Mobile Gaming", description: "Game mobile development" },
-    { title: "AR Application", description: "Aplikasi augmented reality" },
-    {
-      title: "Natural Language Processing",
-      description: "Sistem NLP berbasis Deep Learning",
-    },
-    {
-      title: "Predictive Analytics",
-      description: "Analytics untuk prediksi penjualan",
-    },
-    {
-      title: "Real-time Chat System",
-      description: "Sistem chat dengan WebSocket",
-    },
-    {
-      title: "Document Management",
-      description: "Sistem manajemen dokumen digital",
-    },
-    {
-      title: "Supply Chain Tracking",
-      description: "Tracking supply chain real-time",
-    },
-    {
-      title: "Energy Management System",
-      description: "Sistem manajemen energi cerdas",
-    },
-    {
-      title: "Healthcare Portal",
-      description: "Portal kesehatan terintegrasi",
-    },
-    { title: "Smart Traffic System", description: "Sistem lalu lintas pintar" },
-    {
-      title: "Educational Platform",
-      description: "Platform pembelajaran online",
-    },
-    {
-      title: "Social Media Analytics",
-      description: "Analytics media sosial terpadu",
-    },
-  ];
-
-  let studentIndex = 18; // Start dari student 18 (students 0-5 in main scenarios, 6-17 in capstone)
-  let projectCounter = 0;
-
-  // For each lecturer, create 4 projects (to distribute 100 students to 25 lecturers)
-  for (let lecIdx = 0; lecIdx < allLecturers.length; lecIdx++) {
-    const supervisor1 = allLecturers[lecIdx];
-    const supervisor2 = allLecturers[(lecIdx + 1) % allLecturers.length];
-    const examiner1 = allLecturers[(lecIdx + 2) % allLecturers.length];
-    const examiner2 = allLecturers[(lecIdx + 3) % allLecturers.length];
-
-    console.log(
-      `\n👨‍🏫 Creating 4 projects for ${supervisor1.user?.name} (${supervisor1.lecturer_code})...`
-    );
-
-    // Create guidance availability for this lecturer if doesn't exist
-    let availabilityForSup1 = await guidanceAvailabilityRepo.findOne({
-      where: { lecturer: { id: supervisor1.id } },
-    });
-
-    if (!availabilityForSup1) {
-      availabilityForSup1 = await guidanceAvailabilityRepo.save({
-        lecturer: supervisor1,
-        day_of_week: (lecIdx % 5) + 1,
-        start_time: "09:00",
-        end_time: "12:00",
-        location: `Ruang Dosen ${supervisor1.lecturer_code}`,
-      });
-    }
-
-    let availabilityForSup2 = await guidanceAvailabilityRepo.findOne({
-      where: { lecturer: { id: supervisor2.id } },
-    });
-
-    if (!availabilityForSup2) {
-      availabilityForSup2 = await guidanceAvailabilityRepo.save({
-        lecturer: supervisor2,
-        day_of_week: ((lecIdx + 1) % 5) + 1,
-        start_time: "13:00",
-        end_time: "16:00",
-        location: `Ruang Dosen ${supervisor2.lecturer_code}`,
-      });
-    }
-
-    // Create 4 projects for this lecturer
-    for (let projectIdx = 0; projectIdx < 4; projectIdx++) {
-      if (studentIndex >= students.length) {
-        console.warn(
-          `⚠️ Not enough students (need ${studentIndex + 1}, have ${
-            students.length
-          })`
-        );
-        break;
-      }
-
-      const titleTemplate =
-        projectTitleTemplates[projectCounter % projectTitleTemplates.length];
-      const student = students[studentIndex];
-      const defenseType: "completed" | "scheduled" | "guidance" =
-        projectIdx === 0
-          ? "completed"
-          : projectIdx === 1
-          ? "scheduled"
-          : "guidance";
-
-      console.log(
-        `  📝 Project ${projectIdx + 1}/4: ${titleTemplate.title} → ${
-          student.user?.name
-        }`
-      );
-
-      await createProjectWithFullData(
-        supervisor1,
-        supervisor2,
-        examiner1,
-        examiner2,
-        studentIndex,
-        `${titleTemplate.title} (${supervisor1.lecturer_code}-${
-          projectIdx + 1
-        })`,
-        titleTemplate.description,
-        `Penelitian mengenai ${titleTemplate.title.toLowerCase()}`,
-        expertiseGroups[lecIdx % expertiseGroups.length],
-        expertiseGroups[(lecIdx + 1) % expertiseGroups.length],
-        availabilityForSup1,
-        availabilityForSup2,
-        defenseType
-      );
-
-      studentIndex++;
-      projectCounter++;
-    }
-  }
-
-  console.log(
-    `\n✅ Distribution complete: ${studentIndex} students used for ${allLecturers.length} lecturers`
+    "\n✅ Successfully created 20 students with final projects and guidance sessions"
   );
 
   console.log("✅ Dummy data seeding completed successfully!");
   console.log("=".repeat(80));
   console.log("Summary:");
-  console.log("\n📊 COMPREHENSIVE DATA SEEDING - ALL 25 LECTURERS:");
-  console.log("\n👨‍🏫 DATA DISTRIBUTION FOR EACH LECTURER:");
-  console.log("- Supervisor 1 untuk 4 projects dengan 4 mahasiswa berbeda");
-  console.log("- Co-supervisor role di 4 projects dari lecturer berikutnya");
+  console.log("\n📊 DATA SEEDING - 20 STUDENTS:");
+  console.log("\n👨‍🏫 DATA DISTRIBUTION:");
+  console.log("- 20 students dibagikan ke 4 dosen (ANS, HBF, LIA, MCT)");
   console.log(
-    "- Examiner role di projects dari lecturer lain (cyclic assignment)"
+    "- Masing-masing dosen supervise 5 students sebagai supervisor_1"
   );
-  console.log("- GuidanceAvailability dengan hari berbeda (cycle Mon-Fri)");
-  console.log("- Complete guidance sessions (proposal + hasil defense types)");
+  console.log(
+    "- Masing-masing dosen co-supervise 5 students sebagai supervisor_2"
+  );
+  console.log("- Setiap student: 1 final project + 1 final project member");
+  console.log("- 5 guidance sessions dengan supervisor_1 (completed)");
+  console.log("- 5 guidance sessions dengan supervisor_2 (completed)");
   console.log("\n📈 DATABASE STATISTICS:");
-  console.log(`- Total Students Created: 100`);
-  console.log(
-    `- Total Students Used: ${studentIndex} (6 in main scenarios + ${
-      studentIndex - 6
-    } in comprehensive projects)`
-  );
-  console.log(`- Students per Lecturer: 4`);
-  console.log(`- Total Lecturers: ${allLecturers.length}`);
-  console.log(
-    `- Total Projects Created: ${allLecturers.length * 4} (4 per lecturer × 25)`
-  );
-  console.log(
-    `- Completed Defenses: ${Math.ceil((allLecturers.length * 4) / 3)}`
-  );
-  console.log(
-    `- Scheduled Defenses: ${Math.floor((allLecturers.length * 4) / 3)}`
-  );
-  console.log(
-    `- In Progress (Guidance): ${
-      allLecturers.length * 4 -
-      Math.ceil((allLecturers.length * 4) / 3) -
-      Math.floor((allLecturers.length * 4) / 3)
-    }`
-  );
+  console.log(`- Total Students Created: 20`);
+  console.log(`- Total Final Projects: 20`);
+  console.log(`- Total Final Project Members: 20 (1:1 relationship)`);
+  console.log(`- Total Guidance Sessions: 200 (10 per student)`);
+  console.log(`- Students per Lecturer: 5 as sup1, 5 as sup2`);
+  console.log(`- Target Lecturers: ANS, HBF, LIA, MCT`);
   console.log("\n✅ WORKFLOW COVERAGE:");
   console.log("✓ Pendaftaran Tugas Akhir (Final Project Registration)");
-  console.log("✓ Bimbingan Proposal & Sidang Hasil (Guidance Sessions)");
-  console.log("✓ Penjadwalan Sidang (Defense Scheduling)");
-  console.log("✓ Penilaian dari 4 Dosen (Assessment from 4 Lecturers)");
-  console.log("\n✅ FEATURES COVERED:");
-  console.log("- All 25 lecturers have assigned students");
-  console.log("- Complete guidance session history (proposal + hasil)");
-  console.log("- Defense schedules with multiple statuses");
-  console.log("- Assessment rubrics (Seminar & Sidang)");
-  console.log("- Diverse project types and topics");
+  console.log("✓ Bimbingan Proposal (10 sessions per student)");
+  console.log("✓ All guidance sessions marked as completed");
+  console.log("\n✅ FEATURES PRESERVED:");
+  console.log("✓ Assessment rubrics (Seminar & Sidang)");
+  console.log("✓ Rentang Nilai (Grade ranges)");
+  console.log("✓ Guidance Availability for each lecturer");
+  console.log("\n📋 LECTURER DISTRIBUTION:");
+  console.log(`- Lecturer 1 (ANS): Students 0-4 (sup1), Students 10-14 (sup2)`);
+  console.log(`- Lecturer 2 (HBF): Students 5-9 (sup1), Students 0-4 (sup2)`);
+  console.log(`- Lecturer 3 (LIA): Students 10-14 (sup1), Students 5-9 (sup2)`);
   console.log(
-    "- Cyclic role assignment: supervisor1, supervisor2, examiner1, examiner2"
+    `- Lecturer 4 (MCT): Students 15-19 (sup1), Students 15-19 (sup2)`
   );
-  console.log("- GuidanceAvailability for each lecturer");
-  console.log("- Full assessment data with jawaban penilaian");
-  console.log("\n👨‍🎓 LECTURER LIST (All 25):");
-  allLecturers.forEach((lec, idx) => {
-    console.log(
-      `${String(idx + 1).padStart(2, " ")}. ${lec.lecturer_code} - ${
-        lec.user?.name
-      }`
-    );
-  });
   console.log("=".repeat(80));
 }
 

@@ -250,6 +250,8 @@ export class GuidanceService {
       // 3. Transform data ke format TotalStudentsResponse
       const result: TotalStudentsResponse[] = allGuidanceSessions.map(
         (session: any) => {
+
+          console.log("Processing session:", session.final_project.members);
           // Ambil mahasiswa dari final_project members
           const mahasiswa = session.final_project.members.map(
             (member: any) => ({

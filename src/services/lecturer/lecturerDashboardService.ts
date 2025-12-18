@@ -23,10 +23,6 @@ export class LecturerDashboardService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (!user.lecturer) {
-      throw new Error("USER_IS_NOT_LECTURER");
-    }
-
     const lecturerId = user.lecturer.id;
 
     // Get all dashboard components

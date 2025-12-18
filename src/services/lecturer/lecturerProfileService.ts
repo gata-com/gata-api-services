@@ -31,10 +31,6 @@ export class LecturerProfileService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (user.role !== "lecturer") {
-      throw new Error("USER_IS_NOT_LECTURER");
-    }
-
     // Get lecturer data if admin is also a lecturer
     let nip: string | null = null;
     let initials: string | null = null;
@@ -103,10 +99,6 @@ export class LecturerProfileService {
 
     if (!user) {
       throw new Error("USER_NOT_FOUND");
-    }
-
-    if (user.role !== "lecturer") {
-      throw new Error("USER_IS_NOT_LECTURER");
     }
 
     if (!user.lecturer) {

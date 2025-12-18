@@ -31,12 +31,6 @@ export const getLecturerProfile = async (
       });
     }
 
-    if (error instanceof Error && error.message === "USER_IS_NOT_LECTURER") {
-      return res.status(403).json({
-        message: "User bukan dosen",
-        errors: { path: "role", msg: "User is not a lecturer" },
-      });
-    }
 
     return res.status(500).json({
       message: "Terjadi kesalahan saat mengambil profile",

@@ -147,7 +147,7 @@ export class LecturerDashboardRepository {
       .leftJoinAndSelect("sup2.user", "sup2User")
       .where("ds.scheduled_date >= :today", { today })
       .andWhere(
-        "(fp.supervisor_1 = :lecturerId OR fp.supervisor_2 = :lecturerId)",
+        "(fp.supervisor_1 = :lecturerId OR fp.supervisor_2 = :lecturerId OR defense.examiner_1 = :lecturerId OR defense.examiner_2 = :lecturerId)",
         { lecturerId }
       )
       .orderBy("ds.scheduled_date", "ASC")
